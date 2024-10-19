@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: ./ROS2
+    tty: true
+    container_name: backend
+    restart: always
+    privileged: true # If this docker container is not intended to communicate to board components on i2c bus, this line should be removed
+    ports:
+      - "9090:9090"
+    volumes:
+      - /dev:/dev # If this docker container is not intended to communicate to board components on i2c bus, this line should be removed
+      - ./ROS2/colcon_ws/config.db:/app/config.db
+      - ./ROS2/colcon_ws/tasks.db:/app/tasks.db
+  web_frontend: # If the frontend it going to run on a development environment (preferred for development), the frontend should be removed from the compose file
+    build: ./WebGUI
+    restart: always
+    tty: true
+    ports:
+     - "80:80"
