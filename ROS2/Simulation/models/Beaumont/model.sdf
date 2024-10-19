@@ -6,11 +6,13 @@
       <inertial>
         <!-- 
         Since the electronics enclosure's volume is not large enough to displace 23kg of mass, the mass of Beaumont has to be decreased.
-        The new mass is calculated as approximately volume of the electronics enclosure times density of water
+        The new mass is calculated as approximately volume of the electronics enclosure times density of water.
+        This can be thought of as "adding foam" to the ROV.
         -->
         <mass>7.195</mass>
-        <pose>0 0.13 0.1 0 -0 0</pose>
-        <!-- Imported from the "Simplified ROV" model in Onshape. Material Choen was Aluminum-->
+        <!-- The center of buoyancy being below the center of volume (electronics enclosure) enhances stability in water.-->
+        <pose>0 0.13 0.05 0 -0 0</pose>
+        <!-- Mass moments of inertia imported from the "Simplified ROV" model in Onshape. Material chosen was Aluminum-->
         <inertia>
           <ixx>0.34673407</ixx>
           <ixy>0</ixy>
@@ -58,9 +60,11 @@
       <collision name='electronics_enclosure'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
-        <pose>0 0.1475 0.12 1.5708 0 0</pose>
+        <!-- The enclosure is positioned such that the center of volume is approximately above the center of mass. 
+            This required a bit of trial and error.-->
+        <pose>0 0.1225 0.12 1.5708 0 0</pose>
         <geometry>
-          <!-- Ideally, this would have been a sphere. However, the Buoyancy plugin only accepts boxes and cylinders -->
+          <!-- Ideally, this would have been a cylinder. However, the Buoyancy plugin only accepts boxes and spheres -->
           <box>
             <size>0.157 0.157 0.3</size>
           </box>
@@ -71,7 +75,7 @@
       <pose>0.02 -0.08 -0.02 0 -0 3.14159</pose>
       <link name='left_claw_link'>
         <inertial>
-          <pose>-0.0325 0.025 0.0225 0 0 0</pose>
+          <pose>-0.0325 0.025 0.01125 0 0 0</pose>
           <mass>0.1</mass>
         </inertial>
         <pose>0 0 -0.1 0 7e-06 0.005444</pose>
@@ -83,7 +87,7 @@
           <pose>0 0 0 0 3e-06 3e-06</pose>
           <geometry>
             <mesh>
-              <uri>left_claw_visual.stl</uri>
+              <uri>claw.stl</uri>
               <scale>1 1 1</scale>
             </mesh>
             </geometry>
@@ -103,7 +107,7 @@
           <pose>0 0 0 0 -0 0</pose>
           <geometry>
             <mesh>
-                <uri>left_claw_collision.stl</uri>
+                <uri>claw.stl</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
@@ -111,25 +115,24 @@
       </link>
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-    </model>
+    </model>    
     <model name='right_claw'>
-      <pose>-0.02 -0 -0 0 -0 0</pose>
+      <pose>-0.02 -0.08 -0.2 0 3.14159 3.14159</pose>
       <link name='right_claw_link'>
         <inertial>
-          <!-- Needed to correct the center of mass for the right claw -->
-          <pose>0 -0.1 0 0 0 0</pose>
+          <pose>-0.0325 0.025 0.01125 0 0 0</pose>
           <mass>0.1</mass>
         </inertial>
-        <pose>0 -0 -0.1 0 7e-06 0.005444</pose>
+        <pose>0 0 -0.1 0 7e-06 0.005444</pose>
         <gravity>1</gravity>
         <self_collide>0</self_collide>
         <kinematic>0</kinematic>
         <enable_wind>0</enable_wind>
         <visual name='claw_hand_visual'>
-          <pose>0.022 -0.08 -0.02 0 0 -3.14159</pose>
+          <pose>0 0 0 0 3e-06 3e-06</pose>
           <geometry>
             <mesh>
-              <uri>right_claw_visual.stl</uri>
+              <uri>claw.stl</uri>
               <scale>1 1 1</scale>
             </mesh>
             </geometry>
@@ -146,10 +149,10 @@
         <collision name='collision_1'>
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
-          <pose>0.02 -0.08 -0.02 0 -0 3.14159</pose>
+          <pose>0 0 0 0 -0 0</pose>
           <geometry>
             <mesh>
-              <uri>right_claw_collision.stl</uri>
+                <uri>claw.stl</uri>
               <scale>1 1 1</scale>
             </mesh>
           </geometry>
