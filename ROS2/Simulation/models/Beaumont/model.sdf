@@ -1,0 +1,229 @@
+<?xml version='1.0'?>
+<sdf version='1.7'>
+  <model name='Beaumont'>
+    <link name='chassis'>
+      <pose>0 0 -0 0 -0 0</pose>
+      <inertial>
+        <!-- 
+        Since the electronics enclosure's volume is not large enough to displace 23kg of mass, the mass of Beaumont has to be decreased.
+        The new mass is calculated as approximately volume of the electronics enclosure times density of water
+        -->
+        <mass>7.195</mass>
+        <pose>0 0.13 0.1 0 -0 0</pose>
+        <!-- Imported from the "Simplified ROV" model in Onshape. Material Choen was Aluminum-->
+        <inertia>
+          <ixx>0.34673407</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.2546457474</iyy>
+          <iyz>0.000011623</iyz>
+          <izz>0.3330063202</izz>
+        </inertia>
+      </inertial>
+      <self_collide>0</self_collide>
+      <enable_wind>0</enable_wind>
+      <kinematic>0</kinematic>
+      <gravity>1</gravity>
+      <frame name='chassis_frame'>
+        <pose>0 0.5 0 0 -0 0</pose>
+      </frame>
+      <visual name='assembly_visual'>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>chassis_assembly.stl</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <material>
+        <shader type='pixel'/>
+        <ambient>0.2 0.2 0.2 1</ambient>
+        <diffuse>0.2 0.2 0.2 1</diffuse>
+        <specular>0.2 0.2 0.2 1</specular>
+        <emissive>0.2 0.2 0.2 1</emissive>
+        </material>
+        <transparency>0</transparency>
+        <cast_shadows>1</cast_shadows>
+      </visual>
+      <collision name='assembly_collision'>
+        <max_contacts>10</max_contacts>
+        <pose>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>chassis_assembly.stl</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <collision name='electronics_enclosure'>
+        <laser_retro>0</laser_retro>
+        <max_contacts>10</max_contacts>
+        <pose>0 0.1475 0.12 1.5708 0 0</pose>
+        <geometry>
+          <!-- Ideally, this would have been a sphere. However, the Buoyancy plugin only accepts boxes and cylinders -->
+          <box>
+            <size>0.157 0.157 0.3</size>
+          </box>
+        </geometry>
+      </collision>
+    </link>
+    <model name='left_claw'>
+      <pose>0.02 -0.08 -0.02 0 -0 3.14159</pose>
+      <link name='left_claw_link'>
+        <inertial>
+          <pose>-0.0325 0.025 0.0225 0 0 0</pose>
+          <mass>0.1</mass>
+        </inertial>
+        <pose>0 0 -0.1 0 7e-06 0.005444</pose>
+        <gravity>1</gravity>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <enable_wind>0</enable_wind>
+        <visual name='claw_hand_visual'>
+          <pose>0 0 0 0 3e-06 3e-06</pose>
+          <geometry>
+            <mesh>
+              <uri>left_claw_visual.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+            </geometry>
+            <material>
+              <shader type='pixel'/>
+              <ambient>0.1 0.1 0.5 1</ambient>
+              <diffuse>0.1 0.1 0.5 1</diffuse>
+              <specular>0.1 0.1 0.5 1</specular>
+              <emissive>0 0 0.5 1</emissive>
+            </material>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision_1'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <pose>0 0 0 0 -0 0</pose>
+          <geometry>
+            <mesh>
+                <uri>left_claw_collision.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+      <static>0</static>
+      <allow_auto_disable>1</allow_auto_disable>
+    </model>
+    <model name='right_claw'>
+      <pose>-0.02 -0 -0 0 -0 0</pose>
+      <link name='right_claw_link'>
+        <inertial>
+          <!-- Needed to correct the center of mass for the right claw -->
+          <pose>0 -0.1 0 0 0 0</pose>
+          <mass>0.1</mass>
+        </inertial>
+        <pose>0 -0 -0.1 0 7e-06 0.005444</pose>
+        <gravity>1</gravity>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+        <enable_wind>0</enable_wind>
+        <visual name='claw_hand_visual'>
+          <pose>0.022 -0.08 -0.02 0 0 -3.14159</pose>
+          <geometry>
+            <mesh>
+              <uri>right_claw_visual.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+            </geometry>
+            <material>
+              <shader type='pixel'/>
+              <ambient>0.1 0.1 0.5 1</ambient>
+              <diffuse>0.1 0.1 0.5 1</diffuse>
+              <specular>0.1 0.1 0.5 1</specular>
+              <emissive>0 0 0.5 1</emissive>
+            </material>
+          <transparency>0</transparency>
+          <cast_shadows>1</cast_shadows>
+        </visual>
+        <collision name='collision_1'>
+          <laser_retro>0</laser_retro>
+          <max_contacts>10</max_contacts>
+          <pose>0.02 -0.08 -0.02 0 -0 3.14159</pose>
+          <geometry>
+            <mesh>
+              <uri>right_claw_collision.stl</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+        </collision>
+      </link>
+      <static>0</static>
+      <allow_auto_disable>1</allow_auto_disable>
+    </model>
+    <joint name='chassis_JOINT_0_1' type='revolute'>
+      <parent>chassis</parent>
+      <child>right_claw::right_claw_link</child>
+      <pose>0 -0.01 0 0 -0 0</pose>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.4363</lower>
+          <upper>0.4363</upper>
+          <effort>-1</effort>
+          <velocity>-1</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+          <damping>0</damping>
+          <friction>0</friction>
+        </dynamics>
+      </axis>
+      <physics>
+        <ode>
+          <limit>
+            <cfm>0</cfm>
+            <erp>0.2</erp>
+          </limit>
+          <suspension>
+            <cfm>0</cfm>
+            <erp>0.2</erp>
+          </suspension>
+        </ode>
+      </physics>
+    </joint>
+    <joint name='chassis_JOINT_1_1' type='revolute'>
+      <parent>chassis</parent>
+      <child>left_claw::left_claw_link</child>
+      <pose>-0.023 -0.07 0.02 0 -0 0</pose>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-0.4363</lower>
+          <upper>0.4363</upper>
+          <effort>-1</effort>
+          <velocity>-1</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+          <damping>0</damping>
+          <friction>0</friction>
+        </dynamics>
+      </axis>
+      <physics>
+        <ode>
+          <limit>
+            <cfm>0</cfm>
+            <erp>0.2</erp>
+          </limit>
+          <suspension>
+            <cfm>0</cfm>
+            <erp>0.2</erp>
+          </suspension>
+        </ode>
+      </physics>
+    </joint>
+    <static>0</static>
+    <self_collide>0</self_collide>
+    <allow_auto_disable>1</allow_auto_disable>
+  </model>
+</sdf>
