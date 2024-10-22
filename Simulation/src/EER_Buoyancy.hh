@@ -18,8 +18,8 @@
  * Licensed under the MIT License.
  *
  * Description of modifications:
- * - TODO: Add option to apply buoyancy based on a custom specified center of volume in the SDF.
- * - TODOL Add option to apply buoyancy based on a custom specified volume in the SDF.
+ * Functionality was added to allow the user to preset a custom volume and center of volume for links in the SDF.
+ * This bypasses the need to add arbitrary internal collision shapes to complex models to calculate their volume and center of volume.
  */
 
 #ifndef GZ_SIM_SYSTEMS_BUOYANCY_HH_
@@ -45,7 +45,8 @@ namespace systems
   /// shapes.
   ///
   /// The volume and center of volume will be computed for each link, and
-  /// stored as components. During each iteration, Archimedes' principle is
+  /// stored as components. They can also be manually specified if using uniform
+  /// fluid density. During each iteration, Archimedes' principle is
   /// applied to each link with a volume and center of volume component.
   ///
   /// Plane shapes are not handled by this plugin, and will not be affected
@@ -55,6 +56,12 @@ namespace systems
   ///
   /// * `<uniform_fluid_density>` sets the density of the fluid that surrounds
   /// the buoyant object. [Units: kgm^-3]
+  /// * `<set_volume>` allows you to specify a custom volume and center of volume for 
+  /// a specific link.
+  /// * `<entity>`, `<volume>`, `<center_of_volume>` (children of `<set_volume>`).
+  /// `<entity>` is the name of the link to apply the custom volume and center of volume to.
+  /// `<volume>` is the volume of the link in m^3.
+  /// `<center_of_volume>` is the center of volume of the link in m relative to the link's frame. TODO: Confirm that's correct.
   /// * `<graded_buoyancy>` allows you to define a world where the buoyancy
   /// changes along the Z axis. An example of such a world could be if we are
   /// simulating an open ocean with its surface and under water behaviour. This

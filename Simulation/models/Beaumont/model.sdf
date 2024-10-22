@@ -4,14 +4,8 @@
     <link name='chassis'>
       <pose>0 0 -0 0 -0 0</pose>
       <inertial>
-        <!-- 
-        Since the electronics enclosure's volume is not large enough to displace 23kg of mass, the mass of Beaumont has to be decreased.
-        The new mass is calculated as approximately volume of the electronics enclosure times density of water.
-        This can be thought of as "adding foam" to the ROV.
-        -->
-        <mass>7.195</mass>
-        <!-- The center of buoyancy being below the center of volume (electronics enclosure) enhances stability in water.-->
-        <pose>0 0.13 0.05 0 -0 0</pose>
+        <mass>23</mass>
+        <pose>0 0.13 0.025 0 -0 0</pose>
         <!-- Mass moments of inertia imported from the "Simplified ROV" model in Onshape. Material chosen was Aluminum-->
         <inertia>
           <ixx>0.34673407</ixx>
@@ -62,12 +56,14 @@
         <max_contacts>10</max_contacts>
         <!-- The enclosure is positioned such that the center of volume is approximately above the center of mass. 
             This required a bit of trial and error.-->
-        <pose>0 0.1225 0.12 1.5708 0 0</pose>
+        <pose>0 0.15 0.12 1.5708 0 0</pose>
         <geometry>
-          <!-- Ideally, this would have been a cylinder. However, the Buoyancy plugin only accepts boxes and spheres -->
-          <box>
-            <size>0.157 0.157 0.3</size>
-          </box>
+          <!-- Note that using Graded Buoyancy instead of Uniform Buoyancy will not work as only boxes and spheres collissions are
+              interperted for Graded Buoyancy. -->
+          <cylinder>
+            <radius>0.083</radius>
+            <length>0.3</length>
+          </cylinder>
         </geometry>
       </collision>
     </link>

@@ -18,8 +18,8 @@
  * Licensed under the MIT License.
  *
  * Description of modifications:
- * - TODO: Add option to apply buoyancy based on a custom specified center of volume in the SDF.
- * - TODOL Add option to apply buoyancy based on a custom specified volume in the SDF.
+ * Functionality was added to allow the user to preset a custom volume and center of volume for links in the SDF.
+ * This bypasses the need to add arbitrary internal collision shapes to complex models to calculate their volume and center of volume.
  */
 #include <gz/msgs/wrench.pb.h>
 
@@ -58,7 +58,7 @@
 #include "gz/sim/Model.hh"
 #include "gz/sim/Util.hh"
 
-#include "Buoyancy.hh"
+#include "EER_Buoyancy.hh"
 
 using namespace gz;
 using namespace sim;
@@ -113,6 +113,13 @@ class gz::sim::systems::BuoyancyPrivate
   public: bool IsEnabled(Entity _entity,
       const EntityComponentManager &_ecm) const;
 
+  /// @brief  Check if the entity has a preset volume and center of volume. If it does, apply that volume and center of volume to the entity.
+  /// @param _entity Target entity
+  /// @param _ecm Entity component manager
+  /// @return True if the entity has a preset volume and center of volume.
+  public: bool CheckForPresetVolumes(Entity _entity,
+      const EntityComponentManager &_ecm);
+
   /// \brief Model interface
   public: Entity world{kNullEntity};
 
@@ -161,6 +168,10 @@ class gz::sim::systems::BuoyancyPrivate
   /// \brief Scoped names of entities that buoyancy should apply to. If empty,
   /// all links will receive buoyancy.
   public: std::unordered_set<std::string> enabled;
+
+  /// \brief A list of entities whose volume and center of volume has been preset 
+  /// in the plugin definition.
+  public: std::unordered_map<std::string, std::pair<double, math::Vector3d>> presetVolumes;
 
   /// \brief Center of volumes to be added on the next Pre-update
   public: std::unordered_map<Entity, math::Vector3d> centerOfVolumes;
@@ -296,6 +307,12 @@ void BuoyancyPrivate::CheckForNewEntities(const EntityComponentManager &_ecm)
 
     if (!this->IsEnabled(_entity, _ecm))
     {
+      return true;
+    }
+
+    if (this->CheckForPresetVolumes(_entity, _ecm))
+    {
+      gzmsg << "Preset volume and center of volume found for entity: " << scopedName(_entity, _ecm, "::", false) << std::endl;
       return true;
     }
 
@@ -436,6 +453,36 @@ bool BuoyancyPrivate::IsEnabled(Entity _entity,
 }
 
 //////////////////////////////////////////////////
+bool BuoyancyPrivate::CheckForPresetVolumes(Entity _entity,
+  const EntityComponentManager &_ecm) 
+{
+
+  // If there are no preset volumes, return false
+  if (this->presetVolumes.empty())
+    return false;
+    
+  // Fully scoped name
+  auto entityName = scopedName(_entity, _ecm, "::", false);
+
+  // Remove world name
+  entityName = removeParentScope(entityName, "::");
+
+  if (this->presetVolumes.find(entityName) != this->presetVolumes.end())
+  {
+    double volume = this->presetVolumes.at(entityName).first;
+    math::Vector3d centerOfVolume = this->presetVolumes.at(entityName).second;
+
+    // Stage volume and center of volume results for future commit. 
+    this->centerOfVolumes[_entity] = centerOfVolume;
+    this->volumes[_entity] = volume;
+
+    return true;
+  }
+
+  return false;
+}
+
+//////////////////////////////////////////////////
 Buoyancy::Buoyancy()
   : dataPtr(std::make_unique<BuoyancyPrivate>())
 {
@@ -463,6 +510,46 @@ void Buoyancy::Configure(const Entity &_entity,
   if (_sdf->HasElement("uniform_fluid_density"))
   {
     this->dataPtr->fluidDensity = _sdf->Get<double>("uniform_fluid_density");
+
+    if (_sdf->HasElement("set_volume"))
+    {
+      for (auto volumeElem = _sdf->FindElement("set_volume");
+          volumeElem != nullptr;
+          volumeElem = volumeElem->GetNextElement("set_volume"))
+      {
+        if (!volumeElem->HasElement("entity") || !volumeElem->HasElement("volume") || !volumeElem->HasElement("center_of_volume"))
+        {
+          gzerr << "An entity, volume, and center_of_volume must be defined with the 'set_volume' tag for Uniform Buoyancy!\n" << std::endl;
+          continue;
+        }
+
+        std::string entityName = "";
+        double volume = 0;
+        math::Vector3d centerOfVolume = math::Vector3d::Zero;
+
+        auto argument = volumeElem->GetFirstElement();
+        while (argument != nullptr)
+        {
+          if (argument->GetName() == "entity")
+          {
+            entityName = argument->Get<std::string>();
+          }
+          else if (argument->GetName() == "volume")
+          {
+            volume = argument->Get<double>();
+          }
+          else if (argument->GetName() == "center_of_volume")
+          {
+            centerOfVolume = argument->Get<math::Vector3d>();
+          }
+          argument = argument->GetNextElement();
+        }
+
+        std::pair<double, math::Vector3d> volumeData = {volume, centerOfVolume};
+
+        this->dataPtr->presetVolumes[entityName] = volumeData;
+      }
+    }
   }
   else if (_sdf->HasElement("graded_buoyancy"))
   {
@@ -660,4 +747,4 @@ GZ_ADD_PLUGIN(Buoyancy,
                     Buoyancy::ISystemPostUpdate)
 
 GZ_ADD_PLUGIN_ALIAS(Buoyancy,
-                          "gz::sim::systems::Buoyancy")
+                          "gz::sim::systems::EER_Buoyancy")

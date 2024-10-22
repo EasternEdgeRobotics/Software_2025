@@ -22,16 +22,15 @@
             name="gz::sim::systems::SceneBroadcaster">
         </plugin>
         <plugin
-            filename="plugins/libBuoyancy.so"
-            name="gz::sim::systems::Buoyancy">
-            <graded_buoyancy>
-            <default_density>1000</default_density>
-            <density_change>
-                <above_depth>0</above_depth>
-                <density>1</density>
-            </density_change>
-            </graded_buoyancy>
-            <enable>Beaumont</enable>
+            filename="plugins/libEER_Buoyancy.so"
+            name="gz::sim::systems::EER_Buoyancy">
+            <uniform_fluid_density>1000</uniform_fluid_density>
+            <set_volume>
+                <entity>Beaumont::chassis</entity>
+                <!-- Displaes approcimately 23kg of water (extra volume displaced can be imagined as adding foam) -->
+                <volume>0.02271175</volume>
+                <center_of_volume>0 0.1325 0.1</center_of_volume>
+            </set_volume>
         </plugin>
         <light type="directional" name="sun">
             <cast_shadows>true</cast_shadows>

@@ -18,18 +18,18 @@ gz_find_package(gz-sim8 REQUIRED)
 set(GZ_SIM_VER ${gz-sim8_VERSION_MAJOR})
 
 # Add the plugin libraries
-add_library(Buoyancy SHARED src/Buoyancy.cc src/Buoyancy.hh)
+add_library(EER_Buoyancy SHARED src/EER_Buoyancy.cc src/EER_Buoyancy.hh)
 
 # Set the C++ standard to C++17
-set_property(TARGET Buoyancy PROPERTY CXX_STANDARD 17)
+set_property(TARGET EER_Buoyancy PROPERTY CXX_STANDARD 17)
 
 # Link the plugin library to Gazebo libraries 
-target_link_libraries(Buoyancy
+target_link_libraries(EER_Buoyancy
   PRIVATE gz-plugin${GZ_PLUGIN_VER}::gz-plugin${GZ_PLUGIN_VER}
   PRIVATE gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER})
 
 # Tell CMake to put the plugin library in the plugins directory
-set_target_properties(Buoyancy PROPERTIES 
+set_target_properties(EER_Buoyancy PROPERTIES 
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/plugins
     )
 
@@ -49,13 +49,13 @@ set_target_properties(Buoyancy PROPERTIES
 # find_package(gz-sim8 REQUIRED)
 
 # # Add the plugin libraries
-# add_library(Buoyancy SHARED src/Buoyancy.cc src/Buoyancy.hh)
+# add_library(EER_Buoyancy SHARED src/EER_Buoyancy.cc src/EER_Buoyancy.hh)
 
 # # Link the plugin library to Gazebo libraries (from the gz-sim8 package)
-# target_link_libraries(Buoyancy PUBLIC ${gz-sim8_LIBRARIES})
+# target_link_libraries(EER_Buoyancy PUBLIC ${gz-sim8_LIBRARIES})
 
 # # Tell CMake to put the plugin library in the plugins directory
-# set_target_properties(Buoyancy PROPERTIES 
+# set_target_properties(EER_Buoyancy PROPERTIES 
 #     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/plugins
 #     )
 
