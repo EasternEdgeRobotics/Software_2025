@@ -19,43 +19,14 @@ set(GZ_SIM_VER ${gz-sim8_VERSION_MAJOR})
 
 # Add the plugin libraries
 add_library(EER_Buoyancy SHARED src/EER_Buoyancy.cc src/EER_Buoyancy.hh)
+add_library(EER_Thruster SHARED src/EER_Thruster.cc src/EER_Thruster.hh)
 
-# Set the C++ standard to C++17
-set_property(TARGET EER_Buoyancy PROPERTY CXX_STANDARD 17)
-
-# Link the plugin library to Gazebo libraries 
-target_link_libraries(EER_Buoyancy
-  PRIVATE gz-plugin${GZ_PLUGIN_VER}::gz-plugin${GZ_PLUGIN_VER}
-  PRIVATE gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER})
-
-# Tell CMake to put the plugin library in the plugins directory
-set_target_properties(EER_Buoyancy PROPERTIES 
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/plugins
-    )
-
-# ----------------------------------------------
-# ------=== Alternative CMakeLists.txt ===------
-# ----------------------------------------------
-
-# Below is working CMakeLists.txt for loading only the Buoyancy plugin
-# It does not require the gz-cmake3 package
-
-# cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-
-# # Set the project name
-# project(EER_SIMULAITON_PLUGINS)
-
-# # Find the Gazebo Package, which includes the libraries and headers for C++   
-# find_package(gz-sim8 REQUIRED)
-
-# # Add the plugin libraries
-# add_library(EER_Buoyancy SHARED src/EER_Buoyancy.cc src/EER_Buoyancy.hh)
-
-# # Link the plugin library to Gazebo libraries (from the gz-sim8 package)
-# target_link_libraries(EER_Buoyancy PUBLIC ${gz-sim8_LIBRARIES})
-
-# # Tell CMake to put the plugin library in the plugins directory
-# set_target_properties(EER_Buoyancy PROPERTIES 
-#     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/plugins
-#     )
-
+# Set the C++ standard to C++17 and link the plugin libraries to Gazebo libraries
+foreach(plugin EER_Buoyancy EER_Thruster)
+  set_property(TARGET ${plugin} PROPERTY CXX_STANDARD 17)
+  target_link_libraries(${plugin}
+    PRIVATE gz-plugin${GZ_PLUGIN_VER}::gz-plugin${GZ_PLUGIN_VER}
+    PRIVATE gz-sim${GZ_SIM_VER}::gz-sim${GZ_SIM_VER})
+  set_target_properties(${plugin} PROPERTIES 
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/plugins)
+endforeach()
