@@ -10,7 +10,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
 from geometry_msgs.msg import Wrench, Twist
-from std_msgs.msg import String
+from std_msgs.msg import String, Int32
 
 from math import sqrt, cos, pi
 
@@ -46,15 +46,15 @@ class SimulationBotControl(Node):
         
         self.autonomous_mode_publisher = self.create_publisher(String, "/autonomous_mode_status", 10)
 
-        # For xy movement, the model is using the Gazebo Planar Move Plugin, which allows for movement relative to itself rather than the world
-        # It also uses this plugin for yaw 
-        self.simulation_velocity_publisher_xy_yaw = self.create_publisher(Twist, "/demo/simulation_model_linear_velocity_xy", 10) 
-
-        # For movement in the z axis, the model uses the Gazebo Force Plugin
-        self.simulation_velocity_publisher_z = self.create_publisher(Wrench, "/demo/link/simulation_model_linear_velocity_z", 10) 
-
-        # For Pitch, the model also uses the Gazebo Force Plugin, applied at a specifc spot in order to cause pitch
-        self.simulation_velocity_publisher_pitch = self.create_publisher(Wrench, "/demo/link/force_demo_pitch", 10)
+        # Thruster publishers
+        self.for_star_top_publisher = self.create_publisher(Int32, "/beaumont/for_star_top", 10)
+        self.for_port_top_publisher = self.create_publisher(Int32, "/beaumont/for_port_top", 10)
+        self.aft_port_top_publisher = self.create_publisher(Int32, "/beaumont/aft_port_top", 10)
+        self.aft_star_top_publisher = self.create_publisher(Int32, "/beaumont/aft_star_top", 10)
+        self.for_port_bot_publisher = self.create_publisher(Int32, "/beaumont/for_port_bot", 10)
+        self.for_star_bot_publisher = self.create_publisher(Int32, "/beaumont/for_star_bot", 10)
+        self.aft_port_bot_publisher = self.create_publisher(Int32, "/beaumont/aft_port_bot", 10)
+        self.aft_star_bot_publisher = self.create_publisher(Int32, "/beaumont/aft_star_bot", 10)
 
         # For claw movement, the Gazebo Planar Move Plugin is used
         self.left_claw_publisher = self.create_publisher(Twist, "/demo/left_claw", 10) 
@@ -148,36 +148,38 @@ class SimulationBotControl(Node):
         
         if not self.autonomus_mode_active or (msg.is_autonomous and self.autonomus_mode_active):
             thruster_forces = self.simulation_rov_math(msg)
-            
-            for direction in thruster_forces: # Apply drag force 
+            # TODO: Cleanup this file now that thruster functionality has changed
+            for_star_top = Int32()
+            for_star_top.data = int(thruster_forces["for-star-top"] * 127 + 127)
+            self.for_star_top_publisher.publish(for_star_top)
 
-                # The pitch and yaw the velocity below is actually angular velocity, the the net force is net torque.
-                # Drag is still applied in the same way as it helps maintain smooth bot movement 
+            for_port_top = Int32()
+            for_port_top.data = int(thruster_forces["for-port-top"] * 127 + 127)
+            self.for_port_top_publisher.publish(for_port_top)
 
-                self.velocity_array[direction] = self.velocity_array[direction]+((SIMULAITON_PERCISION*self.net_force_array[direction])/self.bot_mass) 
+            aft_port_top = Int32()
+            aft_port_top.data = int(thruster_forces["aft-port-top"] * 127 + 127)
+            self.aft_port_top_publisher.publish(aft_port_top)
 
-                drag_force = 0.5*self.fluid_mass_density*((self.velocity_array[direction])**2)*self.drag_coefficient*self.surface_area_for_drag[direction] * (-1 if self.velocity_array[direction]>0 else 1)
+            aft_star_top = Int32()
+            aft_star_top.data = int(thruster_forces["aft-star-top"] * 127 + 127)
+            self.aft_star_top_publisher.publish(aft_star_top)
 
-                self.net_force_array[direction] = thruster_forces[direction] + drag_force
+            for_port_bot = Int32()
+            for_port_bot.data = int(thruster_forces["for-port-bot"] * 127 + 127)
+            self.for_port_bot_publisher.publish(for_port_bot)
 
+            for_star_bot = Int32()
+            for_star_bot.data = int(thruster_forces["for-star-bot"] * 127 + 127)
+            self.for_star_bot_publisher.publish(for_star_bot)
 
-            velocity_xy_yaw = Twist()
-            velocity_z = Wrench()
-            velocity_pitch = Wrench()
+            aft_port_bot = Int32()
+            aft_port_bot.data = int(thruster_forces["aft-port-bot"] * 127 + 127)
+            self.aft_port_bot_publisher.publish(aft_port_bot)
 
-            velocity_xy_yaw.linear.x = float((-1)*self.velocity_array["sway"] * self.gazebo_simulation_velocity_xy_adjustment_factor)  
-
-            velocity_xy_yaw.linear.y = float((-1)*self.velocity_array["surge"] * self.gazebo_simulation_velocity_xy_adjustment_factor)
-
-            velocity_z.force.z = float(self.velocity_array["heave"] * self.gazebo_simulation_velocity_z_adjustment_factor)
-
-            velocity_xy_yaw.angular.z = float((-1)*self.velocity_array["yaw"] * self.gazebo_simulation_velocity_yaw_adjustment_factor)
-
-            velocity_pitch.force.z = float(self.velocity_array["pitch"] * self.gazebo_simulation_velocity_pitch_adjustment_factor)
-
-            self.simulation_velocity_publisher_xy_yaw.publish(velocity_xy_yaw)
-            self.simulation_velocity_publisher_z.publish(velocity_z)
-            self.simulation_velocity_publisher_pitch.publish(velocity_pitch)
+            aft_star_bot = Int32()
+            aft_star_bot.data = int(thruster_forces["aft-star-bot"] * 127 + 127)
+            self.aft_star_bot_publisher.publish(aft_star_bot)
 
             # from std_msgs.msg import String
             # velocity = String()
@@ -420,13 +422,7 @@ class SimulationBotControl(Node):
         net_pitch = self.max_thruster_force * self.thruster_distance_from_COM * cos(pi/4)*((thruster_values["for-port-bot"]) + (thruster_values["for-star-bot"]) + (-thruster_values["aft-port-bot"]) + (-thruster_values["aft-star-bot"]) + (-thruster_values["for-port-top"]) + (-thruster_values["for-star-top"]) + (thruster_values["aft-port-top"]) + (thruster_values["aft-star-top"]))
         net_yaw = self.max_thruster_force * self.thruster_distance_from_COM * cos(pi/4)*((thruster_values["for-port-bot"]) + (-thruster_values["for-star-bot"]) + (-thruster_values["aft-port-bot"]) + (thruster_values["aft-star-bot"]) + (thruster_values["for-port-top"]) + (-thruster_values["for-star-top"]) + (-thruster_values["aft-port-top"]) + (thruster_values["aft-star-top"]))
     
-        return {
-            "surge": net_surge,
-            "sway": net_sway,
-            "heave":net_heave,
-            "pitch": net_pitch,
-            "yaw": net_yaw
-        }
+        return thruster_values
         
         ##################################################################################
         ##################################################################################

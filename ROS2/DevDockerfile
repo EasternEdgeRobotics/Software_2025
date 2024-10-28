@@ -1,0 +1,16 @@
+FROM ros:jazzy-ros-base-noble
+
+RUN apt-get update && apt-get install -y python3 python3-pip ros-jazzy-rosbridge-server ffmpeg libsm6 libxext6 dos2unix ros-jazzy-ros-gz
+RUN apt install -y python3-sqlalchemy python3-opencv
+
+WORKDIR /app
+COPY ROS_workspace/src /app/src
+COPY ROS_workspace/docker_entry_script.sh /app
+
+ARG CACHEBUST=1
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && colcon build
+RUN echo "source /app/install/setup.bash" >> /etc/bash.bashrc
+RUN dos2unix /app/docker_entry_script.sh
+
+# TODO: Make new entryscript for development (launches simulation_beaumont_startup.xml)
+# ENTRYPOINT ["bash", "/app/docker_entry_script.sh" ]
