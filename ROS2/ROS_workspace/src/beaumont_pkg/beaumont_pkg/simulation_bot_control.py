@@ -10,7 +10,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
 from geometry_msgs.msg import Wrench, Twist
-from std_msgs.msg import String, Int32
+from std_msgs.msg import String, Int32, Float64
 
 from math import sqrt, cos, pi
 
@@ -56,9 +56,8 @@ class SimulationBotControl(Node):
         self.aft_port_bot_publisher = self.create_publisher(Int32, "/beaumont/aft_port_bot", 10)
         self.aft_star_bot_publisher = self.create_publisher(Int32, "/beaumont/aft_star_bot", 10)
 
-        # For claw movement, the Gazebo Planar Move Plugin is used
-        self.left_claw_publisher = self.create_publisher(Twist, "/demo/left_claw", 10) 
-        self.right_claw_publisher = self.create_publisher(Twist, "/demo/right_claw", 10)
+        # Claw publisher
+        self.claws_publisher = self.create_publisher(Float64, "/Beaumont/claws/cmd_vel", 10) 
 
         # Autonomus movement node
         self._action_client = ActionClient(self, AutoMode, 'autonomus_brain_coral_transplant')
@@ -234,36 +233,27 @@ class SimulationBotControl(Node):
 
         if not (controller_inputs.open_claw ^ controller_inputs.close_claw):
 
-            left_claw_velocity = Twist()
-            right_claw_velocity = Twist()
+            claws_velocity = Float64()
 
-            left_claw_velocity.angular.z = float(0)
-            right_claw_velocity.angular.z = float(0)
+            claws_velocity.data = float(-0.00001)
 
-            self.left_claw_publisher.publish(left_claw_velocity)
-            self.right_claw_publisher.publish(right_claw_velocity)
+            self.claws_publisher.publish(claws_velocity)
         
         elif controller_inputs.open_claw:
 
-            left_claw_velocity = Twist()
-            right_claw_velocity = Twist()
+            claws_velocity = Float64()
 
-            left_claw_velocity.angular.z = 0.5
-            right_claw_velocity.angular.z = -0.5
+            claws_velocity.data = float(0.1)
 
-            self.left_claw_publisher.publish(left_claw_velocity)
-            self.right_claw_publisher.publish(right_claw_velocity)
+            self.claws_publisher.publish(claws_velocity)
 
         elif controller_inputs.close_claw:
 
-            left_claw_velocity = Twist()
-            right_claw_velocity = Twist()
+            claws_velocity = Float64()
 
-            left_claw_velocity.angular.z = -0.5
-            right_claw_velocity.angular.z = 0.5
+            claws_velocity.data = float(-0.1)
 
-            self.left_claw_publisher.publish(left_claw_velocity)
-            self.right_claw_publisher.publish(right_claw_velocity)
+            self.claws_publisher.publish(claws_velocity)
 
     def send_autonomus_mode_goal(self):
 

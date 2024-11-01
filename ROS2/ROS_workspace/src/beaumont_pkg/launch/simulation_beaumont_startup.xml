@@ -6,4 +6,3 @@
 	<node pkg="beaumont_pkg" exec="task_manager"/>
 	<include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml"/>
 </launch>
-<!-- Only works with Gazebo Classic 11 -->
