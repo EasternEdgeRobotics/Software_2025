@@ -10,8 +10,7 @@ services:
     network_mode: host # Run in host mode to allow ros2 communication with host network
     ipc: host # Required for ros2 communication with host network
     volumes:
-      - ./ROS2/colcon_ws/config.db:/app/config.db
-      - ./ROS2/colcon_ws/tasks.db:/app/tasks.db
+      - ./ROS2/ROS_workspace/src/beaumont_pkg/beaumont_pkg/config:/app/src/beaumont_pkg/beaumont_pkg/config # Mount the config directory so that it persists between container restarts
   web_frontend: 
     build: ./WebGUI
     restart: always
