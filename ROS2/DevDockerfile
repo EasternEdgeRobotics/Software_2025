@@ -5,12 +5,11 @@ RUN apt install -y python3-sqlalchemy python3-opencv
 
 WORKDIR /app
 COPY ROS_workspace/src /app/src
-COPY ROS_workspace/docker_entry_script.sh /app
+COPY ROS_workspace/dev_docker_entry_script.sh /app
 
 ARG CACHEBUST=1
 RUN . /opt/ros/$ROS_DISTRO/setup.sh && colcon build
 RUN echo "source /app/install/setup.bash" >> /etc/bash.bashrc
-RUN dos2unix /app/docker_entry_script.sh
+RUN dos2unix /app/dev_docker_entry_script.sh
 
-# TODO: Make new entryscript for development (launches simulation_beaumont_startup.xml)
-# ENTRYPOINT ["bash", "/app/docker_entry_script.sh" ]
+ENTRYPOINT ["bash", "/app/dev_docker_entry_script.sh" ]
