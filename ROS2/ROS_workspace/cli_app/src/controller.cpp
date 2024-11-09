@@ -1,11 +1,3 @@
- // Dear ImGui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
-// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
 #include <thread>
 #include <atomic>
 #include <iostream>
@@ -26,76 +18,17 @@
 #include "eer_messages/msg/pilot_input.hpp"
 #include "controller.h"
 
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
-// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
-// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
-#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
-#pragma comment(lib, "legacy_stdio_definitions")
-#endif
-
-// This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
-#ifdef __EMSCRIPTEN__
-#include "../libs/emscripten/emscripten_mainloop_stub.h"
-#endif
-
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-void webcamCapture(std::atomic<bool>& running, std::atomic<bool>& show_video, cv::Mat& frame, std::mutex& frame_mutex) {
-    cv::VideoCapture cap(0);
-    if (!cap.isOpened()) {
-        std::cerr << "Failed to open webcam" << std::endl;
-        running.store(false);
-        return;
-    }
-
-    // Set capture properties for better performance
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 320); // Lower resolution
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 240); // Lower resolution
-    cap.set(cv::CAP_PROP_FPS, 30); // Limit frame rate
-
-    while (running.load()) {
-        if (show_video.load()) {
-            cv::Mat temp_frame;
-            cap >> temp_frame;
-            if (!temp_frame.empty()) {
-                std::lock_guard<std::mutex> lock(frame_mutex);
-                frame = temp_frame.clone();
-            }
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-    }
-
-    cap.release();
+void publishControllerInput(const eer_messages::msg::PilotInput &input, rclcpp::Publisher<eer_messages::msg::PilotInput>::SharedPtr publisher) {
+    publisher->publish(input);
 }
-
-
-GLuint matToTexture(const cv::Mat &mat, GLuint textureID, GLenum minFilter, GLenum magFilter, GLenum wrapFilter)
-{
-    if (textureID == 0) {
-        glGenTextures(1, &textureID);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapFilter);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mat.cols, mat.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mat.ptr());
-    } else {
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.ptr());
-    }
-
-    return textureID;
-}
-
-
-
 
 //this is the fuction that will launch the GUI
-void launchGUI(){
+void launchController(){
 
     // Initialize ROS 2
     rclcpp::init(0, nullptr);
@@ -140,7 +73,7 @@ void launchGUI(){
 #endif
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1920, 1080, "EER GUI App", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1920, 1080, "EER Controller Input", NULL, NULL);
     if (window == NULL)
         return;
     glfwMakeContextCurrent(window);
@@ -167,44 +100,6 @@ void launchGUI(){
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
     
-    GLuint video_texture = 0;
-    std::atomic<bool> running(true);
-    std::atomic<bool> show_video(true);
-    cv::Mat frame;
-    std::mutex frame_mutex;
-
-    // Initialize webcam
-    //cv::VideoCapture cap(0);
-    //if (!cap.isOpened()) {
-    //    std::cerr << "Failed to open webcam" << std::endl;
-    //    return;
-    //}
-
-    // Start webcam capture thread
-    std::thread capture_thread(webcamCapture, std::ref(running), std::ref(show_video), std::ref(frame), std::ref(frame_mutex));
-
-
-#ifdef __EMSCRIPTEN__
-    ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
-#endif
-
-
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return a nullptr. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-    // - Read 'docs/FONTS.md' for more instructions and details.
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    // - Our Emscripten build process allows embedding fonts to be accessible at runtime from the "fonts/" folder. See Makefile.emscripten for details.
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
-    //IM_ASSERT(font != nullptr);
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -213,20 +108,10 @@ void launchGUI(){
     ImVec2 dot_position = ImVec2(640, 360);
     const float dot_radius = 5.0f;
 
-
-
-
-       eer_messages::msg::PilotInput input;
+    eer_messages::msg::PilotInput input;
 
     // Main loop
-#ifdef __EMSCRIPTEN__
-    // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
-    // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
-    io.IniFilename = nullptr;
-    EMSCRIPTEN_MAINLOOP_BEGIN
-#else
     while (!glfwWindowShouldClose(window))
-#endif
     {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -265,27 +150,6 @@ void launchGUI(){
         draw_list->AddCircleFilled(dot_position, dot_radius, IM_COL32(255, 0, 0, 255));
 
         ImGui::End();
-
-
-
-        // Show video frame
-        ImGui::Begin("Webcam Stream");
-        {
-            std::lock_guard<std::mutex> lock(frame_mutex);
-            if (!frame.empty()) {
-                video_texture = matToTexture(frame, video_texture, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE);
-                ImGui::Image((ImTextureID)(intptr_t)video_texture, ImVec2(frame.cols, frame.rows));
-            }
-        }
-        if (ImGui::Button("Close Video Stream")) {
-            show_video.store(false);
-        }
-        if (ImGui::Button("Open Video Stream")) {
-            show_video.store(true);
-        }
-
-        ImGui::End();
-        
 
         if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
             int axesCount, buttonsCount;
@@ -345,31 +209,6 @@ void launchGUI(){
         publishControllerInput(input, publisher);
 
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        //if (show_demo_window)
-            //ImGui::ShowDemoWindow(&show_demo_window);
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
-        }
-
         // Rendering
         ImGui::Render();
         int display_w, display_h;
@@ -382,9 +221,6 @@ void launchGUI(){
         glfwSwapBuffers(window);
     }
 
-    // Stop the webcam capture thread
-    running.store(false);
-    capture_thread.join();
 
     rclcpp::shutdown();
     ros_spin_thread.join();

@@ -13,10 +13,14 @@ void printCLICommands();
 void handleCommand(const std::string& command);
 void printColoredAsciiImage();
 void printIntroduction();
+void launchController();
 
 int main(int argc, char* argv[]) {
+
+    //atomic bool to keep track of the main loop
     std::atomic<bool> running(true);
 
+    // Check for command line launch options
     if (argc > 1) {
         std::string arg = argv[1];
         if (arg == "-h" || arg == "--help") {
@@ -27,7 +31,12 @@ int main(int argc, char* argv[]) {
             std::thread guiThread(launchGUI);
             guiThread.detach();
 
+        }else if (arg == "launch_controller") {
+            std::thread controlThread(launchController);
+            controlThread.detach();
+
         }
+        
     }
 
     std::string input;
@@ -35,6 +44,7 @@ int main(int argc, char* argv[]) {
     printColoredAsciiImage();
     printIntroduction();
 
+    //main loop for the CLI
     while (true) {
         std::cout << "> ";
         std::getline(std::cin, input);
@@ -46,8 +56,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Exit message
     std::cout << "Goodbye!" << std::endl;
 
+    //cleanup and exit
     running.store(false);
     return 0;
 }

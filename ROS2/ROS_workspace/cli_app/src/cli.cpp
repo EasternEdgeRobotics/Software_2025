@@ -9,6 +9,7 @@
 //forward declarations
 
 void launchGUI();
+void launchController();
 
 // Function to print colored ASCII image
 void printColoredAsciiImage() {
@@ -95,6 +96,9 @@ void handleCommand(const std::string& command) {
     } else if (command == "launch_gui") {
         std::thread guiThread(launchGUI);
         guiThread.detach();
+    } else if (command == "launch_controller") {
+        std::thread controlThread(launchController);
+        controlThread.detach();
     } else {
         std::cout << "Unknown command: " << command << std::endl;
         std::cout << "Type 'help' to see available commands." << std::endl;
