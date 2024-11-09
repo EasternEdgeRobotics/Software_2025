@@ -22,6 +22,9 @@
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include <opencv2/opencv.hpp>
+#include "rclcpp/rclcpp.hpp"
+#include "eer_messages/msg/pilot_input.hpp"
+
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
@@ -88,8 +91,23 @@ GLuint matToTexture(const cv::Mat &mat, GLuint textureID, GLenum minFilter, GLen
     return textureID;
 }
 
+
+void publishControllerInput(const eer_messages::msg::PilotInput &input, rclcpp::Publisher<eer_messages::msg::PilotInput>::SharedPtr publisher) {
+    publisher->publish(input);
+}
+
 //this is the fuction that will launch the GUI
 void launchGUI(){
+
+    // Initialize ROS 2
+    rclcpp::init(0, nullptr);
+    auto node = rclcpp::Node::make_shared("controller_input_publisher");
+    auto publisher = node->create_publisher<eer_messages::msg::PilotInput>("/PilotInput", 10);
+
+    // Start a separate thread to spin the ROS 2 node
+    std::thread ros_spin_thread([&]() {
+        rclcpp::spin(node);
+    });
 
     // Redirect stderr to /dev/null to suppress GStreamer warnings
     freopen("/dev/null", "w", stderr);
@@ -191,13 +209,16 @@ void launchGUI(){
     //IM_ASSERT(font != nullptr);
 
     // Our state
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     //dot position and radius
     ImVec2 dot_position = ImVec2(640, 360);
     const float dot_radius = 5.0f;
-    const float move_speed = 0.1f;
+
+
+
+
+       eer_messages::msg::PilotInput input;
 
     // Main loop
 #ifdef __EMSCRIPTEN__
@@ -237,13 +258,11 @@ void launchGUI(){
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
         draw_list->AddRect(box_min, box_max, IM_COL32(255, 255, 255, 255));
 
-        if (ImGui::IsKeyDown(ImGuiKey_GamepadLStickLeft)) dot_position.x -= move_speed;
-        if (ImGui::IsKeyDown(ImGuiKey_GamepadLStickRight)) dot_position.x += move_speed;
-        if (ImGui::IsKeyDown(ImGuiKey_GamepadLStickUp)) dot_position.y -= move_speed;
-        if (ImGui::IsKeyDown(ImGuiKey_GamepadLStickDown)) dot_position.y += move_speed;
-
         dot_position.x = std::max(box_min.x + dot_radius, std::min(dot_position.x, box_max.x - dot_radius));
         dot_position.y = std::max(box_min.y + dot_radius, std::min(dot_position.y, box_max.y - dot_radius));
+
+        dot_position.x += input.sway / 127.0f;
+        dot_position.y += input.surge / 127.0f;
 
         draw_list->AddCircleFilled(dot_position, dot_radius, IM_COL32(255, 0, 0, 255));
 
@@ -268,29 +287,67 @@ void launchGUI(){
         }
 
         ImGui::End();
+        
 
-        // Controller input
-        if (glfwJoystickPresent(GLFW_JOYSTICK_1))
-        {
+        if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
             int axesCount, buttonsCount;
             const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axesCount);
             const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonsCount);
-            const char* name = glfwGetJoystickName(GLFW_JOYSTICK_1);
+
+            if (axesCount >= 5) { // Ensure there are enough axes
+                input.surge = static_cast<int8_t>(axes[1] * -127); // Left thumbstick vertical axis
+                input.sway = static_cast<int8_t>(axes[0] * 127);  // Left thumbstick horizontal axis
+                input.pitch = static_cast<int8_t>(axes[4] * 127); // Right thumbstick horizontal axis
+                input.yaw = static_cast<int8_t>(axes[3] * 127); // Right thumbstick horizontal axis
+            }
+
+            for (int i = 0; i < buttonsCount; i++) {
+                bool button_state = (buttons[i] == GLFW_PRESS);
+                switch (i) {
+                    case 0: break;
+                    case 1: break;
+                    case 2: input.heave_up = button_state; break;
+                    case 3: input.heave_down = button_state; break;
+                    case 4: input.pitch_up = button_state; break;
+                    case 5: input.pitch_down = button_state; break;
+                    case 6: input.open_claw = button_state; break;
+                    case 7: input.close_claw = button_state; break;
+                    case 8: break;
+                    case 9: break;
+                    case 10: break;
+                    case 11: break;
+                    case 12: break;
+                    case 13: input.heave_up = button_state; break;
+                    case 14: break;
+                    case 15: input.heave_down = button_state; break;
+                    case 16: break;
+                    // Add more cases as needed
+                    default: break;
+                }
+            }
 
             ImGui::Begin("Controller Input");
-            ImGui::Text("Controller: %s", name);
             ImGui::Text("Axes:");
-            for (int i = 0; i < axesCount; i++)
-            {
-                ImGui::Text("Axis %d: %.2f", i, axes[i]);
-            }
+            ImGui::Text("Surge: %d", input.surge);
+            ImGui::Text("Sway: %d", input.sway);
+            ImGui::Text("Heave: %d", input.heave);
+            ImGui::Text("Pitch: %d", input.pitch);
+            ImGui::Text("Yaw: %d", input.yaw);
+
             ImGui::Text("Buttons:");
-            for (int i = 0; i < buttonsCount; i++)
-            {
-                ImGui::Text("Button %d: %s", i, buttons[i] == GLFW_PRESS ? "Pressed" : "Released");
-            }
+            ImGui::Text("Open Claw: %s", input.open_claw ? "Pressed" : "Released");
+            ImGui::Text("Close Claw: %s", input.close_claw ? "Pressed" : "Released");
+            ImGui::Text("Heave Up: %s", input.heave_up ? "Pressed" : "Released");
+            ImGui::Text("Heave Down: %s", input.heave_down ? "Pressed" : "Released");
+            ImGui::Text("Pitch Up: %s", input.pitch_up ? "Pressed" : "Released");
+            ImGui::Text("Pitch Down: %s", input.pitch_down ? "Pressed" : "Released");
+            ImGui::Text("Brighten LED: %s", input.brighten_led ? "Pressed" : "Released");
+            // Add more button states as needed
             ImGui::End();
         }
+
+        publishControllerInput(input, publisher);
+
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         //if (show_demo_window)
@@ -304,7 +361,6 @@ void launchGUI(){
             ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
             ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Another Window", &show_another_window);
 
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
@@ -315,16 +371,6 @@ void launchGUI(){
             ImGui::Text("counter = %d", counter);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
             ImGui::End();
         }
 
@@ -343,6 +389,9 @@ void launchGUI(){
     // Stop the webcam capture thread
     running.store(false);
     capture_thread.join();
+
+    rclcpp::shutdown();
+    ros_spin_thread.join();
 
 #ifdef __EMSCRIPTEN__
     EMSCRIPTEN_MAINLOOP_END;
