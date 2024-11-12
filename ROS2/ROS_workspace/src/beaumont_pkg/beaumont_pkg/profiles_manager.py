@@ -57,7 +57,7 @@ import json
 # engine = create_engine("sqlite:///config.db")
 
 # def mappings_list_to_mappings_json(mappings_list):
-#     """Takes in a list of mappings for a certain profile from the database and turns in into a JSON"""
+#"""Takes in a list of mappings for a certain profile from the database and turns in into a JSON"""
 
 #     controller_1_json_mappings = {"axes": {}, "buttons": {}, "deadzones": {}}
 #     controller_2_json_mappings = {"axes": {}, "buttons": {}, "deadzones": {}}
@@ -103,6 +103,18 @@ import json
 
 #         session.commit()
 
+def delProfile(profileDel):
+        with open("/app/src/beaumont_pkg/beaumont_pkg/config/profiles.json", "w") as f:
+            profiles  = json.loads(f.read())
+            if profileDel in profiles: 
+                del profiles[profileDel] 
+                        
+                f.seek(0)
+                f.write(json.dumps(profiles))
+                f.truncate() # turns file to dict, deletes entry, writes at the beggining of the file, and eliminates past content
+                return "Profile Deleted", f
+            
+            else: return "Profile Not Found", f
 
 
 class ProfilesManager(Node):
@@ -116,9 +128,81 @@ class ProfilesManager(Node):
         self.srv2 = self.create_service(Config, "profiles_list", self.profiles_list_callback)
         self.srv3 = self.create_service(Config, "camera_urls", self.camera_urls_callback)
 
+    
+
     def profile_config_callback(self, request, response):
         if request.state == 0: #We are looking to load mappings into database from GUI
 
+            ''' 
+            The strucuture of how the data is stored is:
+            profileName:
+
+                controller 1:
+                    controllerStatus
+                0: 
+                    buttons
+                        actions
+                    axes
+                        actions
+                        deadzones
+
+                controller 2: (optional)
+                    controllerStatus
+                1: 
+                    buttons
+                        actions
+                    axes
+                        actions
+                        deadzones
+
+            these are stored as part of a JSON file 
+            '''
+
+            mappings  = json.loads(request.data)
+            Pname = mappings["profileName"]
+            
+
+            newProfile = {Pname: 
+                          {
+                                "controller1" : mappings["controller1"],
+                                0: {}                                   
+                          }}
+            
+            newProfile[Pname][0]["axes"] = addAxes(0)
+            
+
+            if mappings["controller2"] == "null": # controller 2 is not in use
+                newProfile[Pname]["controller2"] = None
+                newProfile[Pname][1] = {"buttons": {"actions": {}}, "axes": {"actions": {}, "deadzones": {}}}
+            else:
+                newProfile[Pname]["controller2"] = mappings["controller2"]
+                newProfile[Pname][1] = addAxes(1)
+
+
+            def addAxes(number):
+                buttons = mappings["associated_mappings"][str(number)]["buttons"]
+                axes = mappings["associated_mappings"][str(number)]["axes"]
+                deadzones = mappings["associated_mappings"][str(number)]["deadzones"]
+                
+                controllermappings = {"buttons": {buttons},"axes": {"actions": {}, "deadzones": {}}}
+
+                for i, key in enumerate(axes):
+                    controllermappings["axes"]["actions"][str(i)] = axes[i]
+                    controllermappings["axes"]["deadzones"][str(i)] = deadzones[i]   
+
+                return controllermappings  
+
+
+            os.makedirs("config", exist_ok=True)
+            result, f = delProfile(Pname) # deletes previous profile with that name
+            
+            JSONprofile = json.dumps(newProfile)
+            f.write(JSONprofile) # writes new profile in JSON format
+            response.result = JSONprofile
+            
+            return response                
+
+            
             # message = json.loads(request.data) #Turn the recieved string into a JSON object (i.e. Python dictionary)
 
             # query = session.query(Profile).filter(Profile.name == message["profileName"]) # Remove the profile if it exists as it will be recreated
@@ -139,14 +223,12 @@ class ProfilesManager(Node):
             # if (message["controller2"] != "null"):
             #     mappings_json_to_mappings_list(message["profileName"], message["controller2"], message["associated_mappings"]["1"], 1)
             # response.result = json.dumps(message) 
-            response.result = "Not implemented"
 
             #==========================DEBUG===========================
             # for i in range(session.query(Mapping).filter(Mapping.name == message["profileName"]).count()):
             #    self.get_logger().info(f"{session.query(Mapping).filter_by(name = message['profileName']).all()[i].dict()} recieved")
             #==========================================================
 
-            return response
 
         elif request.state == 1: #We are looking to load mapping into GUI from database
             # mappings_list = []
@@ -154,11 +236,39 @@ class ProfilesManager(Node):
             #     if (row.dict()["name"]==request.data): #request.data in this case stores the name of the profile for which mappings are being requested
             #         mappings_list.append(row.dict())
             # mappings_json = mappings_list_to_mappings_json(mappings_list)
-            response.result = json.dumps("") #Turn the JSON object into a string
+
+            mappings = []
+
+            try:
+                with open("/app/src/beaumont_pkg/beaumont_pkg/config/profiles.json", "r") as f:
+                    profiles  = json.loads(f.read())
+                    
+                    # only the buttons, axes and deadzones are need to be returned
+                    rmap = {0: {"buttons": {}, "axes": {}, "deadzones": {}}, 1: {"buttons": {}, "axes": {}, "deadzones": {}}}
+                    
+                    if request.data in profiles:
+                        secelectedP = profiles[request.data] 
+                        for controller in [0,1]:
+                            rmap[controller]["axes"] = secelectedP[controller]["axes"]["actions"] #the information is received in a different format than how it was stored
+                            rmap[controller]["deadzones"] = secelectedP[controller]["axes"]["deadzones"]                            
+                        response.result = json.dumps(rmap) # transforms dict into JSON
+                    
+                    else:
+                        raise FileNotFoundError
+            
+            except FileNotFoundError:
+                defaultmap = {"axes": {}, "buttons": {}, "deadzones": {}}
+                response.result = json.dumps({0: defaultmap, 1: defaultmap}) #Turn the JSON object into a string
+            
             return response
 
+
     def profiles_list_callback(self, request, response):
-        if request.state == 0:
+        if request.state == 0: # The requested profile should be deleted
+
+            response.result, file = Delprofile(request.data)
+            return response
+            
             # query = session.query(Profile).filter(Profile.name == request.data) #In this case, the request data is expected to only be a string
             # if query.count() == 1: #i.e. profile exists
             #     query.delete()
@@ -166,16 +276,21 @@ class ProfilesManager(Node):
             #     response.result = "Profile Deleted"
             # else:
             #     response.result = "Profile not found"
-            response.result = "Not implemented"
-            return response
         elif request.state == 1: #We only want to read the profiles
+
+            try:
+                with open("/app/src/beaumont_pkg/beaumont_pkg/config/profiles.json", "r") as f:
+                    response.result = f.read() # file is already in JSON format
+            except FileNotFoundError:
+                response.result = json.dumps("") 
+            
+            return response
             # output = []
             # for row in session.query(Profile).all():
             #     output.append(row.dict())
             # response.result = json.dumps(output) #Turn the JSON object into a string
-            response.result = json.dumps("") #Turn the JSON object into a string
-            return response
-        
+            
+
     def camera_urls_callback(self, request, response):
 
         if request.state == 0: # We are looking to load camera URLs into database from GUI
@@ -215,7 +330,8 @@ class ProfilesManager(Node):
 
             return response
 
-            
+    
+        
 
 def main(args=None):
     # global session
