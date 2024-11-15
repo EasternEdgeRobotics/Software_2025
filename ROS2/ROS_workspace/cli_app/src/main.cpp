@@ -5,7 +5,8 @@
 #include <atomic>
 #include <opencv2/opencv.hpp>
 #include <mutex>
-
+#include <chrono>
+//
 // Forward declarations
 void launchGUI();
 void printCLIOptions(const std::string& arg);
@@ -44,8 +45,12 @@ int main(int argc, char* argv[]) {
     printColoredAsciiImage();
     printIntroduction();
 
+    const std::chrono::milliseconds loop_duration(10); // 100 Hz -> 10 ms per loop iteration
+
     //main loop for the CLI
     while (true) {
+        auto loop_start_time = std::chrono::steady_clock::now();
+
         std::cout << "> ";
         std::getline(std::cin, input);
 
@@ -53,6 +58,13 @@ int main(int argc, char* argv[]) {
             break;
         } else {
             handleCommand(input);
+        }
+        
+        // Sleep to maintain 100 Hz loop rate
+        auto loop_end_time = std::chrono::steady_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(loop_end_time - loop_start_time);
+        if (elapsed_time < loop_duration) {
+            std::this_thread::sleep_for(loop_duration - elapsed_time);
         }
     }
 

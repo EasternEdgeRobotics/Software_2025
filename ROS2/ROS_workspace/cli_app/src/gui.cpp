@@ -16,6 +16,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
+#include <chrono>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -219,6 +220,7 @@ void launchGUI(){
        eer_messages::msg::PilotInput input;
 
     // Main loop
+    const std::chrono::milliseconds loop_duration(10); // 100 Hz -> 10 ms per loop iteration
 #ifdef __EMSCRIPTEN__
     // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
     // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
@@ -240,6 +242,8 @@ void launchGUI(){
         //    std::this_thread::sleep_for(std::chrono::milliseconds(10));
         //    continue;
         //}
+
+        auto loop_start_time = std::chrono::steady_clock::now();
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -380,6 +384,13 @@ void launchGUI(){
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
+
+        // Sleep to maintain 100 Hz loop rate
+        auto loop_end_time = std::chrono::steady_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(loop_end_time - loop_start_time);
+        if (elapsed_time < loop_duration) {
+            std::this_thread::sleep_for(loop_duration - elapsed_time);
+        }
     }
 
     // Stop the webcam capture thread

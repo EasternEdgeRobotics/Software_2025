@@ -8,6 +8,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
+#include <chrono>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -110,6 +111,9 @@ void launchController(){
 
     eer_messages::msg::PilotInput input;
 
+
+    const std::chrono::milliseconds loop_duration(10); // 100 Hz -> 10 ms per loop iteration
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -126,6 +130,8 @@ void launchController(){
         //    continue;
         //}
 
+        auto loop_start_time = std::chrono::steady_clock::now();
+        
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -159,6 +165,7 @@ void launchController(){
             if (axesCount >= 5) { // Ensure there are enough axes
                 input.surge = static_cast<int8_t>(axes[1] * -127); // Left thumbstick vertical axis
                 input.sway = static_cast<int8_t>(axes[0] * 127);  // Left thumbstick horizontal axis
+
                 input.pitch = static_cast<int8_t>(axes[4] * 127); // Right thumbstick horizontal axis
                 input.yaw = static_cast<int8_t>(axes[3] * 127); // Right thumbstick horizontal axis
             }
@@ -166,22 +173,22 @@ void launchController(){
             for (int i = 0; i < buttonsCount; i++) {
                 bool button_state = (buttons[i] == GLFW_PRESS);
                 switch (i) {
-                    case 0: break;
-                    case 1: break;
-                    case 2: input.heave_up = button_state; break;
-                    case 3: input.heave_down = button_state; break;
-                    case 4: input.pitch_up = button_state; break;
-                    case 5: input.pitch_down = button_state; break;
-                    case 6: input.open_claw = button_state; break;
-                    case 7: input.close_claw = button_state; break;
+                    case 0: break;//x button
+                    case 1: input.is_autonomous = button_state;break;
+                    case 2: break; 
+                    case 3: break; 
+                    case 4: input.pitch_up = button_state; break; //left bumper
+                    case 5: input.pitch_down = button_state; break; //right bumper
+                    case 6: input.open_claw = button_state; break; // left trigger
+                    case 7: input.close_claw = button_state; break; //right trigger
                     case 8: break;
                     case 9: break;
                     case 10: break;
                     case 11: break;
                     case 12: break;
-                    case 13: input.heave_up = button_state; break;
+                    case 13: input.heave_up = button_state; break; //Dpad up
                     case 14: break;
-                    case 15: input.heave_down = button_state; break;
+                    case 15: input.heave_down = button_state; break;//Dpad down
                     case 16: break;
                     default: break;
                 }
@@ -196,6 +203,7 @@ void launchController(){
             ImGui::Text("Yaw: %d", input.yaw);
 
             ImGui::Text("Buttons:");
+            ImGui::Text("Is autonomous: %s", input.is_autonomous ? "Pressed" : "Released");
             ImGui::Text("Open Claw: %s", input.open_claw ? "Pressed" : "Released");
             ImGui::Text("Close Claw: %s", input.close_claw ? "Pressed" : "Released");
             ImGui::Text("Heave Up: %s", input.heave_up ? "Pressed" : "Released");
@@ -219,6 +227,13 @@ void launchController(){
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
+
+        // Sleep to maintain 100 Hz loop rate
+        auto loop_end_time = std::chrono::steady_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(loop_end_time - loop_start_time);
+        if (elapsed_time < loop_duration) {
+            std::this_thread::sleep_for(loop_duration - elapsed_time);
+        }
     }
 
 
