@@ -1,19 +1,15 @@
-# This docker compose file is intended to be run onboard the ROV's Raspberry Pi. 
+# This docker compose file is intended for development. 
 services:
   backend:
     build: 
       context: ./ROS2
-      dockerfile: Dockerfile
+      dockerfile: DevDockerfile
     tty: true
     container_name: backend
-    restart: always 
+    restart: always
     network_mode: host # Run in host mode to allow ros2 communication with host network
     ipc: host # Required for ros2 communication with host network
-    privileged: true # Required for access to the i2c bus
-    ports:
-      - "9090:9090"
     volumes:
-      - /dev:/dev # Allow access to the i2c bus
       - ./ROS2/ROS_workspace/src/beaumont_pkg/beaumont_pkg/config:/app/src/beaumont_pkg/beaumont_pkg/config # Mount the config directory so that it persists between container restarts
   web_frontend: 
     build: ./WebGUI

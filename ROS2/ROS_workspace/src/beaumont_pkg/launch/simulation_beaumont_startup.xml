@@ -2,8 +2,7 @@
 	<node pkg="beaumont_pkg" exec="simulation_bot_control"/>
 	<node pkg="beaumont_pkg" exec="profiles_manager"/>
 	<node pkg="beaumont_pkg" exec="autonomus_brain_coral_transplant"/>
-	<node pkg="beaumont_pkg" exec="simulation_camera_streamer"/>
+	<node pkg="web_video_server" exec="web_video_server"/>
 	<node pkg="beaumont_pkg" exec="task_manager"/>
 	<include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml"/>
 </launch>
-<!-- Only works with Gazebo Classic 11 -->
