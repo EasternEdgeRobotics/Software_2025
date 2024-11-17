@@ -15,9 +15,10 @@ import json
 #     name: Mapped[str] = mapped_column(unique=True)
 #     controller1: Mapped[str] = mapped_column()
 #     controller2: Mapped[str] = mapped_column(nullable=True)
-    
+
 #     def dict(self):
 #         return {"id": self.id, "name": self.name, "controller1": self.controller1, "controller2": self.controller2}
+
 
 # #Define the Mappings database schema
 # class Mapping(Base):
@@ -56,6 +57,7 @@ import json
 
 # engine = create_engine("sqlite:///config.db")
 
+
 # def mappings_list_to_mappings_json(mappings_list):
 #"""Takes in a list of mappings for a certain profile from the database and turns in into a JSON"""
 
@@ -71,7 +73,7 @@ import json
 #         else:
 #             _json_mappings["buttons"][binding["button"]] = binding["action"]
 #         return _json_mappings
-            
+
 #     for mapping in mappings_list:
 
 #         if mapping["controllerNumber"] == 0:
@@ -86,19 +88,19 @@ import json
 
 #     buttons_dict = mappings_json["buttons"]
 #     for i, key in enumerate(list(buttons_dict.keys())):
-#         new_mapping = Mapping(name = profile_name, controller = controller_name, controllerNumber = controller_number, button = i, action = buttons_dict[str(i)], isAxis = False) 
+#         new_mapping = Mapping(name = profile_name, controller = controller_name, controllerNumber = controller_number, button = i, action = buttons_dict[str(i)], isAxis = False)
 #         session.add(new_mapping)
 
 #         session.commit()
-    
+
 #     axes_dict = mappings_json["axes"]
 #     deadzones_dict = mappings_json["deadzones"]
 #     for i, key in enumerate(list(axes_dict.keys())):
-#         if (float(deadzones_dict[str(i)]) == 0): 
+#         if (float(deadzones_dict[str(i)]) == 0):
 #             new_mapping = Mapping(name = profile_name, controller = controller_name, controllerNumber = controller_number, button = i, action = axes_dict[str(i)], isAxis = True)
 #         else:
 #             new_mapping = Mapping(name = profile_name, controller = controller_name, controllerNumber = controller_number, button = i, action = axes_dict[str(i)], isAxis = True, deadzone = float(deadzones_dict[str(i)]))
-            
+
 #         session.add(new_mapping)
 
 #         session.commit()
@@ -293,9 +295,9 @@ class ProfilesManager(Node):
 
     def camera_urls_callback(self, request, response):
 
-        if request.state == 0: # We are looking to load camera URLs into database from GUI
+        if request.state == 0:  # We are looking to load camera URLs into database from GUI
 
-            urls = json.loads(request.data) #Turn the recieved string into a List
+            urls = json.loads(request.data)  # Turn the received string into a List
 
             while True:
                 if len(urls) < 4:
@@ -304,7 +306,12 @@ class ProfilesManager(Node):
                     break
 
             os.makedirs("config", exist_ok=True)
-            with open("/app/src/beaumont_pkg/beaumont_pkg/config/camera_urls.json", "w") as f:
+            current_directory = os.path.dirname(os.path.abspath(__file__))
+
+            if not os.path.exists(f"{current_directory}/config"):
+                os.makedirs(f"{current_directory}/config")
+
+            with open(f"{current_directory}/config/camera_urls.json", "w") as f:
                 f.write(json.dumps(urls))
 
             response.result = "Success"
@@ -315,13 +322,15 @@ class ProfilesManager(Node):
             #==========================================================
 
             return response
-        
+
         elif request.state == 1: # We are looking to fetch camera URLs form database into GUI
 
             outgoing_camera_urls = []
 
+            current_directory = os.path.dirname(os.path.abspath(__file__))
+
             try:
-                with open("/app/src/beaumont_pkg/beaumont_pkg/config/camera_urls.json", "r") as f:
+                with open(f"{current_directory}/config/camera_urls.json", "r") as f:
                     urls = json.loads(f.read())
             except FileNotFoundError:
                 urls = ["http://", "http://", "http://", "http://"]
@@ -344,4 +353,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
