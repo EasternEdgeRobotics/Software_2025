@@ -30,7 +30,6 @@ set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/gui.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/cli.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/controller.cpp
   ${IMGUI_SOURCES}
 )
 

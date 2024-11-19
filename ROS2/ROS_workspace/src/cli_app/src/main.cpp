@@ -6,15 +6,15 @@
 #include <opencv2/opencv.hpp>
 #include <mutex>
 #include <chrono>
-//
+#include "gui.h"
+
 // Forward declarations
-void launchGUI();
 void printCLIOptions(const std::string& arg);
 void printCLICommands();
 void handleCommand(const std::string& command);
 void printColoredAsciiImage();
 void printIntroduction();
-void launchController();
+
 
 int main(int argc, char* argv[]) {
 
@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     std::atomic<bool> running(true);
 
     // Check for command line launch options
+    //TODO: Move to CLI
     if (argc > 1) {
         std::string arg = argv[1];
         if (arg == "-h" || arg == "--help") {
@@ -29,11 +30,11 @@ int main(int argc, char* argv[]) {
             printCLICommands();
             return 0;
         } else if (arg == "launch_gui") {
-            std::thread guiThread(launchGUI);
+            std::thread guiThread(launchGUI, false);
             guiThread.detach();
 
         }else if (arg == "launch_controller") {
-            std::thread controlThread(launchController);
+            std::thread controlThread(launchGUI, true);
             controlThread.detach();
 
         }

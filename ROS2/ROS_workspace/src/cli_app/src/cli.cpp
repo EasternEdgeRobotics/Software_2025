@@ -5,11 +5,8 @@
 #include <atomic>
 #include <opencv2/opencv.hpp>
 #include <mutex>
+#include "gui.h"
 
-//forward declarations
-
-void launchGUI();
-void launchController();
 
 // Function to print colored ASCII image
 void printColoredAsciiImage() {
@@ -72,13 +69,14 @@ void printCLIOptions(const std::string& arg) {
 
 void printCLICommands() {
     std::string commands = R"(Commands:
-        pilot           Pilot the robot using the selected controller
-        controller      Select the desired controller
-        make_profile    Make a control profile
-        help            Display possible commands and usage
-        version         Display the current version of the tool
-        exit            Exit the application
-        launch_gui      Launch the GUI application)";
+        pilot                  Pilot the robot using the selected controller
+        controller             Select the desired controller
+        make_profile           Make a control profile
+        help                   Display possible commands and usage
+        version                Display the current version of the tool
+        exit                   Exit the application
+        launch_gui             Launch the GUI application
+        launch_controller_only Launch the GUI application with cameras disabled)";
     std::cout << commands << std::endl;
 }
 
@@ -94,10 +92,10 @@ void handleCommand(const std::string& command) {
     } else if (command == "version") {
         std::cout << "EER CLI version 1.0" << std::endl;
     } else if (command == "launch_gui") {
-        std::thread guiThread(launchGUI);
+        std::thread guiThread(launchGUI, false);
         guiThread.detach();
-    } else if (command == "launch_controller") {
-        std::thread controlThread(launchController);
+    } else if (command == "launch_controller_only") {
+        std::thread controlThread(launchGUI,true);
         controlThread.detach();
     } else {
         std::cout << "Unknown command: " << command << std::endl;
