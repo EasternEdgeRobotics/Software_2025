@@ -17,12 +17,15 @@
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <chrono>
+#include <vector>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "eer_messages/msg/pilot_input.hpp"
 #include "controller.h"
@@ -43,56 +46,6 @@ static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
-
-void webcamCapture(std::atomic<bool>& running, std::atomic<bool>& show_video, cv::Mat& frame, std::mutex& frame_mutex) {
-    cv::VideoCapture cap(0);
-    if (!cap.isOpened()) {
-        std::cerr << "Failed to open webcam" << std::endl;
-        running.store(false);
-        return;
-    }
-
-    // Set capture properties for better performance
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 320); // Lower resolution
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 240); // Lower resolution
-    cap.set(cv::CAP_PROP_FPS, 30); // Limit frame rate
-
-    while (running.load()) {
-        if (show_video.load()) {
-            cv::Mat temp_frame;
-            cap >> temp_frame;
-            if (!temp_frame.empty()) {
-                std::lock_guard<std::mutex> lock(frame_mutex);
-                frame = temp_frame.clone();
-            }
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-    }
-
-    cap.release();
-}
-
-
-GLuint matToTexture(const cv::Mat &mat, GLuint textureID, GLenum minFilter, GLenum magFilter, GLenum wrapFilter)
-{
-    if (textureID == 0) {
-        glGenTextures(1, &textureID);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapFilter);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mat.cols, mat.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, mat.ptr());
-    } else {
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mat.cols, mat.rows, GL_BGR, GL_UNSIGNED_BYTE, mat.ptr());
-    }
-
-    return textureID;
-}
-
-
 
 
 //this is the fuction that will launch the GUI
@@ -140,10 +93,19 @@ void launchGUI(){
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-    // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1920, 1080, "EER GUI App", NULL, NULL);
-    if (window == NULL)
+    // Get the primary monitor's video mode
+    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int screenWidth = mode->width;
+    int screenHeight = mode->height;
+
+     // Create window with graphics context
+    GLFWwindow* window = glfwCreateWindow(screenWidth, screenHeight, "EER GUI App", NULL, NULL);
+    if (window == NULL) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
         return;
+    }
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(0); // disable vsync
 
@@ -168,22 +130,6 @@ void launchGUI(){
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
     
-    GLuint video_texture = 0;
-    std::atomic<bool> running(true);
-    std::atomic<bool> show_video(true);
-    cv::Mat frame;
-    std::mutex frame_mutex;
-
-    // Initialize webcam
-    //cv::VideoCapture cap(0);
-    //if (!cap.isOpened()) {
-    //    std::cerr << "Failed to open webcam" << std::endl;
-    //    return;
-    //}
-
-    // Start webcam capture thread
-    std::thread capture_thread(webcamCapture, std::ref(running), std::ref(show_video), std::ref(frame), std::ref(frame_mutex));
-
 
 #ifdef __EMSCRIPTEN__
     ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
@@ -210,15 +156,83 @@ void launchGUI(){
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    //dot position and radius
+    //dot for let stick position and radius
     ImVec2 dot_position = ImVec2(640, 360);
     const float dot_radius = 5.0f;
-
+    
+    //dot for right stick
+    ImVec2 blue_dot_position = ImVec2(640, 360);
 
 
 
        eer_messages::msg::PilotInput input;
 
+
+
+
+    // Camera URLs
+    //to be changed with function which dynamically gets the camera urls
+    std::vector<std::string> camera_urls = {
+        "http://100.80.49.101:8080/stream?topic=/bottom_camera",
+        "http://100.80.49.101:8080/stream?topic=/front_camera",
+        "http://100.80.49.101:8080/stream?topic=/tooling_camera",
+        "http://100.80.49.101:8080/stream?topic=/top_camera"
+    };
+
+    // Extract camera names from URLs
+    std::vector<std::string> camera_names;
+    for (const auto& url : camera_urls) {
+        size_t pos = url.find_last_of('/');
+        if (pos != std::string::npos) {
+            camera_names.push_back(url.substr(pos + 1));
+        } else {
+            camera_names.push_back("Unknown Camera");
+        }
+    }
+
+    // Initialize OpenCV video capture for each IP camera
+    std::vector<cv::VideoCapture> captures(camera_urls.size());
+    std::vector<cv::Mat> frames(camera_urls.size());
+    std::vector<GLuint> textures(camera_urls.size());
+    std::vector<std::thread> capture_threads;
+    std::mutex frame_mutex;
+
+    for (size_t i = 0; i < camera_urls.size(); ++i) {
+        captures[i].open(camera_urls[i]);
+        if (!captures[i].isOpened()) {
+            std::cerr << "Error: Could not open IP camera stream: " << camera_urls[i] << std::endl;
+            continue;
+        }
+
+        // Set resolution to be twice the size
+        captures[i].set(cv::CAP_PROP_FRAME_WIDTH, 1280); // Assuming original width is 1280
+        captures[i].set(cv::CAP_PROP_FRAME_HEIGHT, 720); // Assuming original height is 720
+
+        // Set frame rate to 60
+        captures[i].set(cv::CAP_PROP_FPS, 60);
+
+        glGenTextures(1, &textures[i]);
+
+        // Start a thread to capture frames from the camera
+        capture_threads.emplace_back([&, i]() {
+            while (true) {
+                cv::Mat frame;
+                captures[i] >> frame;
+                if (frame.empty()) {
+                    std::cerr << "Error: Could not capture frame from IP camera: " << camera_urls[i] << std::endl;
+                    continue;
+                }
+
+                std::lock_guard<std::mutex> lock(frame_mutex);
+                frames[i] = frame;
+            }
+        });
+    }
+
+    if (captures.empty()) {
+        std::cerr << "Error: No IP camera streams could be opened." << std::endl;
+        return;
+    }
     // Main loop
     const std::chrono::milliseconds loop_duration(10); // 100 Hz -> 10 ms per loop iteration
 #ifdef __EMSCRIPTEN__
@@ -255,7 +269,7 @@ void launchGUI(){
         ImGui::Text("Use left stick on controller to move dot");
 
         ImVec2 box_min = ImGui::GetCursorScreenPos();
-        ImVec2 box_max = ImVec2(box_min.x + 1000, box_min.y + 1000);
+        ImVec2 box_max = ImVec2(box_min.x + 400, box_min.y + 400);
         ImGui::InvisibleButton("box", ImVec2(1000, 1000));
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
         draw_list->AddRect(box_min, box_max, IM_COL32(255, 255, 255, 255));
@@ -268,27 +282,42 @@ void launchGUI(){
 
         draw_list->AddCircleFilled(dot_position, dot_radius, IM_COL32(255, 0, 0, 255));
 
+        blue_dot_position.x = std::max(box_min.x + dot_radius, std::min(blue_dot_position.x, box_max.x - dot_radius));
+        blue_dot_position.y = std::max(box_min.y + dot_radius, std::min(blue_dot_position.y, box_max.y - dot_radius));
+
+        blue_dot_position.x += input.yaw / 127.0f;
+        blue_dot_position.y += input.pitch / 127.0f;
+
+        draw_list->AddCircleFilled(blue_dot_position, dot_radius, IM_COL32(0, 0, 255, 255));
+
+
         ImGui::End();
 
-
-
-        // Show video frame
-        ImGui::Begin("Webcam Stream");
-        {
-            std::lock_guard<std::mutex> lock(frame_mutex);
-            if (!frame.empty()) {
-                video_texture = matToTexture(frame, video_texture, GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE);
-                ImGui::Image((ImTextureID)(intptr_t)video_texture, ImVec2(frame.cols, frame.rows));
+        for (size_t i = 0; i < captures.size(); ++i) {
+            cv::Mat frame;
+            {
+                std::lock_guard<std::mutex> lock(frame_mutex);
+                frame = frames[i].clone();
             }
-        }
-        if (ImGui::Button("Close Video Stream")) {
-            show_video.store(false);
-        }
-        if (ImGui::Button("Open Video Stream")) {
-            show_video.store(true);
+
+            if (frame.empty()) {
+                continue;
+            }
+
+            // Convert the frame to a format suitable for ImGui
+            cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+
+            glBindTexture(GL_TEXTURE_2D, textures[i]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.cols, frame.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, frame.data);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            // Display the frame in an ImGui window
+            ImGui::Begin(camera_names[i].c_str());
+            ImGui::Image((ImTextureID)(intptr_t)textures[i], ImVec2(frame.cols * 2, frame.rows *2));
+            ImGui::End();
         }
 
-        ImGui::End();
         
 
         if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
@@ -349,26 +378,16 @@ void launchGUI(){
         publishControllerInput(input, publisher);
 
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        //if (show_demo_window)
-            //ImGui::ShowDemoWindow(&show_demo_window);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+        //code for the test window
         {
-            static float f = 0.0f;
-            static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+            ImGui::Begin("This is the test window");                          // Create a window called "Hello, world!" and append into it.
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::Text("You can customize the colour of the GUI and see framerate");  // Display some text (you can use a format strings too)
+
             ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
@@ -393,10 +412,6 @@ void launchGUI(){
         }
     }
 
-    // Stop the webcam capture thread
-    running.store(false);
-    capture_thread.join();
-
     rclcpp::shutdown();
     ros_spin_thread.join();
 
@@ -411,4 +426,10 @@ void launchGUI(){
 
     glfwDestroyWindow(window);
     glfwTerminate();
+
+    for (auto& thread : capture_threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
 }

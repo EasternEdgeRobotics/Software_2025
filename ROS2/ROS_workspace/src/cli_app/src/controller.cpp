@@ -102,7 +102,6 @@ void launchController(){
     ImGui_ImplOpenGL3_Init(glsl_version);
     
 
-    // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     //dot position and radius
