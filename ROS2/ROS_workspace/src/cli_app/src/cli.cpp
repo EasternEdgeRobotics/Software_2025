@@ -83,7 +83,7 @@ std::vector<std::string> CameraStreamUrls(bool set_urls = false) {
             RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
             return camera_urls;
         }
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, quitting...");
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Count not fetch camera URLs from database. /camera_urls service is not available.");
         return camera_urls;
     }
 
@@ -133,6 +133,7 @@ std::vector<std::string> CameraStreamUrls(bool set_urls = false) {
 
         if (index >= 0 && index < static_cast<int>(camera_urls.size())) {
             std::cout << "Enter new URL for camera " << index << ": " << std::endl;
+            std::cout << ">> "; 
             std::getline(std::cin, input);
             camera_urls[index] = input;
         } else {
@@ -168,34 +169,6 @@ void printCLICommands() {
         5: version                Display the current version of the tool
         6: exit                   Exit the application
         7: launch_gui             Launch the GUI application
-        8: launch_controller_only Launch the GUI application (with camexiteras disabled)";
+        8: launch_controller_only Launch the GUI application (with cameras disabled)";
     std::cout << commands << std::endl;
-}
-
-void handleCommand(const std::string& command) {
-    if (command == "0" || command == "pilot") {
-        std::cout << "Piloting the robot..." << std::endl;
-    } else if (command == "1" || command == "controller") {
-        std::cout << "Selecting the controller..." << std::endl;
-    } else if (command == "2" || command == "make_profile") {
-        std::cout << "Making a control profile..." << std::endl;
-    } else if (command == "3" || command == "set_stream_urls") {
-        CameraStreamUrls(true);
-    } else if (command == "4" || command == "help") {
-        printCLICommands();
-    } else if (command == "5" || command == "version") {
-        std::cout << "EER CLI version 1.0" << std::endl;
-    } else if (command == "6" || command == "exit") {
-        std::cout << "Exiting the application..." << std::endl;
-        exit(0);
-    } else if (command == "7" || command == "launch_gui") {
-        std::thread guiThread(launchGUI, false);
-        guiThread.detach();
-    } else if (command == "8" || command == "launch_controller_only") {
-        std::thread controlThread(launchGUI, true);
-        controlThread.detach();
-    } else {
-        std::cout << "Unknown command: " << command << std::endl;
-        std::cout << "Type 'help' to see available commands." << std::endl;
-    }
 }
