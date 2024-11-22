@@ -1,4 +1,3 @@
-// cli.cpp
 #include <iostream>
 #include <string>
 #include <thread>
@@ -6,7 +5,9 @@
 #include <opencv2/opencv.hpp>
 #include <mutex>
 #include "gui.h"
+#include "eer_messages/srv/cameras.hpp"
 
+using namespace std::chrono_literals;
 
 // Function to print colored ASCII image
 void printColoredAsciiImage() {
@@ -67,35 +68,131 @@ void printCLIOptions(const std::string& arg) {
     }
 }
 
+std::vector<std::string> CameraStreamUrls(bool set_urls = false) {
+
+    std::vector<std::string> camera_urls;
+
+    // Create a ROS 2 node and publisher for camera urls
+    std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("camera_urls_client");
+    rclcpp::Client<eer_messages::srv::Cameras>::SharedPtr camera_urls_client =
+        node->create_client<eer_messages::srv::Cameras>("/camera_urls");
+    
+    // Wait for the service server to become available
+    if (!camera_urls_client->wait_for_service(1s)) {
+        if (!rclcpp::ok()) {
+            RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
+            return camera_urls;
+        }
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, quitting...");
+        return camera_urls;
+    }
+
+    // Get the current camera urls
+    auto request = std::make_shared<eer_messages::srv::Cameras::Request>();
+    request->state = 1; // We are just looking to read the current camera urls for now
+
+    auto result = camera_urls_client->async_send_request(request);
+    // Wait for the result.
+    if (rclcpp::spin_until_future_complete(node, result) ==
+        rclcpp::FutureReturnCode::SUCCESS)
+    {   
+        auto response = result.get();
+        camera_urls = response->camera_urls;
+        if (!set_urls) return camera_urls; 
+        else std::cout << "The current camera urls are: " << response->camera_urls_json << std::endl;
+
+    } else {
+        std::cout << "Failed to get camera URLs." << std::endl;
+        return camera_urls;
+    }
+
+    while (true) {
+
+        std::cout << "Which url would you like to change? (type an integer, see_urls, or done): " << std::endl;
+
+        std::string input;
+        std::cout << ">> ";
+        std::getline(std::cin, input);
+
+        if (input == "see_urls") {
+            for (size_t i = 0; i < camera_urls.size(); ++i) {
+            std::cout << "Camera " << i << " URL: " << camera_urls[i] << std::endl;
+            }
+            continue;
+        } else if (input == "done") {
+            break;
+        }
+
+        int index;
+        try {
+            index = std::stoi(input);
+        } catch (const std::invalid_argument& e) {
+            std::cout << "Invalid input." << std::endl;
+            continue;
+        }
+
+        if (index >= 0 && index < static_cast<int>(camera_urls.size())) {
+            std::cout << "Enter new URL for camera " << index << ": " << std::endl;
+            std::getline(std::cin, input);
+            camera_urls[index] = input;
+        } else {
+            std::cout << "Invalid input." << std::endl;
+        }
+    }
+
+    request->state = 0; // We are looking to set the camera urls now
+    request->camera_urls = camera_urls;
+
+    result = camera_urls_client->async_send_request(request);
+    // Wait for the result.
+    if (rclcpp::spin_until_future_complete(node, result) ==
+        rclcpp::FutureReturnCode::SUCCESS)
+    {  
+        auto response = result.get();
+        if (response->success) std::cout << "Camera URLs set!" << std::endl;
+        return camera_urls;
+    } 
+    
+    std::cout << "Failed to set camera URLs." << std::endl;
+
+    return camera_urls;
+}
+
 void printCLICommands() {
     std::string commands = R"(Commands:
-        pilot                  Pilot the robot using the selected controller
-        controller             Select the desired controller
-        make_profile           Make a control profile
-        help                   Display possible commands and usage
-        version                Display the current version of the tool
-        exit                   Exit the application
-        launch_gui             Launch the GUI application
-        launch_controller_only Launch the GUI application with cameras disabled)";
+        0: pilot                  Pilot the robot using the selected controller
+        1: controller             Select the desired controller
+        2: make_profile           Make a control profile
+        3: set_stream_urls        Set the camera stream URLs
+        4: help                   Display possible commands and usage
+        5: version                Display the current version of the tool
+        6: exit                   Exit the application
+        7: launch_gui             Launch the GUI application
+        8: launch_controller_only Launch the GUI application (with camexiteras disabled)";
     std::cout << commands << std::endl;
 }
 
 void handleCommand(const std::string& command) {
-    if (command == "pilot") {
+    if (command == "0" || command == "pilot") {
         std::cout << "Piloting the robot..." << std::endl;
-    } else if (command == "controller") {
+    } else if (command == "1" || command == "controller") {
         std::cout << "Selecting the controller..." << std::endl;
-    } else if (command == "make_profile") {
+    } else if (command == "2" || command == "make_profile") {
         std::cout << "Making a control profile..." << std::endl;
-    } else if (command == "help") {
+    } else if (command == "3" || command == "set_stream_urls") {
+        CameraStreamUrls(true);
+    } else if (command == "4" || command == "help") {
         printCLICommands();
-    } else if (command == "version") {
+    } else if (command == "5" || command == "version") {
         std::cout << "EER CLI version 1.0" << std::endl;
-    } else if (command == "launch_gui") {
+    } else if (command == "6" || command == "exit") {
+        std::cout << "Exiting the application..." << std::endl;
+        exit(0);
+    } else if (command == "7" || command == "launch_gui") {
         std::thread guiThread(launchGUI, false);
         guiThread.detach();
-    } else if (command == "launch_controller_only") {
-        std::thread controlThread(launchGUI,true);
+    } else if (command == "8" || command == "launch_controller_only") {
+        std::thread controlThread(launchGUI, true);
         controlThread.detach();
     } else {
         std::cout << "Unknown command: " << command << std::endl;

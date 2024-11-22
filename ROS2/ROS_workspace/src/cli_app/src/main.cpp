@@ -1,9 +1,9 @@
-// main.cpp
 #include <iostream>
 #include <string>
 #include <thread>
 #include <atomic>
 #include <opencv2/opencv.hpp>
+#include <csignal>
 #include <mutex>
 #include <chrono>
 #include "gui.h"
@@ -15,11 +15,18 @@ void handleCommand(const std::string& command);
 void printColoredAsciiImage();
 void printIntroduction();
 
+// Atomic bool to control the main program loop
+std::atomic<bool> running(true);
+
+void signalHandler(int signum) {
+    (void)signum; // Avoid unused parameter warning
+    running.store(false);
+}
 
 int main(int argc, char* argv[]) {
 
-    //atomic bool to keep track of the main loop
-    std::atomic<bool> running(true);
+    // Call the signal handler function when user does CTRL+C
+    std::signal(SIGINT, signalHandler);
 
     // Check for command line launch options
     //TODO: Move to CLI
@@ -41,7 +48,8 @@ int main(int argc, char* argv[]) {
         
     }
 
-    std::string input;
+    // Initialize ROS 2
+    rclcpp::init(0, nullptr);
 
     printColoredAsciiImage();
     printIntroduction();
@@ -49,14 +57,15 @@ int main(int argc, char* argv[]) {
     const std::chrono::milliseconds loop_duration(10); // 100 Hz -> 10 ms per loop iteration
 
     //main loop for the CLI
-    while (true) {
+    while (running.load()) {
         auto loop_start_time = std::chrono::steady_clock::now();
 
+        std::string input;
         std::cout << "> ";
         std::getline(std::cin, input);
 
         if (input == "exit") {
-            break;
+            running.store(false);
         } else {
             handleCommand(input);
         }
@@ -71,8 +80,9 @@ int main(int argc, char* argv[]) {
 
     // Exit message
     std::cout << "Goodbye!" << std::endl;
+    
+    // Shutdown ROS 2
+    rclcpp::shutdown();
 
-    //cleanup and exit
-    running.store(false);
     return 0;
 }

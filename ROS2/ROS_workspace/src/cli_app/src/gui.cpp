@@ -28,7 +28,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "eer_messages/msg/pilot_input.hpp"
-#include "gui.h"
+#include "cli.h"
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
 // To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
@@ -59,14 +59,8 @@ void launchGUI(bool launch_controller){
     std::mutex frame_mutex;
     std::vector<std::string> camera_names;
     
-    //Camera URLs
-    //to be changed with function which dynamically gets the camera urls
-    std::vector<std::string> camera_urls = {
-        "http://100.80.49.101:8080/stream?topic=/bottom_camera",
-        "http://100.80.49.101:8080/stream?topic=/front_camera",
-        "http://100.80.49.101:8080/stream?topic=/tooling_camera",
-        "http://100.80.49.101:8080/stream?topic=/top_camera"
-    };
+    // Get camera URLs (parameter is false as we do not want to set URLs)
+    std::vector<std::string> camera_urls = CameraStreamUrls();
 
     //initialize input
     eer_messages::msg::PilotInput input;
@@ -76,15 +70,11 @@ void launchGUI(bool launch_controller){
     std::vector<cv::Mat> frames(camera_urls.size());
     std::vector<GLuint> textures(camera_urls.size());
 
-
-
-
-    // Initialize ROS 2
-    rclcpp::init(0, nullptr);
+    // Create a ROS 2 node and publisher for controller input
     auto node = rclcpp::Node::make_shared("controller_input_publisher");
     auto publisher = node->create_publisher<eer_messages::msg::PilotInput>("/PilotInput", 10);
 
-    // Start a separate thread to spin the ROS 2 node
+    // Start a separate thread to spin the ROS 2 publisher node
     std::thread ros_spin_thread([&]() {
         rclcpp::spin(node);
     });
@@ -437,7 +427,6 @@ void launchGUI(bool launch_controller){
         }
     }
 
-    rclcpp::shutdown();
     ros_spin_thread.join();
 
 #ifdef __EMSCRIPTEN__
