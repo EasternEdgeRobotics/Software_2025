@@ -9,10 +9,10 @@ import json
 def delProfile(profileDel, file):
         try: 
             with open(file, "r") as f:
-                profiles  = json.loads(f.read())
+                profiles  = json.loads(f.read()) # reads profiles from file
                 
                 for i, profile in enumerate(profiles):
-                    if profile["profileName"] == profileDel:
+                    if profile["profileName"] == profileDel: # delete entry of the profile 
                         profiles.pop(i) 
                             
                         return "Profile Deleted", profiles
@@ -75,19 +75,18 @@ class ProfilesManager(Node):
 
             newMappings  = json.loads(request.data)
 
-            current_directory = os.path.dirname(os.path.abspath(__file__))
+            current_directory = os.path.dirname(os.path.abspath(__file__)) # create directory if not done previously
             FILE_PATH = f"{current_directory}/config/profiles.json"
             os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True) 
              
 
             result, newProfiles = delProfile(newMappings["profileName"], FILE_PATH) # deletes previous profile with that name
             newProfiles.append(newMappings)
-            JSONprofiles = json.dumps(newProfiles)
 
             with open(FILE_PATH, "w") as f:
-                f.write(json.dumps(JSONprofiles))
+                f.write(json.dumps(newProfiles)) # overwrites file with new profile list
 
-                response.result = JSONprofiles
+                response.result = "success"
             
             return response                
 
@@ -103,14 +102,14 @@ class ProfilesManager(Node):
 
                     for profile in profiles:
                         if profile["profileName"] == request.data:
-                            response.result = json.dumps(profile["associated_mappings"])
-                            return response
+                            response.result = json.dumps(profile["associated_mappings"]) 
+                            return response # only the associated mappings for that profile are returned
 
             except FileNotFoundError:
                 pass
                 
             defaultmap = {"buttons": {}, "axes": {}, "deadzones": {}}
-            response.result = json.dumps({0: defaultmap, 1: defaultmap}) #Turn the JSON object into a string
+            response.result = json.dumps({0: defaultmap, 1: defaultmap}) 
             
             return response
 
@@ -124,12 +123,13 @@ class ProfilesManager(Node):
 
         if request.state == 0: # The requested profile should be deleted
 
-            response.result, newProfiles = Delprofile(request.data)
+            response.result, newProfiles = Delprofile(request.data, FILE_PATH)
 
             with open(FILE_PATH, "w") as f:
-                f.write(json.dumps(newProfiles))
+                f.write(json.dumps(newProfiles)) #overwrites previous profiles with new list
             
             return response
+
 
         elif request.state == 1: #We only want to read the profiles
 
@@ -139,7 +139,7 @@ class ProfilesManager(Node):
                 with open(FILE_PATH, "r") as f:
                     profiles = json.loads(f.read())
 
-                    for i, profile in enumerate(profiles):
+                    for i, profile in enumerate(profiles): # write in the format expected by the client
                         profileNames.append({"id": i, 
                                             "name": profile["profileName"], 
                                             "controller1" : profile["controller1"], 
