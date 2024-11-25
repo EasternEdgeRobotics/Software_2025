@@ -6,7 +6,6 @@
 
 // Function declarations
 void printColoredAsciiImage();
-void handleCommand(const std::string&);
 std::vector<std::string> CameraStreamUrls(bool set_urls = false);
 
 #endif // CLI_H
