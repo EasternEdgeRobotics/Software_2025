@@ -41,6 +41,7 @@ include_directories(
   ${rclcpp_INCLUDE_DIRS}
   ${glfw3_INCLUDE_DIRS}
   ${eer_messages_INCLUDE_DIRS} 
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # Add executable

@@ -223,7 +223,7 @@ export function InitROS() {
     const cameraURLsClient = new ROSLIB.Service({
         ros: ros,
         name: "/camera_urls",
-        serviceType: "eer_messages/Config"
+        serviceType: "eer_messages/Cameras"
     });
 
     // Run the block of code below whenever the RequestingCameraURLs global state is changed
@@ -231,18 +231,17 @@ export function InitROS() {
         if (requestingCameraURLs == 0) { // State 0 indicates that we would like to save camera URLs into database
             const request = new ROSLIB.ServiceRequest({
                 state: 0,
-                data: JSON.stringify(cameraURLs)
+                camera_urls_json: JSON.stringify(cameraURLs),
             });
             cameraURLsClient.callService(request, function (result) { null; });
         }
         else if (requestingCameraURLs == 1) { // State 1 indicates that we are looking to fetch camera URLs from database
             const request = new ROSLIB.ServiceRequest({
                 state: 1,
-                data: "FetchCameraURLs"
             }); // What's in the data field is not important in this case
             cameraURLsClient.callService(request, function (result) {
-                if (result.result != "[]") {
-                    setCameraURLs(JSON.parse(result.result));
+                if (result.camera_urls_json != "[]") {
+                    setCameraURLs(JSON.parse(result.camera_urls_json));
                 }
                 else {
                     console.log("No camera URLs stored in database")

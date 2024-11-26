@@ -28,6 +28,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "eer_messages/msg/pilot_input.hpp"
+#include "cli.h"
 #include "gui.h"
 
 // [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
@@ -47,53 +48,46 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-void publishControllerInput(const eer_messages::msg::PilotInput& input, const rclcpp::Publisher<eer_messages::msg::PilotInput>::SharedPtr& publisher) {
-    publisher->publish(input);
+void publishControllerInput(const eer_messages::msg::PilotInput& input, const rclcpp::Publisher<eer_messages::msg::PilotInput>::SharedPtr& controller_input_publisher) {
+
+    // NOTE: If both a controller thread and Camera thread are running that the same time and both are listening
+    // to controller input, they might both call the publish function on the publisher at the same time.  
+    // If it turns out that ros publishers are not thread safe, we can use a mutex to lock the publisher
+
+    controller_input_publisher->publish(input);
 }
 
 //this is the fuction that will launch the GUI
-void launchGUI(bool launch_controller){
+void launchGUI(const rclcpp::Publisher<eer_messages::msg::PilotInput>::SharedPtr& controller_input_publisher, bool launch_controller){
 
     // Initialize 
     std::vector<std::thread> capture_threads;
     std::mutex frame_mutex;
     std::vector<std::string> camera_names;
     
-    //Camera URLs
-    //to be changed with function which dynamically gets the camera urls
-    std::vector<std::string> camera_urls = {
-        "http://100.80.49.101:8080/stream?topic=/bottom_camera",
-        "http://100.80.49.101:8080/stream?topic=/front_camera",
-        "http://100.80.49.101:8080/stream?topic=/tooling_camera",
-        "http://100.80.49.101:8080/stream?topic=/top_camera"
-    };
-
-    //initialize input
-    eer_messages::msg::PilotInput input;
+    // Initialize camera URLs as an empty vector
+    std::vector<std::string> camera_urls = CameraStreamUrls();
+        
+    // If the camera_urls list is empty, it means that the camera_urls service is not even available.
+    // It could be that the service node crashed or that it doesn't exist on the ROS 2 network.
+    // In this case, fill the camera_urls list with some default URLs.
+    if (camera_urls.empty()) {
+        camera_urls = {
+            "http://127.0.0.1:8080/stream?topic=/bottom_camera",
+            "http://127.0.0.1:8080/stream?topic=/front_camera",
+            "http://127.0.0.1:8080/stream?topic=/tooling_camera",
+            "http://127.0.0.1:8080/stream?topic=/top_camera"
+        };
+        std::cout << "Using default camera URLs (running a simulation with Beaumont in localhost)." << std::endl;
+    }
 
     //initialize variables reliant on camera_urls
     std::vector<cv::VideoCapture> captures(camera_urls.size());
     std::vector<cv::Mat> frames(camera_urls.size());
     std::vector<GLuint> textures(camera_urls.size());
 
-
-
-
-    // Initialize ROS 2
-    rclcpp::init(0, nullptr);
-    auto node = rclcpp::Node::make_shared("controller_input_publisher");
-    auto publisher = node->create_publisher<eer_messages::msg::PilotInput>("/PilotInput", 10);
-
-    // Start a separate thread to spin the ROS 2 node
-    std::thread ros_spin_thread([&]() {
-        rclcpp::spin(node);
-    });
-
-    // Redirect stderr to /dev/null to suppress GStreamer warnings
-    if (freopen("/dev/null", "w", stderr) == NULL) {
-        std::cerr << "Failed to redirect stderr to /dev/null" << std::endl;
-        return;
-    }
+    //initialize input
+    eer_messages::msg::PilotInput input;
 
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
@@ -194,8 +188,12 @@ void launchGUI(bool launch_controller){
     //dot for right stick
     ImVec2 blue_dot_position = ImVec2(640, 360);
 
+    // Check if no camera streams are available
+    bool all_captures_failed = true;
+
 
     if(!launch_controller){
+
         // Extract camera names from URLs
         for (const auto& url : camera_urls) {
             size_t pos = url.find_last_of('/');
@@ -210,7 +208,10 @@ void launchGUI(bool launch_controller){
             captures[i].open(camera_urls[i]);
             if (!captures[i].isOpened()) {
                 std::cerr << "Error: Could not open IP camera stream: " << camera_urls[i] << std::endl;
+                captures[i].release(); // Release the capture object
                 continue;
+            } else {
+                all_captures_failed = false;
             }
 
             // Set resolution to be twice the size
@@ -229,7 +230,7 @@ void launchGUI(bool launch_controller){
                     captures[i] >> frame;
                     if (frame.empty()) {
                         std::cerr << "Error: Could not capture frame from IP camera: " << camera_urls[i] << std::endl;
-                        continue;
+                        break;
                     }
 
                     {
@@ -240,17 +241,9 @@ void launchGUI(bool launch_controller){
             });
         }
 
-        bool all_captures_failed = true;
-        for (const auto& capture : captures) {
-            if (capture.isOpened()) {
-                all_captures_failed = false;
-                break;
-            }
-        }
-
         if (all_captures_failed) {
             std::cerr << "Error: No IP camera streams could be opened." << std::endl;
-            return;
+            std::cout << "> "; // Print the prompt for user input
         }
     }
 
@@ -263,7 +256,8 @@ void launchGUI(bool launch_controller){
     io.IniFilename = nullptr;
     EMSCRIPTEN_MAINLOOP_BEGIN
 #else
-    while (!glfwWindowShouldClose(window))
+    // Do not enter this loop if we are looking to show camera feeds and all captures failed
+    while (!glfwWindowShouldClose(window) && !(!launch_controller && all_captures_failed))
 #endif
     {
         // Poll and handle events (inputs, window resize, etc.)
@@ -402,7 +396,7 @@ void launchGUI(bool launch_controller){
             ImGui::End();
         }
 
-        publishControllerInput(input, publisher);
+        publishControllerInput(input, controller_input_publisher);
 
 
 
@@ -436,9 +430,6 @@ void launchGUI(bool launch_controller){
             std::this_thread::sleep_for(loop_duration - elapsed_time);
         }
     }
-
-    rclcpp::shutdown();
-    ros_spin_thread.join();
 
 #ifdef __EMSCRIPTEN__
     EMSCRIPTEN_MAINLOOP_END;
