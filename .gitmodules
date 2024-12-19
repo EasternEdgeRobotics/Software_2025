@@ -1,0 +1,6 @@
+[submodule "WaterwitchGUI/include/imgui"]
+	path = WaterwitchGUI/include/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "WaterwitchGUI/include/glfw"]
+	path = WaterwitchGUI/include/glfw
+	url = https://github.com/glfw/glfw
