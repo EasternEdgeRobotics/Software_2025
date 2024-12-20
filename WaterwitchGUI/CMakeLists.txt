@@ -4,6 +4,7 @@ project(WaterwitchGUI)
 find_package(OpenGL REQUIRED)
 
 add_subdirectory(include/glfw)
+add_subdirectory(include/json)
 
 include_directories(
     ${OPENGL_INCLUDE_DIRS}
@@ -26,11 +27,12 @@ add_executable(WaterwitchGUI src/main.cpp ${IMGUI_SOURCES})
 
 target_link_libraries(WaterwitchGUI 
     ${OPENGL_LIBRARIES} 
-    glfw 
+    glfw
+    nlohmann_json::nlohmann_json
 )
 
 set_target_properties(WaterwitchGUI PROPERTIES
-    CXX_STANDARD 11
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )

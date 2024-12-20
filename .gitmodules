@@ -4,3 +4,6 @@
 [submodule "WaterwitchGUI/include/glfw"]
 	path = WaterwitchGUI/include/glfw
 	url = https://github.com/glfw/glfw
+[submodule "WaterwitchGUI/include/json"]
+	path = WaterwitchGUI/include/json
+	url = https://github.com/nlohmann/json
