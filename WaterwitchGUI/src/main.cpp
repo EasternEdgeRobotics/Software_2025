@@ -4,6 +4,7 @@
 #include "backends/imgui_impl_opengl3.h"
 #include <iostream>
 #include "Config.hpp"
+#include "Power.hpp"
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -12,10 +13,11 @@ using json = nlohmann::json;
 using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
 
 Config config;
+Power power;
 
 bool showConfigWindow = false;
 bool showCameraWindow = false;
-bool showAboutWindow = true;
+bool showPilotWindow = false;
 
 int main() {
     filesystem::create_directory("configs");
@@ -70,12 +72,9 @@ int main() {
                         if (ImGui::MenuItem(configFile.path().filename().string().c_str())) {
                             ifstream configJson(string("configs/") + configFile.path().filename().string());
                             json configData = json::parse(configJson);
-                            std::strncpy(config.cam1ip, configData["cameraIPs"][0].get<std::string>().c_str(), sizeof(config.cam1ip) - 1);
-                            std::strncpy(config.cam2ip, configData["cameraIPs"][1].get<std::string>().c_str(), sizeof(config.cam2ip) - 1);
-                            std::strncpy(config.cam3ip, configData["cameraIPs"][2].get<std::string>().c_str(), sizeof(config.cam3ip) - 1);
-                            config.cam1ip[sizeof(config.cam1ip) - 1] = '\0';
-                            config.cam2ip[sizeof(config.cam2ip) - 1] = '\0';
-                            config.cam3ip[sizeof(config.cam3ip) - 1] = '\0';
+                            std::strncpy(config.cam1ip, configData["cameraIPs"][0].get<std::string>().c_str(), sizeof(config.cam1ip));
+                            std::strncpy(config.cam2ip, configData["cameraIPs"][1].get<std::string>().c_str(), sizeof(config.cam2ip));
+                            std::strncpy(config.cam3ip, configData["cameraIPs"][2].get<std::string>().c_str(), sizeof(config.cam3ip));
                             std::vector<int> buttons = configData["buttons"].get<std::vector<int>>();
                             config.buttonActions.clear();
                             for (int i = 0; i < buttons.size(); i++) {
@@ -94,7 +93,7 @@ int main() {
             }
             if (ImGui::BeginMenu("Pilot")) {
                 if (ImGui::MenuItem("Open Piloting Menu")) {
-                    //open pilot menu
+                    showPilotWindow = true;
                 }
                 ImGui::EndMenu();
             }
@@ -140,7 +139,7 @@ int main() {
                         }
                         ImGui::SeparatorText("Axes");
                         for (int i = 0; i < axisCount; i++) {
-                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1-abs(axes[i]), 1, 1)); //TODO: this is kind of ugly
+                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1-abs(axes[i]), 1, 1));
                             ImGui::Text((std::string("Axis ") + std::to_string(i)).c_str());
                             ImGui::PopStyleColor();
                             ImGui::SameLine();
@@ -189,7 +188,54 @@ int main() {
         if (showCameraWindow) {
             ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, (io.DisplaySize.y - ImGui::GetFrameHeight())));
             ImGui::SetNextWindowPos(ImVec2{0, ImGui::GetFrameHeight()});
-            ImGui::Begin("Camera Window", &showCameraWindow, ImGuiWindowFlags_NoResize);
+            ImGui::Begin("Camera Window", &showCameraWindow, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+            ImVec2 windowPos = ImGui::GetWindowPos();
+            ImVec2 availPos = ImGui::GetContentRegionAvail();
+
+            ImGui::SetCursorPos(ImVec2(windowPos.x+8, windowPos.y+8));
+            ImGui::Button("Camera 1", ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
+            ImGui::SetCursorPos(ImVec2((availPos.x-24)/2+16, windowPos.y+8));
+            ImGui::Button("Camera 2", ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
+            ImGui::SetCursorPos(ImVec2(windowPos.x+8, (availPos.y-24)/2+35));
+            ImGui::Button("Camera 3", ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
+
+            ImGui::End();
+        }
+
+        //co-pilot controls window
+        if (showPilotWindow) {
+            ImGui::Begin("Co-Pilot Window", &showPilotWindow);
+
+            ImGui::SliderInt("Surge", &power.surge, 0, 100);
+            ImGui::SliderInt("Sway", &power.sway, 0, 100);
+            ImGui::SliderInt("Turn", &power.turn, 0, 100);
+            ImGui::SliderInt("Heave", &power.heave, 0, 100);
+
+            ImGui::SeparatorText("Keybinds");
+            ImGui::Text("1 - Set all to 0%");
+            ImGui::Text("2 - Set all to 50%");
+            ImGui::Text("3 - Set all to 0%, set Heave to 100%");
+
+            if (ImGui::IsKeyPressed(ImGuiKey_1)) {
+                power.surge = 0;
+                power.sway = 0;
+                power.turn = 0;
+                power.heave = 0;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_2)) {
+                power.surge = 50;
+                power.sway = 50;
+                power.turn = 50;
+                power.heave = 50;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_3)) {
+                power.surge = 0;
+                power.sway = 0;
+                power.turn = 0;
+                power.heave = 100;
+            }
+
             ImGui::End();
         }
 
