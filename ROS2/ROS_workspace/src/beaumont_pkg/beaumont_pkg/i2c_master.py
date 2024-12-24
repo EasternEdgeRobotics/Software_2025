@@ -159,7 +159,7 @@ class I2CMaster(Node):
 
         # Subscribers
         self.copilot_listener = self.create_subscription(ThrusterMultipliers, 'thruster_multipliers', self.copilot_listener_callback, 100)
-        self.pilot_listener = self.create_subscription(PilotInput, 'controller_input', self.pilot_listener_callback, 1) # input recieved at 10Hz
+        self.pilot_listener = self.create_subscription(PilotInput, 'pilot_input', self.pilot_listener_callback, 1) # input recieved at 10Hz
 
         # Publishers
         # Comment out code below to remove slowdown

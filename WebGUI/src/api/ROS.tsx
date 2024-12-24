@@ -92,10 +92,10 @@ export function InitROS() {
     }
         , [thrusterMultipliers]);
 
-    // Create a publisher on the "/controller_input" ros2 topic, using the default String message which will be used from transporting JSON data
+    // Create a publisher on the "/pilot_input" ros2 topic, using the default String message which will be used from transporting JSON data
     const controllerInputTopic = new ROSLIB.Topic({
         ros: ros,
-        name: "/controller_input",
+        name: "/pilot_input",
         messageType: "eer_messages/PilotInput",
         queue_size: 1
     });

@@ -39,7 +39,7 @@ class SimulationBotControl(Node):
         super().__init__('simulation_bot_control')
 
         self.copilot_listener = self.create_subscription(ThrusterMultipliers, 'thruster_multipliers', self.copilot_listener_callback, 10)
-        self.pilot_listener = self.create_subscription(PilotInput, 'controller_input', self.pilot_listener_callback, 1)
+        self.pilot_listener = self.create_subscription(PilotInput, 'pilot_input', self.pilot_listener_callback, 1)
         
         self.diagnostics_data_publisher = self.create_publisher(DiagnosticsData, "diagnostics", 1)
         self.outside_temperature_probe_data_publisher = self.create_publisher(OutsideTempProbeData, "outside_temp_probe", 1)

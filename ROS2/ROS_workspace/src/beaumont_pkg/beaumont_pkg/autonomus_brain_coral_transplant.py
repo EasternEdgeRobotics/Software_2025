@@ -60,7 +60,7 @@ class AutonomusBrainCoralTransplant(Node):
             callback_group=ReentrantCallbackGroup()) # Allows for the goal to be cancelled while being executed by making the action server multi-threaded
         
         # The following publishers publish inputs to which both the simulation and real ROV respond 
-        self.pilot_publisher = self.create_publisher(PilotInput, "controller_input", 1)
+        self.pilot_publisher = self.create_publisher(PilotInput, "pilot_input", 1)
         self.copilot_publisher = self.create_publisher(ThrusterMultipliers, "thruster_multipliers", 1)
 
         # Client to fetch the bottom camera MJPEG stream url saved the database
@@ -202,10 +202,10 @@ class AutonomusBrainCoralTransplant(Node):
                 self.get_logger().info('Goal aborted or canceled')
                 break
 
-            # Initialize the controller_input message 
-            controller_input = PilotInput()
+            # Initialize the pilot_input message 
+            pilot_input = PilotInput()
 
-            controller_input.is_autonomous = True
+            pilot_input.is_autonomous = True
 
             # Convert the MJPEG stream into a format recognizable by OpenCV
             bytes += stream.read(1024)
@@ -278,40 +278,40 @@ class AutonomusBrainCoralTransplant(Node):
                     if abs(brain_coral_area_center_location_x - desired_x_location) > percent_5_of_x_resolution: 
                         aligned_x = False
                         if brain_coral_area_center_location_x < desired_x_location:
-                            controller_input.sway = alignment_adjustment_value_neg
+                            pilot_input.sway = alignment_adjustment_value_neg
                             feedback_msg.status += "Swaying left "
                         else:
-                            controller_input.sway = alignment_adjustment_value_pos
+                            pilot_input.sway = alignment_adjustment_value_pos
                             feedback_msg.status += "Swaying right "
                         self.get_logger().info(f"{(brain_coral_area_center_location_x, desired_x_location)}")
                     else: 
-                        controller_input.sway = 0
+                        pilot_input.sway = 0
                         aligned_x = True
 
                     # Also center in the y
                     if abs(brain_coral_area_center_location_y - desired_y_location) > percent_5_of_y_resolution: 
                         aligned_y = False
                         if brain_coral_area_center_location_y < desired_y_location:
-                            controller_input.surge = alignment_adjustment_value_pos
+                            pilot_input.surge = alignment_adjustment_value_pos
                             feedback_msg.status += "Surging forward"
                         else:
-                            controller_input.surge = alignment_adjustment_value_neg
+                            pilot_input.surge = alignment_adjustment_value_neg
                             feedback_msg.status += "Surging back"
                     else:
-                        controller_input.surge = 0
+                        pilot_input.surge = 0
                         aligned_y = True
 
                     # Once aligned, heave down on brain coral area
                     if aligned_x and aligned_y:
 
                         if (biggest_contour_area < (camera_stream_area * 0.5)):
-                            controller_input.heave = -heave_speed
+                            pilot_input.heave = -heave_speed
 
                             feedback_msg.status += "Aligned! Heaving Down!"
 
                         else:
-                            controller_input.open_claw = True
-                            controller_input.heave = -10
+                            pilot_input.open_claw = True
+                            pilot_input.heave = -10
 
                             
                             claw_opening_start_time = time()
@@ -324,7 +324,7 @@ class AutonomusBrainCoralTransplant(Node):
                                     time_since_pilot_input_publishing = time()
 
                                     goal_handle.publish_feedback(feedback_msg) 
-                                    self.pilot_publisher.publish(controller_input)
+                                    self.pilot_publisher.publish(pilot_input)
 
                             
                             feedback_msg.status = "Autonomus task done!"
@@ -336,7 +336,7 @@ class AutonomusBrainCoralTransplant(Node):
                     else:
 
                         # Ensure brain coral is being gripped until it is time to let go 
-                        controller_input.close_claw = True
+                        pilot_input.close_claw = True
 
                     
 
@@ -347,8 +347,8 @@ class AutonomusBrainCoralTransplant(Node):
                     # Initially, Beaumont will heave after the pilot initates autonomus mode
                     if heave_stage:
 
-                        controller_input.heave = heave_speed*3
-                        controller_input.close_claw = True
+                        pilot_input.heave = heave_speed*3
+                        pilot_input.close_claw = True
 
                         feedback_msg.status = "Heaving up"
                         goal_handle.publish_feedback(feedback_msg)
@@ -359,9 +359,9 @@ class AutonomusBrainCoralTransplant(Node):
                     # Surge forward until the brain coral region is detected. Pilot will be facing the coral reef when autonomus mode is initalized
                     else:
 
-                        controller_input.surge = heave_speed
-                        controller_input.close_claw = True
-                        controller_input.heave = 0
+                        pilot_input.surge = heave_speed
+                        pilot_input.close_claw = True
+                        pilot_input.heave = 0
 
                         feedback_msg.status = "Surging forward"
                         goal_handle.publish_feedback(feedback_msg)
@@ -369,13 +369,13 @@ class AutonomusBrainCoralTransplant(Node):
                 
                 if time()-time_since_pilot_input_publishing > 0.1:
                     time_since_pilot_input_publishing = time()
-                    self.pilot_publisher.publish(controller_input)
+                    self.pilot_publisher.publish(pilot_input)
 
 
         # Action loop is exited. Ensure to switch over control to pilot by resetting the multipliers to their inital value and publishing empty pilot input
-        controller_input = PilotInput()
+        pilot_input = PilotInput()
 
-        controller_input.is_autonomous = True
+        pilot_input.is_autonomous = True
 
         restored_power_multipliers = ThrusterMultipliers()
         restored_power_multipliers.power = goal_handle.request.starting_power
@@ -390,7 +390,7 @@ class AutonomusBrainCoralTransplant(Node):
 
         goal_handle.publish_feedback(feedback_msg)
         self.copilot_publisher.publish(restored_power_multipliers)
-        self.pilot_publisher.publish(controller_input)
+        self.pilot_publisher.publish(pilot_input)
     
     def get_contours(self, mask):
         """
