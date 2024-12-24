@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
 
     // Create a ROS 2 node for controller input
     auto node = rclcpp::Node::make_shared("controller_input_publisher");
-    auto controller_input_publisher = node->create_publisher<eer_messages::msg::PilotInput>("/PilotInput", 10);
+    auto controller_input_publisher = node->create_publisher<eer_messages::msg::PilotInput>("/pilot_input", 10);
 
     std::thread ros_spin_thread([&]() {
         rclcpp::spin(node);
