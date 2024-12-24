@@ -3,6 +3,7 @@ int8 sway
 int8 heave
 int8 pitch
 int8 yaw
+int8 roll
 bool open_claw
 bool close_claw
 bool heave_up

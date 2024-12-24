@@ -1,8 +1,11 @@
 #include <memory>
+#include <thread>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "eer_messages/msg/pilot_input.hpp"
+#include "waterwitch_pkg/msg/waterwitch_thrust_values.hpp"
+#include "waterwitch_constants.h"
 
 class PilotListener : public rclcpp::Node
 {
@@ -14,14 +17,40 @@ public:
     pilot_listener = this->create_subscription<eer_messages::msg::PilotInput>(
       "pilot_input", 10, std::bind(&PilotListener::pilot_listener_callback, this, std::placeholders::_1));
 
+    thrust_publisher = this->create_publisher<waterwitch_pkg::msg::WaterwitchThrustValues>("thrust_values", 10);
   }
 
 private:
   rclcpp::Subscription<eer_messages::msg::PilotInput>::SharedPtr pilot_listener;
+  rclcpp::Publisher<waterwitch_pkg::msg::WaterwitchThrustValues>::SharedPtr thrust_publisher;
 
-  void pilot_listener_callback(eer_messages::msg::PilotInput::UniquePtr msg)
-  {
-    RCLCPP_INFO(this->get_logger(), "I heard: '%u'", msg->surge);
+  void pilot_listener_callback(eer_messages::msg::PilotInput::UniquePtr pilot_input)
+  { 
+
+    // Lambda function to compute thrust value for each thruster
+    auto compute_thrust_value = [](int thruster_index, const eer_messages::msg::PilotInput* pilot_input, waterwitch_pkg::msg::WaterwitchThrustValues& thrust_msg) {
+      thrust_msg.values[thruster_index] = (pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
+                                           pilot_input->sway * THRUSTER_CONFIG_MATRIX[thruster_index][SWAY] +
+                                           pilot_input->heave * THRUSTER_CONFIG_MATRIX[thruster_index][HEAVE] +
+                                           pilot_input->pitch * THRUSTER_CONFIG_MATRIX[thruster_index][PITCH] +
+                                           pilot_input->roll * THRUSTER_CONFIG_MATRIX[thruster_index][ROLL] +
+                                           pilot_input->yaw * THRUSTER_CONFIG_MATRIX[thruster_index][YAW]) / 100;
+    };
+
+    waterwitch_pkg::msg::WaterwitchThrustValues thrust_msg;
+
+    std::vector<std::thread> threads;
+
+    for (int thruster_index = 0; thruster_index < 6; thruster_index++) {
+      // Compute the thrust value of each thruster in a thread to improve performance
+      threads.emplace_back(compute_thrust_value, thruster_index, pilot_input.get(), std::ref(thrust_msg));
+    }
+
+    for (auto& thread : threads) {
+      thread.join();
+    }
+
+    thrust_publisher->publish(thrust_msg);
   }
 };
 
