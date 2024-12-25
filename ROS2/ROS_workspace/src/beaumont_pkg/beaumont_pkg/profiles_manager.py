@@ -1,24 +1,28 @@
-from eer_messages.srv import Config
+from eer_messages.srv import Config, Cameras
 import os
 
 import rclpy
 from rclpy.node import Node
 import json
 
+def delProfile(profileDel, file_path):
 
-def delProfile(profileDel, file):
-        try: 
-            with open(file, "r") as f:
-                profiles  = json.loads(f.read()) # reads profiles from file
-                
-                for i, profile in enumerate(profiles):
-                    if profile["profileName"] == profileDel: # delete entry of the profile 
-                        profiles.pop(i) 
-                            
-                        return "Profile Deleted", profiles
+    try:
+        with open(file_path, "r") as f:
+            profiles  = json.loads(f.read())
         
-        except FileNotFoundError:
-            return "Profile Not Found", []
+        # Find if the profile already exists and delete it
+        previous_profiles = profiles
+
+        profiles = [mapping for mapping in profiles if mapping["profileName"] != profileDel]
+
+        if previous_profiles == profiles:
+            return profiles, "Profile not found"
+        else:
+            return profiles, "Profile deleted"
+                
+    except FileNotFoundError:
+        return [], "Profile not found"
 
 
 class ProfilesManager(Node):
@@ -30,74 +34,61 @@ class ProfilesManager(Node):
         #The service names ("profile_config" and "profiles_list") MUST match those defined in the GUI
         self.srv1 = self.create_service(Config, "profile_config", self.profile_config_callback)
         self.srv2 = self.create_service(Config, "profiles_list", self.profiles_list_callback)
-        self.srv3 = self.create_service(Config, "camera_urls", self.camera_urls_callback)
+        self.srv3 = self.create_service(Cameras, "camera_urls", self.camera_urls_callback)
+
+    
 
     
 
     def profile_config_callback(self, request, response):
-        if request.state == 0: #We are looking to load mappings into database from GUI
+        ''' 
+        The strucuture of how the data is stored is:
+        profileName:
 
-
-            ''' 
-            The strucuture of how the data is stored is:
-            profileName: 
-                profile
-                
             controller 1:
-                controllerName
+                controllerStatus
             0: 
                 buttons
-                    number : actions
+                    actions
                 axes
-                    number : actions
-                deadzones
-                    number : value
+                    actions
+                    deadzones
 
-            controller 2:
-                controllerName
+            controller 2: (optional)
+                controllerStatus
             1: 
                 buttons
-                    number : actions
+                    actions
                 axes
-                    number : actions
-                deadzones
-                    number : value
+                    actions
+                    deadzones
 
-            these are stored as part of a JSON file 
-            '''
+        these are stored as part of a JSON file 
+        '''
+        
+        # Create config folder if not done previously
+        current_directory = os.path.dirname(os.path.abspath(__file__)) 
+        file_path = f"{current_directory}/config/profiles.json"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-            #######################
-            # Here's Exactly what you should expect to recieve:
-            '''
-            {"profileName": "Zaid", "controller1": "Xbox One Game Controller (STANDARD GAMEPAD)", "controller2": "null", "associated_mappings": {"0": {"buttons": {"0": "None", "1": "None", "2": "None", "3": "None", "4": "heave_up", "5": "open_claw", "6": "heave_down", "7": "close_claw", "8": "None", "9": "None", "10": "None", "11": "None", "12": "None", "13": "None", "14": "None", "15": "None", "16": "None"}, "axes": {"0": "sway", "1": "surge", "2": "yaw", "3": "pitch"}, "deadzones": {"0": "0", "1": "0", "2": "0", "3": "0"}}, "1": {}}}
-            '''
-            #######################
+        if request.state == 0: #We are looking to load mappings into database from GUI
 
             newMappings  = json.loads(request.data)
 
-            current_directory = os.path.dirname(os.path.abspath(__file__)) # create directory if not done previously
-            FILE_PATH = f"{current_directory}/config/profiles.json"
-            os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True) 
-             
-
-            result, newProfiles = delProfile(newMappings["profileName"], FILE_PATH) # deletes previous profile with that name
+            newProfiles, result = delProfile(newMappings["profileName"], file_path) # deletes previous profile with that name
             newProfiles.append(newMappings)
 
-            with open(FILE_PATH, "w") as f:
+            with open(file_path, "w") as f:
                 f.write(json.dumps(newProfiles)) # overwrites file with new profile list
 
-                response.result = "success"
+            response.result = "success"
             
             return response                
 
 
         elif request.state == 1: #We are looking to load mapping into GUI from database
-            current_directory = os.path.dirname(os.path.abspath(__file__))
-            FILE_PATH = f"{current_directory}/config/profiles.json"
-            os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
-        
             try:
-                with open(FILE_PATH, "r") as f:
+                with open(file_path, "r") as f:
                     profiles  = json.loads(f.read())
 
                     for profile in profiles:
@@ -110,22 +101,23 @@ class ProfilesManager(Node):
                 
             defaultmap = {"buttons": {}, "axes": {}, "deadzones": {}}
             response.result = json.dumps({0: defaultmap, 1: defaultmap}) 
-            
+
             return response
 
 
     def profiles_list_callback(self, request, response):
 
+        # Create config folder if not done previously
         current_directory = os.path.dirname(os.path.abspath(__file__))
-        FILE_PATH = f"{current_directory}/config/profiles.json"
-        os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
+        file_path = f"{current_directory}/config/profiles.json"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         
 
         if request.state == 0: # The requested profile should be deleted
 
-            response.result, newProfiles = Delprofile(request.data, FILE_PATH)
+            newProfiles, response.result = Delprofile(request.data, file_path)
 
-            with open(FILE_PATH, "w") as f:
+            with open(file_path, "w") as f:
                 f.write(json.dumps(newProfiles)) #overwrites previous profiles with new list
             
             return response
@@ -136,11 +128,11 @@ class ProfilesManager(Node):
             profileNames = []
 
             try:
-                with open(FILE_PATH, "r") as f:
+                with open(file_path, "r") as f:
                     profiles = json.loads(f.read())
 
-                    for i, profile in enumerate(profiles): # write in the format expected by the client
-                        profileNames.append({"id": i, 
+                    for index, profile in enumerate(profiles): # write in the format expected by the client
+                        profileNames.append({"id": index, 
                                             "name": profile["profileName"], 
                                             "controller1" : profile["controller1"], 
                                             "controller2" : profile["controller2"]})
@@ -157,8 +149,13 @@ class ProfilesManager(Node):
 
         if request.state == 0:  # We are looking to load camera URLs into database from GUI
 
-            urls = json.loads(request.data)  # Turn the received string into a List
+            # If camera urls are sent in json format, we need to turn them into a list
+            if request.camera_urls == []:
+                urls = json.loads(request.camera_urls_json)  # Turn the received string into a List
+            else:
+                urls = request.camera_urls
 
+            # Ensure that there are 4 elements (4 cameras on Beaumont)
             while True:
                 if len(urls) < 4:
                     urls.append("http://")
@@ -171,7 +168,7 @@ class ProfilesManager(Node):
             with open(f"{current_directory}/config/camera_urls.json", "w") as f:
                 f.write(json.dumps(urls))
 
-            response.result = "Success"
+            response.success = True
 
             return response
 
@@ -187,7 +184,8 @@ class ProfilesManager(Node):
             except FileNotFoundError:
                 urls = ["http://", "http://", "http://", "http://"]
 
-            response.result = json.dumps(urls)
+            response.camera_urls = urls
+            response.camera_urls_json = json.dumps(urls)
 
             return response
 
