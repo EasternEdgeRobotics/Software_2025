@@ -42,7 +42,7 @@ class ProfilesManager(Node):
 
     def profile_config_callback(self, request, response):
         ''' 
-        The strucuture of how the data is stored is:
+        The structure of how the data is stored is:
         profileName:
 
             controller 1:
