@@ -17,3 +17,7 @@ const std::string THRUSTER_NAMES[6] = {
     "star_top",
     "port_top"
 };
+
+const float THRUSTER_ACCELERATION = 0.1f;
+
+const int SOFTWARE_TO_BOARD_COMMUNICATION_RATE = 100;
