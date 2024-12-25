@@ -29,12 +29,14 @@ private:
 
     // Lambda function to compute thrust value for each thruster
     auto compute_thrust_value = [](int thruster_index, const eer_messages::msg::PilotInput* pilot_input, waterwitch_pkg::msg::WaterwitchThrustValues& thrust_msg) {
-      thrust_msg.values[thruster_index] = (pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
-                                           pilot_input->sway * THRUSTER_CONFIG_MATRIX[thruster_index][SWAY] +
-                                           pilot_input->heave * THRUSTER_CONFIG_MATRIX[thruster_index][HEAVE] +
-                                           pilot_input->pitch * THRUSTER_CONFIG_MATRIX[thruster_index][PITCH] +
-                                           pilot_input->roll * THRUSTER_CONFIG_MATRIX[thruster_index][ROLL] +
-                                           pilot_input->yaw * THRUSTER_CONFIG_MATRIX[thruster_index][YAW]) / 100;
+      // Each thrust value should be clamped between -1:1
+      thrust_msg.values[thruster_index] = std::max(-1.0f, std::min((pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
+                                                                    pilot_input->sway * THRUSTER_CONFIG_MATRIX[thruster_index][SWAY] +
+                                                                    pilot_input->heave * THRUSTER_CONFIG_MATRIX[thruster_index][HEAVE] +
+                                                                    pilot_input->pitch * THRUSTER_CONFIG_MATRIX[thruster_index][PITCH] +
+                                                                    pilot_input->roll * THRUSTER_CONFIG_MATRIX[thruster_index][ROLL] +
+                                                                    pilot_input->yaw * THRUSTER_CONFIG_MATRIX[thruster_index][YAW]) / 100.0f,
+                                                                    1.0f));
     };
 
     waterwitch_pkg::msg::WaterwitchThrustValues thrust_msg;
@@ -43,6 +45,7 @@ private:
 
     for (int thruster_index = 0; thruster_index < 6; thruster_index++) {
       // Compute the thrust value of each thruster in a thread to improve performance
+      // Each thread will access a different thruster_index in thrust_msg
       threads.emplace_back(compute_thrust_value, thruster_index, pilot_input.get(), std::ref(thrust_msg));
     }
 
