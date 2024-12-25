@@ -147,6 +147,11 @@ class ProfilesManager(Node):
 
     def camera_urls_callback(self, request, response):
 
+        # Create config folder if not done previously
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        file_path = f"{current_directory}/config/camera_urls.json"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
         if request.state == 0:  # We are looking to load camera URLs into database from GUI
 
             # If camera urls are sent in json format, we need to turn them into a list
@@ -162,10 +167,7 @@ class ProfilesManager(Node):
                 else:
                     break
 
-            current_directory = os.path.dirname(os.path.abspath(__file__))
-            os.makedirs(os.path.dirname(f"{current_directory}/config/profiles.json"), exist_ok=True)
-
-            with open(f"{current_directory}/config/camera_urls.json", "w") as f:
+            with open(file_path, "w") as f:
                 f.write(json.dumps(urls))
 
             response.success = True
@@ -176,10 +178,8 @@ class ProfilesManager(Node):
 
             outgoing_camera_urls = []
 
-            current_directory = os.path.dirname(os.path.abspath(__file__))
-
             try:
-                with open(f"{current_directory}/config/camera_urls.json", "r") as f:
+                with open(file_path, "r") as f:
                     urls = json.loads(f.read())
             except FileNotFoundError:
                 urls = ["http://", "http://", "http://", "http://"]
