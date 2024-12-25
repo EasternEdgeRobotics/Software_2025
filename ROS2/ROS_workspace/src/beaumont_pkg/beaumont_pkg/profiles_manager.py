@@ -35,14 +35,10 @@ class ProfilesManager(Node):
     
 
     def profile_config_callback(self, request, response):
-        if request.state == 0: #We are looking to load mappings into database from GUI
+        ''' 
+        The structure of how the data is stored is:
+        profileName:
 
-
-            ''' 
-            The strucuture of how the data is stored is:
-            profileName: 
-                profile
-                
             controller 1:
                 controllerName
             0: 
