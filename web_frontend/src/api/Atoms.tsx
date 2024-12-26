@@ -73,5 +73,8 @@ export const RequestingProfilesList = atom<number>(2); // Used for deleting a ce
 export const RequestingCameraURLs = atom<number>(2); // Used for requesting/saving camera URLs from/to the database.
 // See the ROS.tsx script for how the above three Atom states are used
 
+// Shows up only on the BotTab
 export const DiagnosticsData1 = atom<string>("No diagnostics data available");
+
+// Shows up both on the BotTab and the CameraTab
 export const DiagnosticsData2 = atom<string>("No diagnostics data available"); 
