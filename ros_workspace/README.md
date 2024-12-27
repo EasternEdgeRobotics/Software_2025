@@ -1,6 +1,6 @@
 # ROS Workspace
 
-To setup the workspace, you can either use compile directly on your computer or quickly set up on [Docker](https://www.docker.com/).
+This README.md details how to setup the ROS Worksapce.
 
 ## Compiling directly
 
