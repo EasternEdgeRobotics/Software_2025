@@ -39,117 +39,119 @@ class ProfilesManager(Node):
 
     
 
+    
+
     def profile_config_callback(self, request, response):
+        ''' 
+        The structure of how the data is stored is:
+        profileName:
+
+            controller 1:
+                controllerStatus
+            0: 
+                buttons
+                    actions
+                axes
+                    actions
+                    deadzones
+
+            controller 2: (optional)
+                controllerStatus
+            1: 
+                buttons
+                    actions
+                axes
+                    actions
+                    deadzones
+
+        these are stored as part of a JSON file 
+        '''
+        
+        # Create config folder if not done previously
+        current_directory = os.path.dirname(os.path.abspath(__file__)) 
+        file_path = f"{current_directory}/config/profiles.json"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
         if request.state == 0: #We are looking to load mappings into database from GUI
 
-            ''' 
-            The strucuture of how the data is stored is:
-            profileName:
+            newMappings  = json.loads(request.data)
 
-                controller 1:
-                    controllerStatus
-                0: 
-                    buttons
-                        actions
-                    axes
-                        actions
-                        deadzones
+            newProfiles, result = delProfile(newMappings["profileName"], file_path) # deletes previous profile with that name
+            newProfiles.append(newMappings)
 
-                controller 2: (optional)
-                    controllerStatus
-                1: 
-                    buttons
-                        actions
-                    axes
-                        actions
-                        deadzones
+            with open(file_path, "w") as f:
+                f.write(json.dumps(newProfiles)) # overwrites file with new profile list
 
-            these are stored as part of a JSON file 
-            '''
-
-            new_mapping  = json.loads(request.data)
-            Pname = new_mapping["profileName"]
-
-            profiles = []
-
-            current_directory = os.path.dirname(os.path.abspath(__file__))
-
-            # Make a config folder if it does not exist
-            os.makedirs(os.path.dirname(f"{current_directory}/config/profiles.json"), exist_ok=True)
-
-            profiles, _ = delProfile(Pname, f"{current_directory}/config/profiles.json")
-
-            profiles.append(new_mapping)
-
-            with open(f"{current_directory}/config/profiles.json", "w") as f:
-                f.write(json.dumps(profiles)) # writes new profile in JSON format
-            
             response.result = "success"
             
-            return response          
+            return response                
 
 
         elif request.state == 1: #We are looking to load mapping into GUI from database
-
-            profile_exists = False
-
             try:
-                current_directory = os.path.dirname(os.path.abspath(__file__))
-                os.makedirs(os.path.dirname(f"{current_directory}/config/profiles.json"), exist_ok=True)    
-
-                with open(f"{current_directory}/config/profiles.json", "r") as f:
+                with open(file_path, "r") as f:
                     profiles  = json.loads(f.read())
-                    
-                    for mapping in profiles:
-                        if mapping["profileName"] == request.data:
-                            profile_exists = True
-                            response.result = json.dumps(mapping["associated_mappings"])
-            
+
+                    for profile in profiles:
+                        if profile["profileName"] == request.data:
+                            response.result = json.dumps(profile["associated_mappings"]) 
+                            return response # only the associated mappings for that profile are returned
+
             except FileNotFoundError:
                 pass
+                
+            defaultmap = {"buttons": {}, "axes": {}, "deadzones": {}}
+            response.result = json.dumps({0: defaultmap, 1: defaultmap}) 
 
-            if not profile_exists:
-                defaultmap = {"axes": {}, "buttons": {}, "deadzones": {}}
-                response.result = json.dumps({0: defaultmap, 1: defaultmap}) #Turn the JSON object into a string
-            
             return response
 
 
     def profiles_list_callback(self, request, response):
 
+        # Create config folder if not done previously
         current_directory = os.path.dirname(os.path.abspath(__file__))
-
-        # Make a config folder if it does not exist
-        os.makedirs(os.path.dirname(f"{current_directory}/config/profiles.json"), exist_ok=True)
+        file_path = f"{current_directory}/config/profiles.json"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        
 
         if request.state == 0: # The requested profile should be deleted
 
-            profiles, response.result = delProfile(request.data, f"{current_directory}/config/profiles.json")
+            newProfiles, response.result = Delprofile(request.data, file_path)
 
-            with open(f"{current_directory}/config/profiles.json", "w") as f:
-                f.write(json.dumps(profiles)) 
-
-            return response
-
-        elif request.state == 1: #We only want to read the profiles
-
-            profilesNames = []
-
-            try:
-                with open(f"{current_directory}/config/profiles.json", "r") as f:
-                    profiles = json.loads(f.read())
-                    for index, mapping in enumerate(profiles):
-                        profilesNames.append({"id": index, 
-                                            "name":mapping["profileName"],
-                                            "controller1": mapping["controller1"],
-                                            "controller2": mapping["controller2"]})
-            except FileNotFoundError:
-                pass
-            response.result = json.dumps(profilesNames)
+            with open(file_path, "w") as f:
+                f.write(json.dumps(newProfiles)) #overwrites previous profiles with new list
             
             return response
 
+
+        elif request.state == 1: #We only want to read the profiles
+
+            profileNames = []
+
+            try:
+                with open(file_path, "r") as f:
+                    profiles = json.loads(f.read())
+
+                    for index, profile in enumerate(profiles): # write in the format expected by the client
+                        profileNames.append({"id": index, 
+                                            "name": profile["profileName"], 
+                                            "controller1" : profile["controller1"], 
+                                            "controller2" : profile["controller2"]})
+
+            except FileNotFoundError:
+                pass
+            
+            response.result = json.dumps(profileNames)
+
+            return response
+            
+
     def camera_urls_callback(self, request, response):
+
+        # Create config folder if not done previously
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        file_path = f"{current_directory}/config/camera_urls.json"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         if request.state == 0:  # We are looking to load camera URLs into database from GUI
 
@@ -166,13 +168,7 @@ class ProfilesManager(Node):
                 else:
                     break
 
-            os.makedirs("config", exist_ok=True)
-            current_directory = os.path.dirname(os.path.abspath(__file__))
-
-            if not os.path.exists(f"{current_directory}/config"):
-                os.makedirs(f"{current_directory}/config")
-
-            with open(f"{current_directory}/config/camera_urls.json", "w") as f:
+            with open(file_path, "w") as f:
                 f.write(json.dumps(urls))
 
             response.success = True
@@ -183,10 +179,8 @@ class ProfilesManager(Node):
 
             outgoing_camera_urls = []
 
-            current_directory = os.path.dirname(os.path.abspath(__file__))
-
             try:
-                with open(f"{current_directory}/config/camera_urls.json", "r") as f:
+                with open(file_path, "r") as f:
                     urls = json.loads(f.read())
             except FileNotFoundError:
                 urls = ["http://", "http://", "http://", "http://"]
