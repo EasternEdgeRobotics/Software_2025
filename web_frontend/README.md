@@ -1,16 +1,12 @@
-# React GUI
-## Install
-### You'll need a ROSBridge server running on port 9090 for this to work!
+# Web Frontend
+
 Install dependencies
 ```
 npm install
 ```
-Set IP in .env to the device running the ROSBridge server  
+Run the code
+```
+npm start
+```
 
-Run it
-```
-npm run start
-```
-Win
-## TODO
- - Send off cameras to whatever for the AI task (when we get AI code done)
+To drive an ROV, you need the ROV's backend running ([See ros_workspace](../ros_workspace/)).
