@@ -14,12 +14,16 @@ This code repository contains code for maintaining EER's two current ROVs, Beaum
 ## Repository Structure
 
 ### ros_workspace
-This folder contains ROS2 packages:
-1. **beaumont_backend**: Backend code for interfacing with the ROV named Beaumont.
-2. **waterwitch_backend**: Backend code for interfacing with the ROV named Waterwitch.
-3. **common_backend**: Common backend ROS nodes for all ROVs.
-4. **eer_interfaces**: Custom ROS2 interfaces used by all packages.
-5. **cpp_frontend**: A frontend built using C++ that can be operated just from the command-line or with a GUI interface.
+This project uses ROS2 Jazzy.
+
+#### ROS2 Packages
+| Package Name         | Description                                                                 |
+|----------------------|-----------------------------------------------------------------------------|
+| **beaumont_backend** | Backend code for interfacing with the ROV named Beaumont.                   |
+| **waterwitch_backend** | Backend code for interfacing with the ROV named Waterwitch.               |
+| **common_backend**   | Common backend ROS nodes for all ROVs.                                      |
+| **eer_interfaces**   | Custom ROS2 interfaces used by all packages.                                |
+| **cpp_frontend**     | A frontend built using C++ that can be operated just from the command-line or with a GUI interface. |
 
 More details [here](./ros_workspace/)
 
