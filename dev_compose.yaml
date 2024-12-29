@@ -1,18 +1,22 @@
 # This docker compose file is intended for development. 
 services:
-  backend:
+  eer_ros_packages:
     build: 
-      context: ./ROS2
-      dockerfile: DevDockerfile
+      context: ./ros_workspace
+      dockerfile: Dockerfile
+      args:
+      - ROV_NAME=${ROV_NAME:-waterwitch} # Specify the name of the ROV 
+      - DEV_MODE=${DEV_MODE:-true} # Set DEV_MODE to 1 (simulated ROV)
     tty: true
-    container_name: backend
+    container_name: eer_ros_packages
     restart: always
     network_mode: host # Run in host mode to allow ros2 communication with host network
     ipc: host # Required for ros2 communication with host network
     volumes:
-      - ./ROS2/ROS_workspace/src/beaumont_pkg/beaumont_pkg/config:/app/src/beaumont_pkg/beaumont_pkg/config # Mount the config directory so that it persists between container restarts
+      - ./ros_workspace/src/common_backend/common_backend/config:/app/src/common_backend/common_backend/config # Mount the config directory so that it persists between container restarts
   web_frontend: 
-    build: ./WebGUI
+    build: ./web_frontend
+    container_name: web_frontend
     restart: always
     tty: true
     ports:
