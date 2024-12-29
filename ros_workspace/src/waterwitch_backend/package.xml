@@ -3,7 +3,7 @@
 <package format="3">
   <name>waterwitch_backend</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Backend code for interfacing with the ROV named Waterwitch.</description>
   <maintainer email="easternedgerobotics@gmail.com">Eastern Edge Robotics</maintainer>
   <license>MIT License</license>
 
