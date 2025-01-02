@@ -209,7 +209,7 @@ int main() {
 
             ImGui::SliderInt("Surge", &power.surge, 0, 100);
             ImGui::SliderInt("Sway", &power.sway, 0, 100);
-            ImGui::SliderInt("Turn", &power.turn, 0, 100);
+            ImGui::SliderInt("Turn", &power.yaw, 0, 100);
             ImGui::SliderInt("Heave", &power.heave, 0, 100);
 
             ImGui::SeparatorText("Keybinds");
@@ -220,19 +220,19 @@ int main() {
             if (ImGui::IsKeyPressed(ImGuiKey_1)) {
                 power.surge = 0;
                 power.sway = 0;
-                power.turn = 0;
+                power.yaw = 0;
                 power.heave = 0;
             }
             if (ImGui::IsKeyPressed(ImGuiKey_2)) {
                 power.surge = 50;
                 power.sway = 50;
-                power.turn = 50;
+                power.yaw = 50;
                 power.heave = 50;
             }
             if (ImGui::IsKeyPressed(ImGuiKey_3)) {
                 power.surge = 0;
                 power.sway = 0;
-                power.turn = 0;
+                power.yaw = 0;
                 power.heave = 100;
             }
 
