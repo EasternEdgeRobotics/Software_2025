@@ -1,27 +1,15 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.5)
 project(common_backend)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
-# Find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_python REQUIRED)
-find_package(rclpy REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(eer_interfaces REQUIRED)
 
-# Install Python modules
-ament_python_install_package(${PROJECT_NAME})
+add_executable(config_manager src/ConfigManager.cpp)
+ament_target_dependencies(config_manager rclcpp eer_interfaces)
 
-# Install Python executables 
-install(PROGRAMS
-  common_backend/profiles_manager.py
-  DESTINATION lib/${PROJECT_NAME}
-)
+install(TARGETS
+  config_manager 
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

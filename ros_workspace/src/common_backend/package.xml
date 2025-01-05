@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
-<package format="3">  
+<package format="3">
   <name>common_backend</name>
   <version>0.0.0</version>
   <description>Common backend ROS nodes for all EER ROVs.</description>
@@ -8,11 +8,10 @@
   <license>MIT License</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <buildtool_depend>ament_cmake_python</buildtool_depend>
 
-  <depend>rclpy</depend>
-  <exec_depend>std_msgs</exec_depend>
-  <exec_depend>eer_interfaces</exec_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>eer_interfaces</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
