@@ -10,11 +10,13 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-	"srv/Config.srv"
+	"srv/ListConfig.srv"
+	"srv/GetConfig.srv"
 	"srv/Cameras.srv"
 	"msg/ThrusterMultipliers.msg"
 	"msg/PilotInput.msg"
 	"msg/WaterwitchThrustValues.msg"
+	"msg/SaveConfig.msg"
 	"action/BeaumontAutoMode.action"
 	"srv/HSVColours.srv"
 )

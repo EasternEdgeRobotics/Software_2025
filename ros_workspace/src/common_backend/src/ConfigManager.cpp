@@ -23,7 +23,16 @@ class ListConfigService : public rclcpp::Node {
                 string name = configFile.path().filename().string();
 
                 if (name.size() > 5 && name.substr(name.size() - 5) == ".json") {
-                    response->configs.push_back(name.substr(0, name.size() - 5));
+                    response->names.push_back(name.substr(0, name.size() - 5));
+                }
+
+                string path = configFile.path().string();
+                ifstream file(path);
+                if (file.is_open()) {
+                    stringstream buffer;
+                    buffer << file.rdbuf();
+                    string content = buffer.str();
+                    response->configs.push_back(content);
                 }
             }
         }
