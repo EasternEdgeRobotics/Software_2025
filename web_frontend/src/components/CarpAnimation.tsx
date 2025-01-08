@@ -1,8 +1,5 @@
 import React, { useRef, useEffect } from "react";
 
-
- 
-
 const regions: Record<string, number[][]> = {
   "Region 1": [
     [90, 310],
@@ -41,19 +38,12 @@ type DataType = {
   Regions: Record<string, boolean[]>;
 };
 
-const CarpAnimation: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+type CarpAnimationProps = {
+  graphData: DataType;
+};
 
-  const data: DataType = {
-    Year: [2016, 2017, 2018, 2019, 2020],
-    Regions: {
-      "Region 1": [true, true, true, true, true],
-      "Region 2": [false, true, true, true, true],
-      "Region 3": [false, false, true, true, true],
-      "Region 4": [false, false, false, true, true],
-      "Region 5": [false, false, false, false, true],
-    },
-  };
+const CarpAnimation: React.FC<CarpAnimationProps> = ({ graphData }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const drawRegion = (
     ctx: CanvasRenderingContext2D,
@@ -77,37 +67,38 @@ const CarpAnimation: React.FC = () => {
     if (!canvas || !ctx) return;
 
     const background = new Image();
-    background.src = "/image.png";
+    background.src = "/River.png"; 
+
     let frame = 0;
 
     const animate = () => {
-      if (frame >= data.Year.length) return;
+      if (frame >= graphData.Year.length) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Displaying the background image for the illinois river
+      // Drawing background image for illinois river
       ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
       // Drawing regions
-      Object.keys(data.Regions).forEach((region) => {
-        const isPresent = data.Regions[region][frame];
+      Object.keys(graphData.Regions).forEach((region) => {
+        const isPresent = graphData.Regions[region][frame];
         const color = isPresent
           ? "rgba(255, 0, 0, 0.5)"
           : "rgba(255, 255, 255, 0)";
         drawRegion(ctx, regions[region], color);
       });
 
-      // Add year label
+      // year label
       ctx.font = "20px Arial";
       ctx.fillStyle = "black";
-      ctx.fillText(`Year: ${data.Year[frame]}`, 20, 30);
+      ctx.fillText(`Year: ${graphData.Year[frame]}`, 20, 30);
 
       frame++;
       setTimeout(animate, 1000); // 1 second per frame
     };
 
     background.onload = animate;
-  }, [data]);
+  }, [graphData]);
 
   return (
     <div>
@@ -118,5 +109,3 @@ const CarpAnimation: React.FC = () => {
 };
 
 export default CarpAnimation;
-
-
