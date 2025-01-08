@@ -9,6 +9,10 @@ import { CameraURLs } from "../api/Atoms";
 import SafetyDisclaimer from "./SafetyDisclaimer";
 import { InitROS } from "../api/ROS";
 import { BotTab } from "./BotTab";
+import CarpTab from "./CarpTab";
+
+
+
 
 // Navbar, calls to render each window, and a popout button
 
@@ -18,6 +22,7 @@ export function RenderTab(props: { tab: number }) {
         case 0: return (<CameraTab />);
         case 1: return (<BotTab />);
         case 2: return (<SettingsTab />);
+        case 3: return (<CarpTab />);
         default: return (null);
     }
 }
@@ -40,6 +45,7 @@ export default function App() {
                 <Tab label={<Camera />} />
                 <Tab label={<Bot />} />
                 <Tab label={<Wrench />} />
+                <Tab label ={<Bot />} />
             </Tabs>
             <br />
             {/* Popout window button, only for camera and bot tasks*/}
