@@ -1,5 +1,5 @@
 import { Box, Button, Tab, Tabs } from "@mui/material";
-import { ArrowUpRightSquare, Bot, Camera, Wrench } from "lucide-react";
+import { ArrowUpRightSquare, Bot, Camera, FishIcon, Wrench } from "lucide-react";
 import { useState } from "react";
 import CameraTab from "./CameraTab";
 import SettingsTab from "./SettingsTab";
@@ -45,7 +45,7 @@ export default function App() {
                 <Tab label={<Camera />} />
                 <Tab label={<Bot />} />
                 <Tab label={<Wrench />} />
-                <Tab label ={<Bot />} />
+                <Tab label ={<FishIcon />} />
             </Tabs>
             <br />
             {/* Popout window button, only for camera and bot tasks*/}
