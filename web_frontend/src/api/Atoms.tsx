@@ -40,7 +40,7 @@ export const PilotActions = atom<string[]>([ // Possible pilot inputs
   "turn_stepper_ccw",
   "read_outside_temperature_probe",
   "enter_auto_mode"
-])
+]);
 
 export const KeyboardInputMap = atom<(string | number)[][]>([ // Possible pilot inputs
   ["w", "surge", 100],
@@ -63,14 +63,13 @@ export const KeyboardInputMap = atom<(string | number)[][]>([ // Possible pilot 
   ["n", "turn_stepper_ccw", 1],
   ["m", "read_outside_temperature_probe", 1],
   [",", "enter_auto_mode", 1],
-])
+]);
 
 export const CurrentProfile = atom<string>("Not Assigned"); // Current pilot profile
-export const ProfilesList = atom<[{ id: number, name: string, controller1: string, controller2: string }]>([{ id: 0, name: "default", controller1: "null", controller2: "null" }]); // List of known pilot profiles
+export const ProfilesList = atom<{ id: number, name: string, controller1: string, controller2: string }[]>([{ id: 0, name: "default", controller1: "null", controller2: "null" }]); // List of known pilot profiles
 
-export const RequestingConfig = atom<{ state: number, profileName: string, controller1: string, controller2: string }>({ state: 2, profileName: "default", controller1: "null", controller2: "null" }); // Used for requesting mappings from OR loading mappings into the Database
+export const RequestingConfig = atom<{ state: number, name: string, controller1: string, controller2: string }>({ state: 2, name: "default", controller1: "null", controller2: "null" }); // Used for requesting mappings from OR loading mappings into the Database
 export const RequestingProfilesList = atom<number>(2); // Used for deleting a certain profile in the database or requesting a list of profiles.
-export const RequestingCameraURLs = atom<number>(2); // Used for requesting/saving camera URLs from/to the database.
 // See the ROS.tsx script for how the above three Atom states are used
 
 // Shows up only on the BotTab

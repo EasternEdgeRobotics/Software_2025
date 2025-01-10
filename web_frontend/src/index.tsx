@@ -23,7 +23,7 @@ root.render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />} />
-          <Route path="/0" element={<Box sx={{display: 'flex', alignItems: 'center', height: '100vh'}}><CameraTab /></Box>} />
+          <Route path="/0" element={<Box sx={{display: "flex", alignItems: "center", height: "100vh"}}><CameraTab /></Box>} />
           <Route path="/1" element={<Box><br/><BotTab /></Box>} />
           <Route path="/mate_2024_science" element={<Mate2024ScienceController />} />
           <Route path="/mate_2024_tablet" element={<Mate2024TabletApp />} />

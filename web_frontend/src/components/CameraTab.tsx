@@ -6,7 +6,6 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableContainer,
     TableRow
 } from "@mui/material";
 import { useAtom } from "jotai";
@@ -218,7 +217,7 @@ export default function CameraTab() {
             );
             window.addEventListener(
                 "keyup",
-                function (e) {
+                function () {
                     pressed_key = "";
                 },
                 false
@@ -234,7 +233,7 @@ export default function CameraTab() {
             );
             window.removeEventListener(
                 "keyup",
-                function (e) {
+                function () {
                     pressed_key = "";
                 },
                 false

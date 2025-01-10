@@ -1,7 +1,7 @@
-import { Box, Button, Checkbox, FormGroup, FormControlLabel, Grid, Typography, AppBar, Stack } from "@mui/material";
+import { Box, Button, Checkbox, FormGroup, FormControlLabel, Typography, AppBar, Stack } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { atom, useAtom } from "jotai";
-import { grey, green, yellow, red, blue } from "@mui/material/colors";
+import { grey, green, yellow, red } from "@mui/material/colors";
 import { Task } from "../types/Task";
 import taskJSON from "./tasks.json";
 import { Row } from "react-bootstrap";
@@ -78,7 +78,7 @@ export default function Mate2024TabletApp() {
 
     task_publisher.subscribe((message) => {
       const data: { id: string; sender: string; status: boolean } = JSON.parse(
-        (message as any).data
+        (message as { data: string }).data
       );
       console.log("Received message UPDATE ", data);
       // if (data.sender === "tablet") return;
@@ -224,7 +224,7 @@ function RenderTasks(
             label={
               <div
                 style={{
-                  fontSize: `max(calc(1.6vw), 15px)`,
+                  fontSize: "max(calc(1.6vw), 15px)",
                   fontWeight: "lighter",
                 }}
               >
@@ -241,12 +241,12 @@ function RenderTasks(
               wordBreak: "break-word",
               alignItems: "flex-start",
               fontWeight: "bold",
-              fontSize: `max(calc(1.8vw), 17px)`,
+              fontSize: "max(calc(1.8vw), 17px)",
             }}
           >
             <Checkbox
               sx={{
-                color: grey[900],
+                "color": grey[900],
                 "&.Mui-checked": { color: grey[900] },
               }}
               disabled={true}

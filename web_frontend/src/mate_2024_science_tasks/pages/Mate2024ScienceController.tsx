@@ -27,6 +27,8 @@ import {
   Legend,
   ChartData,
   BarElement,
+  Point,
+  BubbleDataPoint,
 } from "chart.js";
 import ROSLIB, { Ros } from "roslib";
 import React from "react";
@@ -246,7 +248,6 @@ function isValidHSV({ h, s, v }: { h: number; s: number; v: number }) {
 function SideBar({ ros }: { ros: ROSLIB.Ros }) {
   //[To-do] acoount for mobile view
   const [collapsed, setCollapsed] = useState(false);
-  const [RosIP] = useAtom(ROSIP);
   // const [ros,] = React.useState<Ros>(new ROSLIB.Ros({}));
   const [saved_tasks, setTasks] = useState<{ [key: string]: boolean }>({});
   const [, setTaskPublisher] = useAtom(taskPublisherAtom);
@@ -279,7 +280,7 @@ function SideBar({ ros }: { ros: ROSLIB.Ros }) {
 
     task_publisher.subscribe((message) => {
       const data: { id: string; sender: string; status: boolean } = JSON.parse(
-        (message as any).data
+        (message as {data: string }).data
       );
       console.log("Received message UPDATE ", data);
       if (data.sender === "science") return;
@@ -413,7 +414,6 @@ function SideBar({ ros }: { ros: ROSLIB.Ros }) {
 function SideBar2({ ros }: { ros: ROSLIB.Ros }) {
   //[To-do] acoount for mobile view
   const [collapsed, setCollapsed] = useState(true);
-  const [RosIP] = useAtom(ROSIP);
 
   const handleToggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -511,7 +511,7 @@ function SubList(props: {
       if (max)
         return Math.max(
           ...tasks.map(
-            (t) => t.points ?? calculateTotalScore(t.subTasks!, t.single)
+            (t) => t.points ?? calculateTotalScore(t.subTasks || [], t.single)
           )
         );
 
@@ -561,12 +561,12 @@ function SubList(props: {
           {props.name} ({score}/{totalScore})
         </h2>
         <div>
-          {renderTasks(
+          { task_publisher != null && renderTasks(
             props.tasks,
             undefined,
             props.name.split(":")[0].trim().replace(" ", "_"),
             // props.publisher,
-            task_publisher!,
+            task_publisher,
             props.saved,
             props.setTasks
           )}
@@ -712,7 +712,7 @@ function CSVHandler() {
     labels: [],
     datasets: [],
   });
-  const [fileSelected, setFileSelected] = useState(false);
+  const [, setFileSelected] = useState(false);
 
   const options = {
     responsive: true,
@@ -839,7 +839,7 @@ function CSVHandler() {
           // height: chartData.datasets.length > 0 ? undefined : "150px",
         }}
       >
-        <Line data={chartData as any} options={options} />
+        <Line data={chartData as ChartData<"line", (number | Point | null)[], unknown>} options={options} />
       </div>
       <div
         style={{
@@ -852,7 +852,7 @@ function CSVHandler() {
           border: "1px solid rgba(255, 255, 255, 0.18)",
         }}
       >
-        <Bar data={chartData as any} options={options} />
+        <Bar data={chartData as ChartData<"bar", (number | Point | [number, number] | BubbleDataPoint | null)[], unknown>} options={options} />
       </div>
     </div>
   );
@@ -974,7 +974,7 @@ function getTaskFromID(
   let tempTask: Task = mainTasks[indexlist[0]];
   for (let i = 1; i < indexlist.length; i++) {
     const index = indexlist[i];
-    tempTask = tempTask.subTasks![index];
+    if (tempTask.subTasks != null) tempTask = tempTask.subTasks[index];
   }
   return tempTask;
 }

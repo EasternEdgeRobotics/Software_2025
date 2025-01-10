@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { CameraURLs, ROSIP, ProfilesList, CurrentProfile, RequestingProfilesList, RequestingConfig, RequestingCameraURLs } from "../api/Atoms";
+import { CameraURLs, ROSIP, ProfilesList, CurrentProfile, RequestingProfilesList, RequestingConfig } from "../api/Atoms";
 import { Box } from "@mui/system";
 import { Button, Divider, FormControl, Grid, InputLabel, Select, TextField, MenuItem } from "@mui/material";
 import { Trash2 } from "lucide-react";
@@ -18,7 +18,6 @@ export default function SettingsTab() {
 
     const [, setRequestingProfilesList] = useAtom(RequestingProfilesList);
     const [, setRequestingConfig] = useAtom(RequestingConfig);
-    const [, setRequestingCameraURLs] = useAtom(RequestingCameraURLs);
 
     const setCameraIP = (camera: number, ip: string) => {
         setURLs(URLs.map((item, index) => index === camera ? ip : item));
@@ -28,18 +27,17 @@ export default function SettingsTab() {
         setURLs(URLs.map(ip => !ip.startsWith("http://") && !ip.startsWith("https://") ? "http://" + ip : ip));
         const settings: { [id: string]: string[] } = {};
         settings.CameraURLs = URLs.map(ip => !ip.startsWith("http://") && !ip.startsWith("https://") ? "http://" + ip : ip);
-        fetch("/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
         localStorage.setItem("ROS_IP", RosIP);
     };
 
     // The loadProfile function iterates through each profile, checking if that profile is the current profile and which controller is recognized
     const loadProfile = (profileName: string) => {
-        const controllers_recognized = [false, false]
-        let current_profile_index = -1
+        const controllers_recognized = [false, false];
+        let current_profile_index = -1;
 
         for (let i = 0; i < profilesList.length; i++) {
             if (profilesList[i].name == profileName) {
-                current_profile_index = i
+                current_profile_index = i;
             }
         }
 
@@ -58,12 +56,12 @@ export default function SettingsTab() {
             }
             if (profilesList[current_profile_index].controller2 == navigator.getGamepads()[controllerIndex]?.id) {
                 console.log("Controller 2 recognized");
-                controllers_recognized[1] = true
+                controllers_recognized[1] = true;
             }
         }
         // Recieve latest bindings for this profile
         setRequestingConfig({
-            state: 1, profileName: profileName,
+            state: 1, name: profileName,
             controller1: (controllers_recognized[0]) ? "recognized" : "null",
             controller2: (controllers_recognized[1]) ? "recognized" : "null"
         });
@@ -89,12 +87,6 @@ export default function SettingsTab() {
                 </Grid>
                 <Grid item xs={6}>
                     <TextField label="Camera 4 URL" variant="outlined" sx={{ width: "100%" }} value={URLs[3]} onChange={(e) => setCameraIP(3, e.target.value)} />
-                </Grid>
-                <Grid item xs={6}>
-                    <Button variant="contained" sx={{ height: "30px", width: "100%" }} onClick={() => { setRequestingCameraURLs(1); }}>Fetch Camera URLs from Database</Button>
-                </Grid>
-                <Grid item xs={6}>
-                    <Button variant="contained" sx={{ height: "30px", width: "100%" }} onClick={() => { setRequestingCameraURLs(0); }}>Save Current Camera URLs to Database</Button>
                 </Grid>
             </Grid>
             <Box position="absolute" bottom="8px" left="10%" width="80%">
