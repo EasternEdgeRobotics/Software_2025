@@ -40,9 +40,10 @@ type DataType = {
 
 type CarpAnimationProps = {
   graphData: DataType;
+  startAnimation: boolean;
 };
 
-const CarpAnimation: React.FC<CarpAnimationProps> = ({ graphData }) => {
+const CarpAnimation: React.FC<CarpAnimationProps> = ({ startAnimation, graphData }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const drawRegion = (
@@ -67,7 +68,7 @@ const CarpAnimation: React.FC<CarpAnimationProps> = ({ graphData }) => {
     if (!canvas || !ctx) return;
 
     const background = new Image();
-    background.src = "/River.png"; 
+    background.src = "./Images/River.png"; 
 
     let frame = 0;
 
@@ -98,7 +99,7 @@ const CarpAnimation: React.FC<CarpAnimationProps> = ({ graphData }) => {
     };
 
     background.onload = animate;
-  }, [graphData]);
+  }, [startAnimation, graphData]);
 
   return (
     <div>

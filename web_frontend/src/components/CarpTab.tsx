@@ -13,54 +13,22 @@ export default function CarpTab() {
       "Region 5": [false, false, false, false, true],
     },
   });
-
+  const [startAnimation, setStartAnimation] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
-  const handleApplyData = () => {
-    try {
-      const parsedData = JSON.parse(inputValue); // Expecting a JSON string for the data structure
-      setGraphData(parsedData);
-    } catch (error) {
-      alert("Invalid data format. Please enter valid JSON.");
-    }
+  const handleStartAnimation = () => {
+    setStartAnimation((prev) => !prev); 
   };
 
   return (
-    <Box>
-      <Grid container spacing={2}>
         <Grid item xs={12}>
-          <Paper elevation={3}>
-            <CarpAnimation graphData={graphData} />
-          </Paper>
-        </Grid>
-        <Grid item xs={12}>
-          <TextField
-            label="Enter Graph Data (JSON)"
-            fullWidth
-            multiline
-            rows={6}
-            value={inputValue}
-            onChange={handleInputChange}
-            placeholder={`{
-  "Year": [2016, 2017, 2018, 2019, 2020],
-  "Regions": {
-    "Region 1": [true, true, true, true, true],
-    "Region 2": [false, true, true, true, true],
-    ...
-  }
-}`}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Button variant="contained" color="primary" onClick={handleApplyData}>
-            Apply Data
+          <Button variant="contained" color="primary" onClick={handleStartAnimation}>
+            Start Animation
           </Button>
         </Grid>
-      </Grid>
-    </Box>
   );
 }
