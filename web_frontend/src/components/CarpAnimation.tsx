@@ -77,10 +77,10 @@ const CarpAnimation: React.FC<CarpAnimationProps> = ({ startAnimation, graphData
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Drawing background image for illinois river
+      
       ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-      // Drawing regions
+      
       Object.keys(graphData.Regions).forEach((region) => {
         const isPresent = graphData.Regions[region][frame];
         const color = isPresent
