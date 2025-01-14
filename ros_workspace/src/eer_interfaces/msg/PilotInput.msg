@@ -10,6 +10,12 @@ bool heave_up
 bool heave_down
 bool pitch_up
 bool pitch_down
+bool roll_cw
+bool roll_ccw
+bool turn_front_servo_cw
+bool turn_front_servo_ccw
+bool turn_back_servo_cw
+bool turn_back_servo_ccw
 bool brighten_led
 bool dim_led
 bool turn_stepper_cw

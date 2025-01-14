@@ -14,7 +14,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"srv/Cameras.srv"
 	"msg/ThrusterMultipliers.msg"
 	"msg/PilotInput.msg"
-	"msg/WaterwitchThrustValues.msg"
+	"msg/WaterwitchControl.msg"
 	"action/BeaumontAutoMode.action"
 	"srv/HSVColours.srv"
 )

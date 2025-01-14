@@ -17,7 +17,7 @@ export const Mappings = atom<{ [controller: number]: { [type: string]: { [index:
 export const KeyboardMode = atom<boolean>(false);
 
 export const ThrusterMultipliers = atom<number[]>([20, 0, 0, 0, 0, 0]); // Power:0, Surge:1, Sway:2, Heave:3, Pitch:4, Yaw:5
-export const ControllerInput = atom<(number | undefined)[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // Current controller input from pilot
+export const ControllerInput = atom<(number | undefined)[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // Current controller input from pilot
 export const PilotActions = atom<string[]>([ // Possible pilot inputs
   "None",
   "surge",
@@ -34,6 +34,10 @@ export const PilotActions = atom<string[]>([ // Possible pilot inputs
   "pitch_down",
   "roll_ccw",
   "roll_cw",
+  "turn_front_servo_cw",
+  "turn_front_servo_ccw",
+  "turn_back_servo_cw",
+  "turn_back_servo_ccw",
   "brighten_led",
   "dim_led",
   "turn_stepper_cw",
