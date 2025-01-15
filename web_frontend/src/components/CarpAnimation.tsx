@@ -43,7 +43,10 @@ type CarpAnimationProps = {
   startAnimation: boolean;
 };
 
-const CarpAnimation: React.FC<CarpAnimationProps> = ({ startAnimation, graphData }) => {
+const CarpAnimation: React.FC<CarpAnimationProps> = ({
+  graphData,
+  startAnimation,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const drawRegion = (
@@ -62,25 +65,37 @@ const CarpAnimation: React.FC<CarpAnimationProps> = ({ startAnimation, graphData
   };
 
   useEffect(() => {
+    if (!startAnimation) return; // Only proceed when animation is started
+
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
 
-    if (!canvas || !ctx) return;
+    if (!canvas || !ctx) {
+      console.error("Canvas or context is not available.");
+      return;
+    }
 
     const background = new Image();
-    background.src = "./Images/River.png"; 
+    background.src = "/River.png"; // Ensure the image is in the public folder
 
     let frame = 0;
 
     const animate = () => {
-      if (frame >= graphData.Year.length) return;
+      if (frame >= graphData.Year.length) {
+        console.log("Animation complete.");
+        return; // Stop when all frames are rendered
+      }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      
-      ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+      // Draw the background
+      if (background.complete) {
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+      } else {
+        console.warn("Background image not loaded.");
+      }
 
-      
+      // Draw regions for the current year
       Object.keys(graphData.Regions).forEach((region) => {
         const isPresent = graphData.Regions[region][frame];
         const color = isPresent
@@ -89,7 +104,7 @@ const CarpAnimation: React.FC<CarpAnimationProps> = ({ startAnimation, graphData
         drawRegion(ctx, regions[region], color);
       });
 
-      // year label
+      // Add year label
       ctx.font = "20px Arial";
       ctx.fillStyle = "black";
       ctx.fillText(`Year: ${graphData.Year[frame]}`, 20, 30);
@@ -98,15 +113,17 @@ const CarpAnimation: React.FC<CarpAnimationProps> = ({ startAnimation, graphData
       setTimeout(animate, 1000); // 1 second per frame
     };
 
-    background.onload = animate;
+    background.onload = () => {
+      console.log("Background image loaded. Starting animation...");
+      animate();
+    };
+
+    background.onerror = () => {
+      console.error("Failed to load background image.");
+    };
   }, [startAnimation, graphData]);
 
-  return (
-    <div>
-      <h1>Carp Animation</h1>
-      <canvas ref={canvasRef} width={600} height={700} />
-    </div>
-  );
+  return <canvas ref={canvasRef} width={600} height={700} />;
 };
 
 export default CarpAnimation;
