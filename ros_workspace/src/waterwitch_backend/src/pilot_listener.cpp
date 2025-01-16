@@ -44,6 +44,14 @@ private:
   void pilot_listener_callback(eer_interfaces::msg::PilotInput::UniquePtr pilot_input)
   { 
 
+    // Check if thrust is being controlled using a bool input
+    if (pilot_input->heave_up | pilot_input->heave_down) 
+      pilot_input->heave = (pilot_input->heave_up - pilot_input->heave_down) * 100;
+    if (pilot_input->pitch_up | pilot_input->pitch_down) 
+      pilot_input->pitch = (pilot_input->pitch_up - pilot_input->pitch_down) * 100;
+    if (pilot_input->roll_cw | pilot_input->roll_ccw) 
+      pilot_input->roll = (pilot_input->roll_cw - pilot_input->roll_ccw) * 100;
+
     // Lambda function to compute thrust value for each thruster
     auto compute_thrust_value = [this](int thruster_index, const eer_interfaces::msg::PilotInput* pilot_input, std::array<float, 6>& target_thrust_values) 
     {

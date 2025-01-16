@@ -19,9 +19,10 @@ public:
       thruster_publishers[thruster_index] = this->create_publisher<std_msgs::msg::Int32>("/waterwitch/" + THRUSTER_NAMES[thruster_index], 10);
     }
 
-    front_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/front_servo", 10);
-
-    back_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/back_servo", 10);
+    front_camera_forward_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/front_camera_forward_servo", 10);
+    front_camera_downtilt_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/front_camera_downtilt_servo", 10);
+    back_camera_forward_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/back_camera_forward_servo", 10);
+    back_camera_downtilt_servo_publisher = this->create_publisher<std_msgs::msg::Float64>("/back_camera_downtilt_servo", 10);
 
     auto control_values_subscriber_callback =
       [this](eer_interfaces::msg::WaterwitchControl::UniquePtr control_values_msg) -> void {
@@ -45,13 +46,15 @@ public:
 
         if (front_servo_msg.data == 0) front_servo_msg.data = 0.001;
 
-        front_servo_publisher->publish(back_servo_msg);
+        front_camera_forward_servo_publisher->publish(front_servo_msg);
+        front_camera_downtilt_servo_publisher->publish(front_servo_msg);
 
         back_servo_msg.data = static_cast<double>(control_values_msg->camera_servos[1]);
 
         if (back_servo_msg.data == 0) back_servo_msg.data = 0.001;
 
-        back_servo_publisher->publish(back_servo_msg);
+        back_camera_forward_servo_publisher->publish(back_servo_msg);
+        back_camera_downtilt_servo_publisher->publish(back_servo_msg);
       };
 
     control_values_subscriber =
@@ -62,8 +65,10 @@ public:
 private:
   rclcpp::Subscription<eer_interfaces::msg::WaterwitchControl>::SharedPtr control_values_subscriber;
   std::array<rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr, 6> thruster_publishers;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr front_servo_publisher;
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr back_servo_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr front_camera_forward_servo_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr front_camera_downtilt_servo_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr back_camera_forward_servo_publisher;
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr back_camera_downtilt_servo_publisher;
 };
 
 int main(int argc, char * argv[])

@@ -59,14 +59,14 @@ export const KeyboardInputMap = atom<(string | number)[][]>([ // Possible pilot 
   ["g", "pitch", -100],
   ["y", "roll", 100],
   ["h", "roll", -100],
-  ["z", "open_claw", 1],
-  ["x", "close_claw", 1],
+  ["z", "turn_front_servo_cw", 1],
+  ["x", "turn_front_servo_ccw", 1],
   ["c", "brighten_led", 1],
   ["v", "dim_led", 1],
-  ["b", "turn_stepper_cw", 1],
-  ["n", "turn_stepper_ccw", 1],
+  ["b", "turn_back_servo_cw", 1],
+  ["n", "turn_back_servo_ccw", 1],
   ["m", "read_outside_temperature_probe", 1],
-  [",", "enter_auto_mode", 1],
+  [",", "enter_auto_mode", 1]
 ])
 
 export const CurrentProfile = atom<string>("Not Assigned"); // Current pilot profile

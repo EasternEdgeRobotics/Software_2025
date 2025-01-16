@@ -108,8 +108,7 @@ export function InitROS() {
             turn_stepper_cw: controllerInput[20] ? true : false,
             turn_stepper_ccw: controllerInput[21] ? true : false,
             read_outside_temperature_probe: controllerInput[22] ? true : false,
-            enter_auto_mode: controllerInput[23] ? true : false,
-            is_autonomous: false
+            enter_auto_mode: controllerInput[23] ? true : false
         });
         controllerInputTopic.publish(controllerInputVals);
         first_input_sent = true;
