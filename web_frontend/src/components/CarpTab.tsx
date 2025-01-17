@@ -1,31 +1,167 @@
-import React, { useState } from "react";
-import CarpAnimation from "./CarpAnimation";
+import React, { useRef, useEffect, useState } from "react";
 import { Button } from "@mui/material";
 
-export default function CarpTab() {
+const regions: Record<string, number[][]> = {
+  "Region 1": [
+    [90, 310],
+    [130, 250],
+    [160, 280],
+    [120, 340],
+  ],
+  "Region 2": [
+    [160, 200],
+    [200, 170],
+    [240, 220],
+    [180, 260],
+  ],
+  "Region 3": [
+    [230, 140],
+    [270, 120],
+    [300, 160],
+    [260, 200],
+  ],
+  "Region 4": [
+    [310, 90],
+    [350, 70],
+    [380, 110],
+    [340, 140],
+  ],
+  "Region 5": [
+    [380, 40],
+    [420, 20],
+    [440, 60],
+    [400, 80],
+  ],
+};
+
+const graphData = {
+  Year: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+  Regions: {
+    "Region 1": [false, true, true, true, true, true, true, true, true, true],
+    "Region 2": [false, false, true, true, true, true, true, true, true, true],
+    "Region 3": [false, false, false, true, true, true, true, true, true, true],
+    "Region 4": [false, false, false, false, true, true, true, true, true, true],
+    "Region 5": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+    ],
+  },
+};
+
+const CarpAnimationGUI: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [startAnimation, setStartAnimation] = useState(false);
 
-  const graphData = {
-    Year: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
-    Regions: {
-      "Region 1": [false, true, true, true, true, true, true, true, true, true],
-      "Region 2": [false, false, true, true, true, true, true, true, true, true],
-      "Region 3": [false, false, false, true, true, true, true, true, true, true],
-      "Region 4": [false, false, false, false, true, true, true, true, true, true],
-      "Region 5": [false, false, false, false, false, true, true, true, true, false],
-    },
+  const drawRegion = (
+    ctx: CanvasRenderingContext2D,
+    coords: number[][],
+    color: string
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(coords[0][0], coords[0][1]);
+    coords.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = "black";
+    ctx.stroke();
   };
 
-  const handleStart = () => {
-    setStartAnimation(true);
-  };
+  useEffect(() => {
+    if (!startAnimation) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+
+    if (!canvas || !ctx) {
+      console.error("Canvas or context is not available.");
+      return;
+    }
+
+    
+    const background = new Image();
+    background.src = '/River.png'; 
+    console.log("Attempting to load image:", background.src);
+
+    let frame = 0;
+    const regionKeys: (keyof typeof graphData.Regions)[] = [
+      "Region 1",
+      "Region 2",
+      "Region 3",
+      "Region 4",
+      "Region 5",
+    ];
+
+    const animate = () => {
+      if (frame >= graphData.Year.length) {
+        console.log("Animation complete.");
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      
+      if (background.complete) {
+        console.log("Drawing background image...");
+        ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+      } else {
+        console.warn("Background image not yet loaded.");
+      }
+
+    
+      regionKeys.forEach((region) => {
+        const isPresent = graphData.Regions[region][frame];
+        const color = isPresent
+          ? "rgba(255, 0, 0, 0.5)"
+          : "rgba(255, 255, 255, 0)";
+        drawRegion(ctx, regions[region], color);
+      });
+
+      
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "black";
+      ctx.fillText(`Year: ${graphData.Year[frame]}`, 20, 30);
+
+      frame++;
+      setTimeout(animate, 1000);
+    };
+
+    
+    background.onload = () => {
+      console.log("Image loaded successfully!");
+      animate();
+    };
+
+    background.onerror = (err) => {
+      console.error("Failed to load the image:", err);
+    };
+  }, [startAnimation]);
 
   return (
-    <div>
-      <Button variant="contained" color="primary" onClick={handleStart}>
+    <div style={{ textAlign: "center" }}>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => setStartAnimation(true)}
+      >
         Start Animation
       </Button>
-      <CarpAnimation graphData={graphData} startAnimation={startAnimation} />
+      <canvas
+        ref={canvasRef}
+        width={600}
+        height={700}
+        style={{ border: "1px solid black" }}
+      />
     </div>
   );
-}
+};
+
+export default CarpAnimationGUI;
