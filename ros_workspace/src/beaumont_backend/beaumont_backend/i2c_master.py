@@ -425,7 +425,7 @@ class I2CMaster(Node):
         This function will take the recieved input and pipe it through control functions.
         '''
         
-        if not self.autonomous_mode_active or (msg.is_autonomous and self.autonomous_mode_active):
+        if not self.autonomous_mode_active or (self.autonomous_mode_active):
             thruster_values = self.rov_math(msg)
 
             if self.bus is not None:
