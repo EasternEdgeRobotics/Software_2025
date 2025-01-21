@@ -3,34 +3,34 @@ import { Button } from "@mui/material";
 
 const regions: Record<string, number[][]> = {
   "Region 1": [
-    [90, 310],
-    [130, 250],
-    [160, 280],
-    [120, 340],
+    [120, 360],
+    [150, 345],
+    [150, 350],
+    [132, 480],
   ],
   "Region 2": [
-    [160, 200],
-    [200, 170],
-    [240, 220],
-    [180, 260],
+    [160, 280],
+    [210, 230],
+    [240, 280],
+    [180, 330],
   ],
   "Region 3": [
-    [230, 140],
-    [270, 120],
-    [300, 160],
-    [260, 200],
+    [260, 240],
+    [300, 220],
+    [330, 260],
+    [290, 300],
   ],
   "Region 4": [
-    [310, 90],
-    [350, 70],
-    [380, 110],
-    [340, 140],
+    [330, 180],
+    [370, 160],
+    [400, 200],
+    [360, 230],
   ],
   "Region 5": [
-    [380, 40],
-    [420, 20],
-    [440, 60],
-    [400, 80],
+    [400, 120],
+    [440, 100],
+    [460, 140],
+    [420, 160],
   ],
 };
 
@@ -43,6 +43,14 @@ const graphData = {
     "Region 4": [false, false, false, false, false, false, false, true, true, true],
     "Region 5": [false, false, false, false, false, false, false, false, false, false, ],
   },
+};
+
+const regionColors: Record<string, string> = {
+  "Region 1": "red",
+  "Region 2": "orange",
+  "Region 3": "green",
+  "Region 4": "blue",
+  "Region 5": "purple",
 };
 
 const CarpAnimationGUI: React.FC = () => {
@@ -108,9 +116,7 @@ const CarpAnimationGUI: React.FC = () => {
     
       regionKeys.forEach((region) => {
         const isPresent = graphData.Regions[region][frame];
-        const color = isPresent
-          ? "rgba(255, 0, 0, 0.5)"
-          : "rgba(255, 255, 255, 0)";
+        const color = isPresent ? regionColors[region] : "rgba(255, 255, 255, 0)";
         drawRegion(ctx, regions[region], color);
       });
 
