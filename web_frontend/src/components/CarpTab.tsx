@@ -8,7 +8,7 @@ const regions: Record<string, number[][]> = {
     [150, 390],
     [132, 463],
   ],
-   "Region 2": [
+  "Region 2": [
     [150, 345], // Bot left corner
     [180, 310], // Top left corner
     [220, 290], // Top right corner
@@ -16,7 +16,7 @@ const regions: Record<string, number[][]> = {
   ],
   "Region 3": [
     [220, 290],
-    [250, 200], 
+    [250, 200],
     [290, 220],
     [220, 300],
   ],
@@ -37,19 +37,19 @@ const regions: Record<string, number[][]> = {
 const graphData = {
   Year: [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
   Regions: {
-    "Region 1": [false, true,  true, true, true, true, true, true, true, true],
+    "Region 1": [false, true, true, true, true, true, true, true, true, true],
     "Region 2": [false, false, false, false, true, true, true, true, true, true],
     "Region 3": [false, false, false, false, true, true, true, true, true, true],
     "Region 4": [false, false, false, false, false, false, false, true, true, true],
-    "Region 5": [false, false, false, false, false, false, false, false, false, false, ],
+    "Region 5": [false, false, false, false, false, false, false, false, false, false,],
   },
 };
 
 const regionColors: Record<string, string> = {
-  "Region 1": "rgba(255, 0, 0, 0.5)",    
-  "Region 2": "rgba(255, 165, 0, 0.5)", 
-  "Region 3": "rgba(0, 128, 0, 0.5)",   
-  "Region 4": "rgba(0, 0, 255, 0.5)",   
+  "Region 1": "rgba(255, 0, 0, 0.5)",
+  "Region 2": "rgba(255, 165, 0, 0.5)",
+  "Region 3": "rgba(0, 128, 0, 0.5)",
+  "Region 4": "rgba(0, 0, 255, 0.5)",
   "Region 5": "rgba(128, 0, 128, 0.5)",
 };
 
@@ -83,9 +83,8 @@ const CarpAnimationGUI: React.FC = () => {
       return;
     }
 
-    
     const background = new Image();
-    background.src = '/River.png'; 
+    background.src = "/River.png";
     console.log("Attempting to load image:", background.src);
 
     let frame = 0;
@@ -105,7 +104,6 @@ const CarpAnimationGUI: React.FC = () => {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      
       if (background.complete) {
         console.log("Drawing background image...");
         ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
@@ -113,14 +111,12 @@ const CarpAnimationGUI: React.FC = () => {
         console.warn("Background image not yet loaded.");
       }
 
-    
       regionKeys.forEach((region) => {
         const isPresent = graphData.Regions[region][frame];
         const color = isPresent ? regionColors[region] : "rgba(255, 255, 255, 0)";
         drawRegion(ctx, regions[region], color);
       });
 
-      
       ctx.font = "20px Arial";
       ctx.fillStyle = "black";
       ctx.fillText(`Year: ${graphData.Year[frame]}`, 20, 30);
@@ -129,7 +125,6 @@ const CarpAnimationGUI: React.FC = () => {
       setTimeout(animate, 1000);
     };
 
-    
     background.onload = () => {
       console.log("Image loaded successfully!");
       animate();
@@ -142,19 +137,23 @@ const CarpAnimationGUI: React.FC = () => {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={() => setStartAnimation(true)}
-      >
-        Start Animation
-      </Button>
-      <canvas
-        ref={canvasRef}
-        width={600}
-        height={700}
-        style={{ border: "1px solid black" }}
-      />
+      <div>
+        <canvas
+          ref={canvasRef}
+          width={600}
+          height={700}
+          style={{ border: "1px solid black" }}
+        />
+      </div>
+      <div style={{ marginTop: "20px" }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => setStartAnimation(true)}
+        >
+          Start Animation
+        </Button>
+      </div>
     </div>
   );
 };
