@@ -46,11 +46,11 @@ const graphData = {
 };
 
 const regionColors: Record<string, string> = {
-  "Region 1": "red",
-  "Region 2": "green",
-  "Region 3": "orange",
-  "Region 4": "blue",
-  "Region 5": "purple",
+  "Region 1": "rgba(255, 0, 0, 0.5)",    
+  "Region 2": "rgba(255, 165, 0, 0.5)", 
+  "Region 3": "rgba(0, 128, 0, 0.5)",   
+  "Region 4": "rgba(0, 0, 255, 0.5)",   
+  "Region 5": "rgba(128, 0, 128, 0.5)",
 };
 
 const CarpAnimationGUI: React.FC = () => {
