@@ -6,10 +6,6 @@ int8 yaw
 int8 roll
 bool open_claw
 bool close_claw
-bool heave_up
-bool heave_down
-bool pitch_up
-bool pitch_down
 bool brighten_led
 bool dim_led
 bool turn_stepper_cw

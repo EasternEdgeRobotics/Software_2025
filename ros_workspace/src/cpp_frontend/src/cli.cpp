@@ -168,7 +168,6 @@ void printCLICommands() {
         4: help                   Display possible commands and usage
         5: version                Display the current version of the tool
         6: exit                   Exit the application
-        7: launch_gui             Launch the GUI application
-        8: launch_controller_only Launch the GUI application (with cameras disabled)";
+        7: launch_gui             Launch the GUI application)";
     std::cout << commands << std::endl;
 }

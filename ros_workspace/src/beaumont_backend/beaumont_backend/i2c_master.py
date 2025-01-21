@@ -609,15 +609,15 @@ class I2CMaster(Node):
         sway = controller_inputs.sway * self.power_multiplier * self.sway_multiplier * 0.01
         yaw = controller_inputs.yaw * self.power_multiplier * self.yaw_multiplier * 0.01
 
-        if controller_inputs.heave_up or controller_inputs.heave_down:
-            heave = ((self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_up else 0) + ((-self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_down else 0)
-        else:
-            heave = controller_inputs.heave * self.power_multiplier * self.heave_multiplier * 0.01  
+        # if controller_inputs.heave_up or controller_inputs.heave_down:
+            # heave = ((self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_up else 0) + ((-self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_down else 0)
+        # else:
+        heave = controller_inputs.heave * self.power_multiplier * self.heave_multiplier * 0.01  
 
-        if controller_inputs.pitch_up or controller_inputs.pitch_down:
-            pitch = ((self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_up else 0) + ((-self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_down else 0)
-        else:
-            pitch = controller_inputs.pitch * self.power_multiplier * self.pitch_multiplier * 0.01  
+        # if controller_inputs.pitch_up or controller_inputs.pitch_down:
+        #     pitch = ((self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_up else 0) + ((-self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_down else 0)
+        # else:
+        pitch = controller_inputs.pitch * self.power_multiplier * self.pitch_multiplier * 0.01  
 
         sum_of_magnitudes_of_linear_movements = abs(surge) + abs(sway) + abs(heave)
         sum_of_magnitudes_of_rotational_movements = abs(pitch) + abs(yaw)

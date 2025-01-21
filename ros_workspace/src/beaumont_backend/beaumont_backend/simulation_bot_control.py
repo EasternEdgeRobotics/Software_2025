@@ -340,8 +340,8 @@ class SimulationBotControl(Node):
             
         heave = controller_inputs.heave * self.power_multiplier * self.heave_multiplier * 0.01   
 
-        if controller_inputs.pitch_up or controller_inputs.pitch_down:
-            controller_inputs.pitch = (100 if controller_inputs.pitch_up else 0) + (-100 if controller_inputs.pitch_down else 0)
+        # if controller_inputs.pitch_up or controller_inputs.pitch_down:
+        #     controller_inputs.pitch = (100 if controller_inputs.pitch_up else 0) + (-100 if controller_inputs.pitch_down else 0)
         
         pitch = controller_inputs.pitch * self.power_multiplier * self.pitch_multiplier * 0.01  
 

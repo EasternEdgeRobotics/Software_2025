@@ -86,22 +86,17 @@ export function InitROS() {
         const controllerInputVals = new ROSLIB.Message({
             surge: controllerInput[0],
             sway: controllerInput[1],
-            heave: controllerInput[2],
-            pitch: controllerInput[3],
+            heave: (controllerInput[7] || controllerInput[8]) ? ((controllerInput[7]||0)-(controllerInput[8]||0))*100 :controllerInput[2],
+            pitch: (controllerInput[9] || controllerInput[10]) ? ((controllerInput[9]||0)-(controllerInput[10]||0))*100 : controllerInput[3],
             yaw: controllerInput[4],
             open_claw: controllerInput[5] ? true : false,
             close_claw: controllerInput[6] ? true : false,
-            heave_up: controllerInput[7] ? true : false,
-            heave_down: controllerInput[8] ? true : false,
-            pitch_up: controllerInput[9] ? true : false,
-            pitch_down: controllerInput[10] ? true : false,
             brighten_led: controllerInput[11] ? true : false,
             dim_led: controllerInput[12] ? true : false,
             turn_stepper_cw: controllerInput[13] ? true : false,
             turn_stepper_ccw: controllerInput[14] ? true : false,
             read_outside_temperature_probe: controllerInput[15] ? true : false,
             enter_auto_mode: controllerInput[16] ? true : false,
-            is_autonomous: false
         });
         controllerInputTopic.publish(controllerInputVals);
         first_input_sent = true;

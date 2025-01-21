@@ -49,12 +49,8 @@ int main(int argc, char* argv[]) {
             printCLICommands();
             return 0;
         } else if (arg == "launch_gui") {
-            std::thread guiThread(launchGUI, controller_input_publisher, false);
+            std::thread guiThread(launchGUI, controller_input_publisher);
             guiThread.detach();
-
-        }else if (arg == "launch_controller") {
-            std::thread controlThread(launchGUI, controller_input_publisher, true);
-            controlThread.detach();
 
         }
         
@@ -92,11 +88,8 @@ int main(int argc, char* argv[]) {
                 std::cout << "Exiting the application..." << std::endl;
             exit(0);
             } else if (input == "7" || input == "launch_gui") {
-                std::thread guiThread(launchGUI, controller_input_publisher, false);
+                std::thread guiThread(launchGUI, controller_input_publisher);
                 guiThread.detach();
-            } else if (input == "8" || input == "launch_controller_only") {
-                std::thread controlThread(launchGUI, controller_input_publisher, true);
-                controlThread.detach();
             } else {
                 std::cout << "Unknown command: " << input << std::endl;
                 std::cout << "Type 'help' to see available commands." << std::endl;

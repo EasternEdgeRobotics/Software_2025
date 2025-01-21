@@ -10,19 +10,30 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(glfw3 REQUIRED)
+find_package(OpenGL REQUIRED)
 find_package(eer_interfaces REQUIRED) 
 
+# Add the glfw and json libraries
+add_subdirectory(include/glfw)
+add_subdirectory(include/json)
+
+# Import imgui, and glfw
+include_directories(
+    ${OPENGL_INCLUDE_DIRS}
+    include/glfw/include
+    include/imgui
+    include/imgui/backends
+)
+
 # ImGui configuration
-set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 set(IMGUI_SOURCES
-  ${IMGUI_DIR}/imgui.cpp
-  ${IMGUI_DIR}/imgui_demo.cpp
-  ${IMGUI_DIR}/imgui_draw.cpp
-  ${IMGUI_DIR}/imgui_tables.cpp
-  ${IMGUI_DIR}/imgui_widgets.cpp
-  ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
-  ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+    include/imgui/imgui.cpp
+    include/imgui/imgui_draw.cpp
+    include/imgui/imgui_widgets.cpp
+    include/imgui/imgui_tables.cpp
+    include/imgui/imgui_demo.cpp
+    include/imgui/backends/imgui_impl_glfw.cpp
+    include/imgui/backends/imgui_impl_opengl3.cpp
 )
 
 # Source files
@@ -39,7 +50,6 @@ include_directories(
   ${IMGUI_DIR}/backends
   ${OpenCV_INCLUDE_DIRS}
   ${rclcpp_INCLUDE_DIRS}
-  ${glfw3_INCLUDE_DIRS}
   ${eer_interfaces_INCLUDE_DIRS} 
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
@@ -52,6 +62,7 @@ target_link_libraries(${PROJECT_NAME}_node
   ${OpenCV_LIBRARIES}
   glfw
   GL
+  nlohmann_json::nlohmann_json
 )
 
 # Link ROS 2 dependencies

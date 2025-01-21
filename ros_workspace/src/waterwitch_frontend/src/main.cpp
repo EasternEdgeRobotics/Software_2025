@@ -8,8 +8,6 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <filesystem>
-#include "cli.h"
-#include "gui.h"
 
 using json = nlohmann::json;
 using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;

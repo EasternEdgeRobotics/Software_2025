@@ -1,6 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "eer_interfaces/srv/list_config.hpp"
 #include "eer_interfaces/srv/get_config.hpp"
+#include "eer_interfaces/srv/delete_config.hpp"
 #include "eer_interfaces/msg/save_config.hpp"
 #include <filesystem>
 #include <fstream>
@@ -71,6 +72,30 @@ class GetConfigService : public rclcpp::Node {
         rclcpp::Service<eer_interfaces::srv::GetConfig>::SharedPtr service_;
 };
 
+class DeleteConfigService : public rclcpp::Node {
+    public:
+        DeleteConfigService() : Node("delete_config_service") {
+            service_ = this->create_service<eer_interfaces::srv::DeleteConfig>("delete_config", bind(&DeleteConfigService::handle_request, this, _1, _2));
+        }
+    
+    private:
+        void handle_request(const shared_ptr<eer_interfaces::srv::DeleteConfig::Request> request, shared_ptr<eer_interfaces::srv::DeleteConfig::Response> response) {
+            string path = "configs/" + request->name + ".json";
+
+            try {
+                if (std::filesystem::remove(path)) {
+                    response->success = true;
+                } else {
+                    response->success = false;
+                }
+            } catch (const std::filesystem::filesystem_error& e) {
+                response->success = false;
+            }
+        }
+
+        rclcpp::Service<eer_interfaces::srv::DeleteConfig>::SharedPtr service_;
+};
+
 class SaveConfigSubscriber : public rclcpp::Node {
     public:
         SaveConfigSubscriber() : Node("save_config_subscriber") {
@@ -97,13 +122,15 @@ int main(int argc, char *argv[])
 
     rclcpp::Node::SharedPtr listNode = make_shared<ListConfigService>();
     rclcpp::Node::SharedPtr getNode = make_shared<GetConfigService>();
-    rclcpp::Node::SharedPtr saveSub = make_shared<SaveConfigSubscriber>();
+    rclcpp::Node::SharedPtr delNode = make_shared<DeleteConfigService>();
+    rclcpp::Node::SharedPtr saveNode = make_shared<SaveConfigSubscriber>();
 
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     
     executor.add_node(listNode);
     executor.add_node(getNode);
-    executor.add_node(saveSub);
+    executor.add_node(delNode);
+    executor.add_node(saveNode);
 
     executor.spin();
     rclcpp::shutdown();

@@ -12,6 +12,7 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
 	"srv/ListConfig.srv"
 	"srv/GetConfig.srv"
+	"srv/DeleteConfig.srv"
 	"srv/Cameras.srv"
 	"msg/ThrusterMultipliers.msg"
 	"msg/PilotInput.msg"
