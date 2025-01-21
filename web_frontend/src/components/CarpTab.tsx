@@ -9,22 +9,22 @@ const regions: Record<string, number[][]> = {
     [132, 463],
   ],
    "Region 2": [
-    [150, 345],
-    [180, 310], 
-    [220, 290], 
-    [170, 345], 
+    [150, 345], // Bot left corner
+    [180, 310], // Top left corner
+    [220, 290], // Top right corner
+    [170, 345], // Bot right corner. Left number is horizontal, right number is vertical.
   ],
   "Region 3": [
-    [260, 240],
-    [300, 220],
-    [330, 260],
-    [290, 300],
+    [220, 290],
+    [250, 200], 
+    [290, 220],
+    [220, 300],
   ],
   "Region 4": [
-    [330, 180],
-    [370, 160],
-    [400, 200],
-    [360, 230],
+    [280, 230],
+    [370, 200],
+    [410, 150],
+    [275, 215],
   ],
   "Region 5": [
     [400, 120],
@@ -47,8 +47,8 @@ const graphData = {
 
 const regionColors: Record<string, string> = {
   "Region 1": "red",
-  "Region 2": "orange",
-  "Region 3": "green",
+  "Region 2": "green",
+  "Region 3": "orange",
   "Region 4": "blue",
   "Region 5": "purple",
 };
