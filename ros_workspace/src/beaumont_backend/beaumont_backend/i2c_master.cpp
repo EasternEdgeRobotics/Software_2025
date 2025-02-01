@@ -22,6 +22,53 @@
 #include <iostream>
 #include <vector>
 
+// Thruster channels are based on Beaumont
+std::map<std::string, int> THRUSTER_CHANNELS = {
+    {"for-port-top", 1},
+    {"for-star-top", 0},
+    {"aft-port-top", 4},
+    {"aft-star-top", 3},
+    {"for-port-bot", 2},
+    {"for-star-bot", 6},
+    {"aft-port-bot", 5},
+    {"aft-star-bot", 7}
+};
+
+// In the thruster class, the target speed is set by the user. 
+// Each thruster accelerates towards the target speed by the acceleration below
+const int THRUSTER_ACCELERATION = 8;
+
+// Max % acceleration per second can be calculated by (THRUSTER_ACCELERATION/254)*(pilot input frequency in Hz)
+// Where 0 is max reverse speed, 127 is center speed, and 254 is max forward speed
+
+const int RP2040_ADDRESS = 0x08;
+
+const int STM32_ADDRESS = 0x69;
+
+std::map<std::string, int> ADC_ADDRESSES = {
+    {"adc_48v_bus", 0x55},
+    {"adc_12v_bus", 0x56},
+    {"adc_5v_bus", 0x59}
+};
+
+std::map<std::string, std::pair<int, int>> ADC_VOLTAGE_DIVIDER_VALUES = {
+    {"adc_48v_bus", {20000, 1000}},
+    {"adc_12v_bus", {5000, 1000}},
+    {"adc_5v_bus", {2000, 1000}}
+};
+
+std::map<std::string, int> TEMPERATURE_SENSOR_ADDRESSES = {
+    {"power_board_u8", 0x48},
+    {"power_board_u9", 0x49},
+    {"power_board_u10", 0x4a},
+    {"mega_board_ic2", 0x4b},
+    {"power_board_u11", 0x4c},
+    {"mega_board_ic1", 0x4e}
+};
+
+// How often to read data on i2c bus
+const int DIAGNOSTICS_REQUESTS_PERIOD = 2;
+
 class Thruster {
 public:
     Thruster(int bus, const std::string& thruster_position) 
