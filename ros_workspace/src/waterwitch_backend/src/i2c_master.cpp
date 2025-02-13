@@ -30,23 +30,39 @@ public:
 
 
             // Publish on i2c bus
-            write_to_i2c(RP2040_ADDRESS, THRUSTER_MAP.at(THRUSTER_NAMES[thruster_index]), thrust, 2);
+            write_to_i2c(RP2040_ADDRESS, 2, THRUSTER_MAP.at(THRUSTER_NAMES[thruster_index]), thrust);
         }
       };
 
     control_values_subscriber =
       this->create_subscription<eer_interfaces::msg::WaterwitchControl>(
         "waterwitch_control_values", 10, control_values_subscriber_callback);
+
+    
+    // Open the i2c file
+    if ((i2c_file = open(I2C_BUS, O_RDWR)) < 0) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to open the i2c bus");
+    }
+  }
+
+  // Deconstructor for I2CMaster
+  ~I2CMaster()
+  { 
+    // Close the i2c file
+    if(i2c_file >= 0){
+      close(i2c_file);
+    }
   }
 
 private:
   rclcpp::Subscription<eer_interfaces::msg::WaterwitchControl>::SharedPtr control_values_subscriber;
 
-  void write_to_i2c(int device_address, uint8_t byte_1, uint8_t byte_2, uint8_t num_bytes)
+  void write_to_i2c(int device_address, uint8_t num_bytes, uint8_t byte_1, uint8_t byte_2)
   {
-    int file;
-    if ((file = open(I2C_BUS, O_RDWR)) < 0) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to open the i2c bus");
+    
+    // Raise an error if the i2c file is not open
+    if (i2c_file < 0) {
+      RCLCPP_ERROR(this->get_logger(), "I2C bus is not open");
       return;
     }
 
@@ -77,8 +93,6 @@ private:
         RCLCPP_INFO(this->get_logger(), "Wrote to Device Address: 0x%02X, Byte 1: 0x%02X, Byte 2: 0x%02X", device_address, byte_1, byte_2);
       }
     }
-
-    close(file);
   }
 };
 
