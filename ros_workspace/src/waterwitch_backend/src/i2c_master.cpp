@@ -26,7 +26,7 @@ public:
         for (int thruster_index = 0; thruster_index < 6; thruster_index++) {
 
             // Map the thrust value from the range [-1, 1] to [0, 255]
-            uint64_t thrust = static_cast<uint8_t>((control_values_msg->thrust[thruster_index] + 1) * 127.5);
+            uint8_t thrust = static_cast<uint8_t>((control_values_msg->thrust[thruster_index] + 1) * 127.5);
 
 
             // Publish on i2c bus
