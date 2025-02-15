@@ -1,5 +1,14 @@
 #include "waterwitch_constants.h"
 
+// TERMINOLOGY
+// for star -> forward right
+// for port -> forward left
+// aft star -> backward right
+// aft port -> backward left
+// star top -> upward right
+// port top -> upward left
+
+
 const int8_t THRUSTER_CONFIG_MATRIX[6][6] = {
     {-1, 1, 0, 0, 0, 1}, // for star
     {-1, -1, 0, 0, 0, -1}, // for port
