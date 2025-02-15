@@ -34,15 +34,14 @@ public:
         }
       };
 
-    control_values_subscriber =
-      this->create_subscription<eer_interfaces::msg::WaterwitchControl>(
-        "waterwitch_control_values", 10, control_values_subscriber_callback);
-
-    
     // Open the i2c file
     if ((i2c_file = open(I2C_BUS, O_RDWR)) < 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to open the i2c bus");
     }
+
+    control_values_subscriber =
+      this->create_subscription<eer_interfaces::msg::WaterwitchControl>(
+        "waterwitch_control_values", 10, control_values_subscriber_callback);  
   }
 
   // Deconstructor for I2CMaster
@@ -56,6 +55,7 @@ public:
 
 private:
   rclcpp::Subscription<eer_interfaces::msg::WaterwitchControl>::SharedPtr control_values_subscriber;
+  int i2c_file;
 
   void write_to_i2c(int device_address, uint8_t num_bytes, uint8_t byte_1, uint8_t byte_2 = 0)
   {
@@ -66,17 +66,15 @@ private:
       return;
     }
 
-    if (ioctl(file, I2C_SLAVE, device_address) < 0) {
+    if (ioctl(i2c_file, I2C_SLAVE, device_address) < 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to acquire bus access and/or talk to slave");
-      close(file);
       return;
     }
 
-    if (num_bytes == 1)
-    {
+    if (num_bytes == 1) {
       uint8_t buffer[1];
       buffer[0] = byte_1;
-      if (write(file, buffer, 1) != 1) {
+      if (write(i2c_file, buffer, 1) != 1) {
         RCLCPP_ERROR(this->get_logger(), "Failed to write to the i2c bus");
       }
     }
@@ -85,12 +83,8 @@ private:
       uint8_t buffer[2];
       buffer[0] = byte_1;
       buffer[1] = byte_2;
-      if (write(file, buffer, 2) != 2) {
+      if (write(i2c_file, buffer, 2) != 2) {
         RCLCPP_ERROR(this->get_logger(), "Failed to write to the i2c bus");
-      }
-      else 
-      {
-        RCLCPP_INFO(this->get_logger(), "Wrote to Device Address: 0x%02X, Byte 1: 0x%02X, Byte 2: 0x%02X", device_address, byte_1, byte_2);
       }
     }
   }
