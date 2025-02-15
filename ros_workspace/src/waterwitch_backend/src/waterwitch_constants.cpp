@@ -28,17 +28,17 @@ const std::string THRUSTER_NAMES[6] = {
 };
 
 const std::unordered_map<std::string, uint8_t> THRUSTER_MAP = {
-    {"for_star", 0},
-    {"for_port", 1},
-    {"aft_star", 2},
-    {"aft_port", 3},
-    {"star_top", 4},
-    {"port_top", 5}
+    {"for_star", 7},
+    {"for_port", 6},
+    {"aft_star", 5},
+    {"aft_port", 4},
+    {"star_top", 3},
+    {"port_top", 1}
 };
 
 
 const float THRUSTER_ACCELERATION = 0.1f;
 
-const int RP2040_ADDRESS = 0x08;
+const int RP2040_ADDRESS = 0x69;
 
 const int SOFTWARE_TO_BOARD_COMMUNICATION_RATE = 100;
