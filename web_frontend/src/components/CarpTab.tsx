@@ -55,7 +55,45 @@ const regionColors: Record<string, string> = {
 
 const CarpAnimationGUI: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const snapshotCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [startAnimation, setStartAnimation] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch((err) => {
+        console.error("Camera access error:", err);
+        setCameraError("Failed to access the webcam.");
+      });
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const captureSnapshot = () => {
+    if (!videoRef.current || !snapshotCanvasRef.current) return;
+
+    const context = snapshotCanvasRef.current.getContext("2d");
+    if (!context) return;
+
+    context.drawImage(videoRef.current, 0, 0, 240, 320);
+    const imageData = snapshotCanvasRef.current.toDataURL("image/png");
+    console.log("Captured Image:", imageData);
+  };
+
 
   const drawRegion = (
     ctx: CanvasRenderingContext2D,
@@ -153,9 +191,24 @@ const CarpAnimationGUI: React.FC = () => {
         >
           Start Animation
         </Button>
+        <div style={{ marginTop: "20px" }}>
+        <h3>Webcam Feed</h3>
+        {cameraError ? (
+          <p style={{ color: "red" }}>{cameraError}</p>
+        ) : (
+          <video ref={videoRef} width="240" height="320" autoPlay />
+        )}
+        <br />
+        <Button variant="contained" color="secondary" onClick={captureSnapshot}>
+          Capture Snapshot
+        </Button>
+        <canvas ref={snapshotCanvasRef} width="240" height="320" style={{ display: "none" }} />
       </div>
     </div>
+    </div>
+    
   );
+
 };
 
 export default CarpAnimationGUI;
