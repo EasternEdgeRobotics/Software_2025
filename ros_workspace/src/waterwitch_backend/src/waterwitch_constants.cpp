@@ -39,6 +39,6 @@ const std::unordered_map<std::string, uint8_t> THRUSTER_MAP = {
 
 const float THRUSTER_ACCELERATION = 0.1f;
 
-const int RP2040_ADDRESS = 0x08;
+const int RP2040_ADDRESS = 0x69;
 
 const int SOFTWARE_TO_BOARD_COMMUNICATION_RATE = 100;
