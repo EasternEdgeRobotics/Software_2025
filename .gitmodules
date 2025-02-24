@@ -1,0 +1,9 @@
+[submodule "ros_workspace/src/waterwitch_frontend/include/json"]
+	path = ros_workspace/src/waterwitch_frontend/include/json
+	url = https://github.com/nlohmann/json
+[submodule "ros_workspace/src/waterwitch_frontend/include/imgui"]
+	path = ros_workspace/src/waterwitch_frontend/include/imgui
+	url = https://github.com/ocornut/imgui
+[submodule "ros_workspace/src/waterwitch_frontend/include/glfw"]
+	path = ros_workspace/src/waterwitch_frontend/include/glfw
+	url = https://github.com/glfw/glfw
