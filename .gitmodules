@@ -7,3 +7,6 @@
 [submodule "ros_workspace/src/waterwitch_frontend/include/glfw"]
 	path = ros_workspace/src/waterwitch_frontend/include/glfw
 	url = https://github.com/glfw/glfw
+[submodule "ros_workspace/src/waterwitch_frontend/include/stb"]
+	path = ros_workspace/src/waterwitch_frontend/include/stb
+	url = https://github.com/nothings/stb

@@ -9,6 +9,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(eer_interfaces REQUIRED) 
 find_package(OpenGL REQUIRED)
+find_package(OpenCV REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -23,10 +24,12 @@ add_subdirectory(include/json)
 include_directories(
   ${eer_interfaces_INCLUDE_DIRS} 
   ${OPENGL_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
   include/glfw/include
   include/imgui
   include/imgui/backends
   include/waterwitch_frontend
+  include/stb
 )
 
 set(IMGUI_SOURCES
@@ -43,6 +46,7 @@ add_executable(waterwitch_frontend src/main.cpp ${IMGUI_SOURCES})
 
 target_link_libraries(waterwitch_frontend 
     ${OPENGL_LIBRARIES} 
+    ${OpenCV_LIBRARIES}
     glfw
     nlohmann_json::nlohmann_json
     rclcpp::rclcpp
