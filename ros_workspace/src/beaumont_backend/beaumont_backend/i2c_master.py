@@ -5,7 +5,7 @@ from rclpy.action import ActionClient
 
 from eer_interfaces.msg import ThrusterMultipliers, PilotInput
 from eer_interfaces.action import BeaumontAutoMode 
-from beaumont_backend.srv import HSVColours
+from eer_interfaces.srv import HSVColours
 from std_msgs.msg import String
 
 from rclpy.callback_groups import ReentrantCallbackGroup
