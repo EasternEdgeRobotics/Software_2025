@@ -90,6 +90,9 @@ int main(int argc, char **argv) {
             int yaw = 0;
             bool brightenLED = false;
             bool dimLED = false;
+            // ########################
+            // Add more buttons
+            // ########################
             for (int i = 0; i < buttonCount; i++) {
                 if (!buttons[i]) continue;
                 switch (config.buttonActions[i]) { 
@@ -148,6 +151,9 @@ int main(int argc, char **argv) {
             }
 
             //should probably move this out of the main render loop?
+            // ########################
+            // Add more inputs here
+            // ########################
             pilotInputNode->sendInput(surge, sway, heave, yaw, brightenLED, dimLED);
         }
 
@@ -334,6 +340,12 @@ int main(int argc, char **argv) {
                         configJson["name"] = "global";
                         configJson["servos"][0] = global_config.servo1ip;
                         configJson["servos"][1] = global_config.servo2ip;
+
+                        RCLCPP_INFO(rclcpp::get_logger("logger_name"), "Servo 1 IP: %s", global_config.servo1ip);
+                        RCLCPP_INFO(rclcpp::get_logger("logger_name"), "Servo 2 IP: %s", global_config.servo2ip);
+                        for (int i = 0; i < std::size(global_config.thruster_map); i++) {
+                            RCLCPP_INFO(rclcpp::get_logger("logger_name"), "Thruster %d: %s", i, global_config.thruster_map[i]);
+                        }
 
                         for (int i = 0; i < std::size(global_config.thruster_map); i++){
                             configJson["thrusters"][i] = global_config.thruster_map[i];

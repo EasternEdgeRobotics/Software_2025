@@ -46,6 +46,9 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.brighten_led = brightenLED;
             msg.dim_led = dimLED;
             publisher_->publish(msg);
+            // ########################
+            // Add more inputs to this function
+            // ########################
         }
 
     private:
@@ -100,6 +103,9 @@ std::array<std::vector<std::string>, 2> getConfigs() {
         auto response = result.get();
         output[0] = response->names;
         output[1] = response->configs;
+        for (const auto & config : response->configs) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Config: %s", config.c_str());
+        }
     } else {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service list_configs");
     }
