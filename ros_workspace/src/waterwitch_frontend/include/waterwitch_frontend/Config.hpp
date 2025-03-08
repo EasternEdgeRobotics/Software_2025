@@ -34,6 +34,6 @@ class Config {
         float deadzone = 0.1;
         vector<ButtonAction> buttonActions;
         vector<AxisAction> axisActions;
-        u_int16_t[6] thruster_channels;
-        string[2] servo_ips;
+        // u_int16_t[6] thruster_channels;
+        // string[2] servo_ips;
 };

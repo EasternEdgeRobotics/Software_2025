@@ -213,6 +213,18 @@ int main(int argc, char **argv) {
                     ImGui::SameLine(); 
                     ImGui::InputText("##camera3", config.cam3ip, 64);
                     ImGui::EndTabItem();
+                    
+                }
+                char placeholder1[64];
+                if (ImGui::BeginTabItem("Servo")){
+                    ImGui::Text("Servo 1 URL");
+                    ImGui::SameLine();
+                    ImGui::InputText("##servo1", placeholder1, 64);
+                    ImGui::Text("Servo 2 URL");
+                    ImGui::SameLine();
+                    ImGui::InputText("##servo2", placeholder1, 64);
+                    ImGui::EndTabItem();
+
                 }
                 if (ImGui::BeginTabItem("Controls")) {
                     if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
