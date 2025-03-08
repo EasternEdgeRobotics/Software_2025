@@ -585,7 +585,7 @@ class I2CMaster(Node):
 
                 diagnostics_data.data += f"Outside Temperature Probe: {round((float(((readMSBs<<8)|readLSBs) & 0b0000011111111111)/16) * (-1 if readMSBs >= 16 else 1), 4)}C\n"
 
-            self.diagnostics_data_publisher.publish(diagnostics_data)
+            self.diagnostics_data_publisher_1.publish(diagnostics_data)
 
                 
                 

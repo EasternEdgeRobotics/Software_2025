@@ -21,11 +21,6 @@ public:
   I2CMaster() : Node("I2CMaster")
   {
 
-    // Execute a bash command to list the contents of the current directory
-    if (std::system("ls -la") != 0) {
-      RCLCPP_ERROR(this->get_logger(), 'sshpass -p "raspberry" ssh -o StrictHostKeyChecking=no pi@192.168.1.10 "pigs hp 18 50 1500000"');
-    }
-
     auto control_values_subscriber_callback =
       [this](eer_interfaces::msg::WaterwitchControl::UniquePtr control_values_msg) -> void {
         for (int thruster_index = 0; thruster_index < 6; thruster_index++) {
