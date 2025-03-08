@@ -1,0 +1,9 @@
+#0 = load config into database
+#1 = get config from database
+uint8 state
+string servo_ips_json
+string[] servo_ips
+---
+bool success
+string servo_ips_json
+string[] servo_ips

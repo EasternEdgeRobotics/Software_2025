@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from eer_interfaces.srv import Config, Cameras
+from eer_interfaces.srv import Config, Cameras, ServoIps
 import os
 
 import rclpy
@@ -36,10 +36,8 @@ class ProfilesManager(Node):
         self.srv1 = self.create_service(Config, "profile_config", self.profile_config_callback)
         self.srv2 = self.create_service(Config, "profiles_list", self.profiles_list_callback)
         self.srv3 = self.create_service(Cameras, "camera_urls", self.camera_urls_callback)
+        self.srv4 = self.create_service(ServoIps, "servo_ips", self.servo_ips_callback)
 
-    
-
-    
 
     def profile_config_callback(self, request, response):
         ''' 
@@ -190,6 +188,51 @@ class ProfilesManager(Node):
 
             return response
 
+    def servo_ips_callback(self, request, response):
+
+        # Create config folder if not done previously
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        file_path = f"{current_directory}/config/servo_ips.json"
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        if request.state == 0:  # We are looking to load servo ips into database from GUI
+
+            # If servo ips are sent in json format, we need to turn them into a list
+            if request.servo_ips == []:
+                ips = json.loads(request.servo_ips_json)  # Turn the received string into a List
+            else:
+                ips = request.servo_ips
+
+            # Ensure that there are at least 2 elements
+            while True:
+                if len(ips) < 2:
+                    ips.append("")
+                else:
+                    break
+
+            with open(file_path, "w") as f:
+                f.write(json.dumps(ips))
+
+            response.success = True
+
+            return response
+
+        elif request.state == 1: # We are looking to fetch servo ips form database into GUI
+
+            outgoing_servo_ips = []
+
+            try:
+                with open(file_path, "r") as f:
+                    ips = json.loads(f.read())
+            except FileNotFoundError:
+                ips = ["", ""]
+
+            response.servo_ips = ips
+            response.servo_ips_json = json.dumps(ips)
+
+            return response
+    
+    
     
         
 

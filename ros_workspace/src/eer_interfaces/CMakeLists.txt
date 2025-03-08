@@ -17,6 +17,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"msg/WaterwitchControl.msg"
 	"action/BeaumontAutoMode.action"
 	"srv/HSVColours.srv"
+	"srv/ServoIps.srv"
 )
 ament_export_dependencies(rosidl_default_runtime)
 
