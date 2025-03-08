@@ -9,7 +9,7 @@ export default function ControllerTab(props: { controller: number; index: number
     const [mappings, setMappings] = useAtom(Mappings);
 
     // The pilot actions are interperted once they get the to the RPi4 inside the enclosure
-    const [pilotActions,] = useAtom(PilotActions)
+    const [pilotActions,] = useAtom(PilotActions);
 
     const [, reloadComponent] = useState<number>(0);
 

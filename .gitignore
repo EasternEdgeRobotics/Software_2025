@@ -4,3 +4,5 @@ log/
 config/
 .vscode/
 imgui.ini
+.DS_Store
+configs/
