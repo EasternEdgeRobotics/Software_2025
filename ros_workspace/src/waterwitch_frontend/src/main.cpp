@@ -217,12 +217,35 @@ int main(int argc, char **argv) {
                 }
                 char placeholder1[64];
                 if (ImGui::BeginTabItem("Servo")){
-                    ImGui::Text("Servo 1 URL");
+                    ImGui::Text("Servo 1 IP");
                     ImGui::SameLine();
                     ImGui::InputText("##servo1", placeholder1, 64);
-                    ImGui::Text("Servo 2 URL");
+                    ImGui::Text("Servo 2 IP");
                     ImGui::SameLine();
                     ImGui::InputText("##servo2", placeholder1, 64);
+                    ImGui::EndTabItem();
+
+                }
+                char placeholder2[64];
+                if (ImGui::BeginTabItem("Thruster Map")){
+                    ImGui::Text("For Star (Forward Right)");
+                    ImGui::SameLine();
+                    ImGui::InputText("##for_star", placeholder2, 64);
+                    ImGui::Text("For Port (Forward Left)");
+                    ImGui::SameLine();
+                    ImGui::InputText("##for_port", placeholder2, 64);
+                    ImGui::Text("Aft star (Back Right)");
+                    ImGui::SameLine();
+                    ImGui::InputText("##aft_star", placeholder2, 64);
+                    ImGui::Text("Aft Port (Back Left)");
+                    ImGui::SameLine();
+                    ImGui::InputText("##aft_port", placeholder2, 64);
+                    ImGui::Text("Star Top (Right Top)");
+                    ImGui::SameLine();
+                    ImGui::InputText("##star_top", placeholder2, 64);
+                    ImGui::Text("[Port Top (Left Top)");
+                    ImGui::SameLine();
+                    ImGui::InputText("##Port_top", placeholder2, 64);
                     ImGui::EndTabItem();
 
                 }
