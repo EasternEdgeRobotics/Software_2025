@@ -19,11 +19,11 @@ This project uses ROS2 Jazzy.
 #### ROS2 Packages
 | Package Name         | Description                                                                 |
 |----------------------|-----------------------------------------------------------------------------|
-| **beaumont_backend** | Backend code for interfacing with the ROV named Beaumont.                   |
+| **beaumont_backend**  | Backend code for interfacing with the ROV named Beaumont.                   |
 | **waterwitch_backend** | Backend code for interfacing with the ROV named Waterwitch.               |
-| **common_backend**   | Common backend ROS nodes for all ROVs.                                      |
-| **eer_interfaces**   | Custom ROS2 interfaces used by all packages.                                |
-| **cpp_frontend**     | A frontend built using C++ that can be operated just from the command-line or with a GUI interface. |
+| **common_backend**    | Common backend ROS nodes for all ROVs.                                      |
+| **eer_interfaces**    | Custom ROS2 interfaces used by all packages.                                |
+| **waterwitch_frotnend**     | A frontend built using C++ r with a GUI interface.                          |
 
 More details [here](./ros_workspace/)
 
