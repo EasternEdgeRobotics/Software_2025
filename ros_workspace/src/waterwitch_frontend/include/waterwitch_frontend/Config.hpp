@@ -29,11 +29,16 @@ class Config {
     public:
         char cam1ip[64];
         char cam2ip[64];
-        char cam3ip[64];
+        char cam3ip[64]; 
         char name[64];
         float deadzone = 0.1;
         vector<ButtonAction> buttonActions;
         vector<AxisAction> axisActions;
-        // u_int16_t[6] thruster_channels;
-        // string[2] servo_ips;
+};
+
+class GlobalConfig {
+    public:
+        char servo1ip[64];
+        char servo2ip[64];
+        char thruster_map[6][64];
 };

@@ -15,6 +15,7 @@
 using json = nlohmann::json;
 
 Config config;
+GlobalConfig global_config;
 Power power;
 
 bool showConfigWindow = false;
@@ -164,9 +165,20 @@ int main(int argc, char **argv) {
                 }
                 if (ImGui::BeginMenu("Load Config")) {
                     for (size_t i = 0; i < names.size(); i++) {
+                        if (names[i] == "global")
+                        {
+                            json configData = json::parse(configs[i]);
+                            if (!configData["servos"][0].is_null()) std::strncpy(global_config.servo1ip, configData["servos"][0].get<std::string>().c_str(), sizeof(global_config.servo1ip));
+                            if (!configData["servos"][1].is_null()) std::strncpy(global_config.servo2ip, configData["servos"][1].get<std::string>().c_str(), sizeof(global_config.servo2ip));
+                            for (size_t i = 0; i < std::size(global_config.thruster_map); i++){
+                                if (!configData["thrusters"][1].is_null()) std::strncpy(global_config.thruster_map[i], configData["thrusters"][i].get<std::string>().c_str(), sizeof(global_config.thruster_map[i]));
+                            }
+                            continue;
+                        }
                         if (ImGui::MenuItem(names[i].c_str())) {
                             json configData = json::parse(configs[i]);
-                            if (!configData["cameras"][0].is_null()) std::strncpy(config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(config.cam1ip));
+                            if (!configData["cameras"][0].is_null()) std::strncpy(
+                                config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(config.cam1ip));
                             if (!configData["cameras"][1].is_null()) std::strncpy(config.cam2ip, configData["cameras"][1].get<std::string>().c_str(), sizeof(config.cam2ip));
                             if (!configData["cameras"][2].is_null()) std::strncpy(config.cam3ip, configData["cameras"][2].get<std::string>().c_str(), sizeof(config.cam3ip));
                             config.deadzone = configData.value("deadzone", 0.1f);
@@ -179,6 +191,7 @@ int main(int argc, char **argv) {
                                 config.axisActions.push_back(stringToAxisAction(mapping.value()));
                             }
                         }
+                    
                     }
                     ImGui::EndMenu();
                 }
@@ -215,37 +228,40 @@ int main(int argc, char **argv) {
                     ImGui::EndTabItem();
                     
                 }
-                char placeholder1[64];
+                // #################################
+                // Add the thruster map adn servo ips
+                // #################################
+               
                 if (ImGui::BeginTabItem("Servo")){
                     ImGui::Text("Servo 1 IP");
                     ImGui::SameLine();
-                    ImGui::InputText("##servo1", placeholder1, 64);
+                    ImGui::InputText("##servo1", global_config.servo1ip, 64);
                     ImGui::Text("Servo 2 IP");
                     ImGui::SameLine();
-                    ImGui::InputText("##servo2", placeholder1, 64);
+                    ImGui::InputText("##servo2", global_config.servo2ip, 64);
                     ImGui::EndTabItem();
 
                 }
-                char placeholder2[64];
+                
                 if (ImGui::BeginTabItem("Thruster Map")){
                     ImGui::Text("For Star (Forward Right)");
                     ImGui::SameLine();
-                    ImGui::InputText("##for_star", placeholder2, 64);
+                    ImGui::InputText("##for_star", global_config.thruster_map[0], 64);
                     ImGui::Text("For Port (Forward Left)");
                     ImGui::SameLine();
-                    ImGui::InputText("##for_port", placeholder2, 64);
+                    ImGui::InputText("##for_port", global_config.thruster_map[1], 64);
                     ImGui::Text("Aft star (Back Right)");
                     ImGui::SameLine();
-                    ImGui::InputText("##aft_star", placeholder2, 64);
+                    ImGui::InputText("##aft_star", global_config.thruster_map[2], 64);
                     ImGui::Text("Aft Port (Back Left)");
                     ImGui::SameLine();
-                    ImGui::InputText("##aft_port", placeholder2, 64);
+                    ImGui::InputText("##aft_port", global_config.thruster_map[3], 64);
                     ImGui::Text("Star Top (Right Top)");
                     ImGui::SameLine();
-                    ImGui::InputText("##star_top", placeholder2, 64);
+                    ImGui::InputText("##star_top", global_config.thruster_map[4], 64);
                     ImGui::Text("[Port Top (Left Top)");
                     ImGui::SameLine();
-                    ImGui::InputText("##Port_top", placeholder2, 64);
+                    ImGui::InputText("##Port_top", global_config.thruster_map[5], 64);
                     ImGui::EndTabItem();
 
                 }
@@ -308,6 +324,22 @@ int main(int argc, char **argv) {
                             configJson["mappings"]["0"]["axes"][i] = axisActionCodes[static_cast<int>(config.axisActions[i])];
                         }
                         saveConfigNode->saveConfig(string(config.name), configJson.dump());
+                    }
+                    ImGui::EndTabItem();
+                }
+                if (ImGui::BeginTabItem("Save Global Config")) {
+                    ImGui::Text("Saves global config (thruster map and servo ips)");
+                    if (ImGui::Button("Save")) {
+                        json configJson;
+                        configJson["name"] = "global";
+                        configJson["servos"][0] = global_config.servo1ip;
+                        configJson["servos"][1] = global_config.servo2ip;
+
+                        for (int i = 0; i < std::size(global_config.thruster_map); i++){
+                            configJson["thrusters"][i] = global_config.thruster_map[i];
+                        }
+                        
+                        saveConfigNode->saveConfig(string("global"), configJson.dump());
                     }
                     ImGui::EndTabItem();
                 }
