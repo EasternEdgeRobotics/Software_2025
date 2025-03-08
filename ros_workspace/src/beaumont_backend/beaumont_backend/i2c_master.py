@@ -425,7 +425,7 @@ class I2CMaster(Node):
         This function will take the recieved input and pipe it through control functions.
         '''
         
-        if not self.autonomous_mode_active or (msg.is_autonomous and self.autonomous_mode_active):
+        if not self.autonomous_mode_active or (self.autonomous_mode_active):
             thruster_values = self.rov_math(msg)
 
             if self.bus is not None:
@@ -440,13 +440,16 @@ class I2CMaster(Node):
                 self.tick_thrusters()
                 self.stm32_communications(msg)
         
-        if msg.enter_auto_mode:
-            if not self.autonomous_mode_active:
-                self.autonomous_mode_active = True
-                self.send_autonomous_mode_goal()
-            else:
-                future = self.goal_handle.cancel_goal_async()
-                future.add_done_callback(self.cancel_done)
+        # March 2025: Auto mode does not work anymore due to a series of changes
+        # This code is commented out to prevent i2c_master.py from crashing or getting stuck
+
+        # if msg.enter_auto_mode:
+        #     if not self.autonomous_mode_active:
+        #         self.autonomous_mode_active = True
+        #         self.send_autonomous_mode_goal()
+        #     else:
+        #         future = self.goal_handle.cancel_goal_async()
+        #         future.add_done_callback(self.cancel_done)
 
     def stm32_communications(self, controller_inputs):
         '''
@@ -585,7 +588,7 @@ class I2CMaster(Node):
 
                 diagnostics_data.data += f"Outside Temperature Probe: {round((float(((readMSBs<<8)|readLSBs) & 0b0000011111111111)/16) * (-1 if readMSBs >= 16 else 1), 4)}C\n"
 
-            self.diagnostics_data_publisher.publish(diagnostics_data)
+            self.diagnostics_data_publisher_1.publish(diagnostics_data)
 
                 
                 

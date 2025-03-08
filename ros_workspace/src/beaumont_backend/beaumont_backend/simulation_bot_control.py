@@ -143,7 +143,7 @@ class SimulationBotControl(Node):
     def pilot_listener_callback(self, msg):  
         '''Called when new controller input from pilot is recieved'''
         
-        if not self.autonomus_mode_active or (msg.is_autonomous and self.autonomus_mode_active):
+        if not self.autonomus_mode_active or (self.autonomus_mode_active):
             thruster_forces = self.simulation_rov_math(msg)
             # TODO: Cleanup this file now that thruster functionality has changed
             for_star_top = Int32()

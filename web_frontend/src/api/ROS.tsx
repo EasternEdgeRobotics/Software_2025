@@ -86,17 +86,22 @@ export function InitROS() {
         const controllerInputVals = new ROSLIB.Message({
             surge: controllerInput[0],
             sway: controllerInput[1],
-            heave: (controllerInput[7] || controllerInput[8]) ? ((controllerInput[7]||0)-(controllerInput[8]||0))*100 :controllerInput[2],
-            pitch: (controllerInput[9] || controllerInput[10]) ? ((controllerInput[9]||0)-(controllerInput[10]||0))*100 : controllerInput[3],
-            yaw: controllerInput[4],
-            open_claw: controllerInput[5] ? true : false,
-            close_claw: controllerInput[6] ? true : false,
-            brighten_led: controllerInput[11] ? true : false,
-            dim_led: controllerInput[12] ? true : false,
-            turn_stepper_cw: controllerInput[13] ? true : false,
-            turn_stepper_ccw: controllerInput[14] ? true : false,
-            read_outside_temperature_probe: controllerInput[15] ? true : false,
-            enter_auto_mode: controllerInput[16] ? true : false,
+            heave: (controllerInput[8] || controllerInput[9]) ? ((controllerInput[8]||0)-(controllerInput[9]||0))*100 : controllerInput[2],
+            pitch: (controllerInput[10] || controllerInput[11]) ? ((controllerInput[10]||0)-(controllerInput[11]||0))*100 : controllerInput[3],
+            roll: (controllerInput[12] || controllerInput[13]) ? ((controllerInput[12]||0)-(controllerInput[13]||0))*100 : controllerInput[4],
+            yaw: controllerInput[5],
+            open_claw: controllerInput[6] ? true : false,
+            close_claw: controllerInput[7] ? true : false,
+            turn_front_servo_cw: controllerInput[14] ? true : false,
+            turn_front_servo_ccw: controllerInput[15] ? true : false,
+            turn_back_servo_cw: controllerInput[16] ? true : false,
+            turn_back_servo_ccw: controllerInput[17] ? true : false,
+            brighten_led: controllerInput[18] ? true : false,
+            dim_led: controllerInput[19] ? true : false,
+            turn_stepper_cw: controllerInput[20] ? true : false,
+            turn_stepper_ccw: controllerInput[21] ? true : false,
+            read_outside_temperature_probe: controllerInput[22] ? true : false,
+            enter_auto_mode: controllerInput[23] ? true : false
         });
         controllerInputTopic.publish(controllerInputVals);
         first_input_sent = true;

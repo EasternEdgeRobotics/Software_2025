@@ -17,7 +17,7 @@ export const Mappings = atom<{ [controller: number]: { [type: string]: { [index:
 export const KeyboardMode = atom<boolean>(false);
 
 export const ThrusterMultipliers = atom<number[]>([20, 0, 0, 0, 0, 0]); // Power:0, Surge:1, Sway:2, Heave:3, Pitch:4, Yaw:5
-export const ControllerInput = atom<(number | undefined)[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // Current controller input from pilot
+export const ControllerInput = atom<(number | undefined)[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // Current controller input from pilot
 export const PilotActions = atom<string[]>([ // Possible pilot inputs
   "None",
   "surge",
@@ -32,8 +32,12 @@ export const PilotActions = atom<string[]>([ // Possible pilot inputs
   "heave_down",
   "pitch_up",
   "pitch_down",
-  "roll_ccw",
   "roll_cw",
+  "roll_ccw",
+  "turn_front_servo_cw",
+  "turn_front_servo_ccw",
+  "turn_back_servo_cw",
+  "turn_back_servo_ccw",
   "brighten_led",
   "dim_led",
   "turn_stepper_cw",
@@ -55,15 +59,17 @@ export const KeyboardInputMap = atom<(string | number)[][]>([ // Possible pilot 
   ["g", "pitch", -100],
   ["y", "roll", 100],
   ["h", "roll", -100],
-  ["z", "open_claw", 1],
-  ["x", "close_claw", 1],
+  ["z", "turn_front_servo_cw", 1],
+  ["x", "turn_front_servo_ccw", 1],
   ["c", "brighten_led", 1],
   ["v", "dim_led", 1],
-  ["b", "turn_stepper_cw", 1],
-  ["n", "turn_stepper_ccw", 1],
+  ["b", "turn_back_servo_cw", 1],
+  ["n", "turn_back_servo_ccw", 1],
   ["m", "read_outside_temperature_probe", 1],
-  [",", "enter_auto_mode", 1],
-]);
+  ["o", "open_claw", 1],
+  ["p", "close_claw", 1],
+  [",", "enter_auto_mode", 1]
+])
 
 export const CurrentProfile = atom<string>("Not Assigned"); // Current pilot profile
 export const ProfilesList = atom<{ id: number, name: string, controller1: string, controller2: string }[]>([{ id: 0, name: "default", controller1: "null", controller2: "null" }]); // List of known pilot profiles
