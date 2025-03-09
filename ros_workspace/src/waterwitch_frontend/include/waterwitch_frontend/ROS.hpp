@@ -5,7 +5,6 @@
 #include "eer_interfaces/srv/list_config.hpp"
 #include "eer_interfaces/msg/save_config.hpp"
 #include "eer_interfaces/msg/pilot_input.hpp"
-#include "eer_interfaces/msg/thruster_multipliers.hpp"
 #include "Power.hpp"
 
 class SaveConfigPublisher : public rclcpp::Node {
