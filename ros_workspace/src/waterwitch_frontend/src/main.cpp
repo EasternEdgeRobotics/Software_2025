@@ -25,6 +25,7 @@ bool showPilotWindow = false;
 vector<string> names;
 vector<string> configs;
 int configuration_mode_thruster_number = 0;
+bool configuration_mode = false;
 
 int main(int argc, char **argv) {
     //initialize glfw, imgui, and rclcpp (ros)    
@@ -94,7 +95,6 @@ int main(int argc, char **argv) {
             bool turnFrontServoCcw = false;
             bool turnBackServoCw = false;
             bool turnBackServoCcw = false;
-            bool configurationMode = false;
             // ########################
             // Add more buttons
             // ########################
@@ -144,7 +144,8 @@ int main(int argc, char **argv) {
                         turnBackServoCcw = true;
                         break;
                     case ButtonAction::CONFIGURATION_MODE:
-                        configurationMode = true;
+                        // Can either be set by user input for through the GUI
+                        configuration_mode = !configuration_mode;
                         break;
                     default:
                         break;
@@ -291,6 +292,7 @@ int main(int argc, char **argv) {
                     if (ImGui::Combo("##thruster_number", &currentThrusterNumber, thrusterNumbers, IM_ARRAYSIZE(thrusterNumbers))) {
                         configuration_mode_thruster_number = currentThrusterNumber;
                     }
+                    ImGui::Checkbox("Configuration Mode", &configuration_mode);
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Controls (User)")) {

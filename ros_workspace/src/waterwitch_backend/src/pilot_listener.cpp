@@ -96,7 +96,7 @@ private:
   };
   eer_interfaces::msg::WaterwitchControl current_waterwitch_control_values;
 
-  bool configuration_set = false;
+  bool inital_configuration_set = false;
   bool single_thruster_configuration_mode = false;
 
   void pilot_listener_callback(eer_interfaces::msg::PilotInput::UniquePtr pilot_input)
@@ -104,14 +104,14 @@ private:
 
     // This would be a part of the constructor, but since `get_waterwitch_config` contains
     // a call to shared_from_this(), we need to call this in the `pilot_listener_callback` to avoid runtime error
-    if (!configuration_set)
+    if (!inital_configuration_set)
     {
       RCLCPP_INFO(this->get_logger(), "Got here 1");
 
       std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
       // Get configs
       get_waterwitch_config();
-      configuration_set = true;
+      inital_configuration_set = true;
 
       RCLCPP_INFO(this->get_logger(), "Got here 2");
 
@@ -176,12 +176,13 @@ private:
     {
       std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
 
-      if (pilot_input->configuration_mode)
+      // If single_thruster_configuration_mode is going from true to false, get the waterwitch config again
+      if (!pilot_input->configuration_mode && single_thruster_configuration_mode)
       {
-        // If single_thruster_configuration_mode is going from false to true, get the waterwitch config again
         if (!single_thruster_configuration_mode) get_waterwitch_config();
-        single_thruster_configuration_mode = !single_thruster_configuration_mode;
       }
+
+      single_thruster_configuration_mode = pilot_input->configuration_mode;
 
       current_waterwitch_control_values.camera_servos[0] = pilot_input->turn_front_servo_cw - pilot_input->turn_front_servo_ccw;
       current_waterwitch_control_values.camera_servos[1] = pilot_input->turn_back_servo_cw - pilot_input->turn_back_servo_ccw;
