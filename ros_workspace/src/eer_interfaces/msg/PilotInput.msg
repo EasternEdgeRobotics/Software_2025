@@ -4,6 +4,13 @@ int8 heave
 int8 pitch
 int8 yaw
 int8 roll
+uint8 power_multiplier
+uint8 surge_multiplier
+uint8 sway_multiplier
+uint8 heave_multiplier
+uint8 pitch_multiplier
+uint8 yaw_multiplier
+uint8 roll_multiplier
 bool open_claw
 bool close_claw
 bool heave_up
@@ -22,3 +29,5 @@ bool turn_stepper_cw
 bool turn_stepper_ccw
 bool read_outside_temperature_probe
 bool enter_auto_mode
+bool configuration_mode
+int8 configuration_mode_thruster_number

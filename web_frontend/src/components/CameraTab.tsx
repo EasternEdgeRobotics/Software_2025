@@ -242,16 +242,16 @@ export default function CameraTab() {
         document.addEventListener("keypress", (event) => {
             switch (event.key) {
                 case "0":
-                    setThrusterMultipliers([0, 0, 0, 0, 0, 0]);
+                    setThrusterMultipliers([0, 0, 0, 0, 0, 0, 0]);
                     break;
                 case "1":
-                    setThrusterMultipliers([100, 100, 100, 100, 100, 70]);
+                    setThrusterMultipliers([100, 100, 100, 100, 100, 100, 70]);
                     break;
                 case "2":
-                    setThrusterMultipliers([100, 0, 0, 100, 0, 0]);
+                    setThrusterMultipliers([100, 0, 0, 100, 0, 0, 0]);
                     break;
                 case "3":
-                    setThrusterMultipliers([0, 100, 0, 0, 0, 0]);
+                    setThrusterMultipliers([0, 100, 0, 0, 0, 0, 0]);
                     break;
                 default:
                     break;
