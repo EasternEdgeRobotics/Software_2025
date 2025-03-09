@@ -28,9 +28,10 @@ public:
             // Map the thrust value from the range [-1, 1] to [0, 255]
             uint8_t thrust = static_cast<uint8_t>((control_values_msg->thrust[thruster_index] + 1) * 127.5);
 
+            RCLCPP_INFO(this->get_logger(), "Thruster address %d value: %d", thruster_index, thrust);
 
             // Publish on i2c bus
-            write_to_i2c(RP2040_ADDRESS, 2, THRUSTER_MAP.at(THRUSTER_NAMES[thruster_index]), thrust);
+            write_to_i2c(RP2040_ADDRESS, 2, control_values_msg->thruster_map[thruster_index], thrust);
         }
       };
 

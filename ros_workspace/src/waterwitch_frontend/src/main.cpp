@@ -14,8 +14,8 @@
 
 using json = nlohmann::json;
 
-Config config;
-GlobalConfig global_config;
+UserConfig user_config;
+WaterwitchConfig waterwitch_config;
 Power power;
 
 bool showConfigWindow = false;
@@ -24,6 +24,7 @@ bool showPilotWindow = false;
 
 vector<string> names;
 vector<string> configs;
+int configuration_mode_thruster_number = 0;
 
 int main(int argc, char **argv) {
     //initialize glfw, imgui, and rclcpp (ros)    
@@ -54,16 +55,15 @@ int main(int argc, char **argv) {
     //create ros nodes
     auto saveConfigNode = std::make_shared<SaveConfigPublisher>();
     auto pilotInputNode = std::make_shared<PilotInputPublisher>();
-    auto thrusterMultipliersNode = std::make_shared<ThrusterMultipliersPublisher>(&power);
 
     //get configs from ros, then set the names and configs
     std::array<std::vector<std::string>, 2> configRes = getConfigs();
     names = configRes[0];
     configs = configRes[1];
 
-    Camera cam1(config.cam1ip, noSignal);
-    Camera cam2(config.cam2ip, noSignal);
-    Camera cam3(config.cam3ip, noSignal);
+    Camera cam1(user_config.cam1ip, noSignal);
+    Camera cam2(user_config.cam2ip, noSignal);
+    Camera cam3(user_config.cam3ip, noSignal);
 
     cam1.start();
     cam2.start();
@@ -82,20 +82,25 @@ int main(int argc, char **argv) {
             int buttonCount, axisCount;
             const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
             const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
-            if (buttonCount > 0 && config.buttonActions.empty()) config.buttonActions = vector<ButtonAction>(buttonCount, ButtonAction::NONE);
-            if (axisCount > 0 && config.axisActions.empty()) config.axisActions = vector<AxisAction>(axisCount, AxisAction::NONE);
+            if (buttonCount > 0 && user_config.buttonActions.empty()) user_config.buttonActions = vector<ButtonAction>(buttonCount, ButtonAction::NONE);
+            if (axisCount > 0 && user_config.axisActions.empty()) user_config.axisActions = vector<AxisAction>(axisCount, AxisAction::NONE);
             int surge = 0;
             int sway = 0;
             int heave = 0;
             int yaw = 0;
             bool brightenLED = false;
             bool dimLED = false;
+            bool turnFrontServoCw = false;
+            bool turnFrontServoCcw = false;
+            bool turnBackServoCw = false;
+            bool turnBackServoCcw = false;
+            bool configurationMode = false;
             // ########################
             // Add more buttons
             // ########################
             for (int i = 0; i < buttonCount; i++) {
                 if (!buttons[i]) continue;
-                switch (config.buttonActions[i]) { 
+                switch (user_config.buttonActions[i]) { 
                     case ButtonAction::SURGE_BACKWARD:
                         surge -= 100;
                         break;
@@ -126,13 +131,28 @@ int main(int argc, char **argv) {
                     case ButtonAction::DIM_LED:
                         dimLED = true;
                         break;
+                    case ButtonAction::TURN_FRONT_SERVO_CW:
+                        turnFrontServoCw = true;
+                        break;
+                    case ButtonAction::TURN_FRONT_SERVO_CCW:
+                        turnFrontServoCcw = true;
+                        break;
+                    case ButtonAction::TURN_BACK_SERVO_CW:
+                        turnBackServoCw = true;
+                        break;
+                    case ButtonAction::TURN_BACK_SERVO_CCW:
+                        turnBackServoCcw = true;
+                        break;
+                    case ButtonAction::CONFIGURATION_MODE:
+                        configurationMode = true;
+                        break;
                     default:
                         break;
                 }
             }
-            for (size_t i = 0; i < config.axisActions.size(); i++) {
-                if (std::abs(axes[i]) <= config.deadzone) continue;
-                switch (config.axisActions[i]) {
+            for (size_t i = 0; i < user_config.axisActions.size(); i++) {
+                if (std::abs(axes[i]) <= user_config.deadzone) continue;
+                switch (user_config.axisActions[i]) {
                     case AxisAction::SURGE:
                         if (surge == 0) surge = -(int)(axes[i]*100);
                         break;
@@ -154,7 +174,8 @@ int main(int argc, char **argv) {
             // ########################
             // Add more inputs here
             // ########################
-            pilotInputNode->sendInput(surge, sway, heave, yaw, brightenLED, dimLED);
+            pilotInputNode->sendInput(power, surge, sway, heave, yaw, brightenLED, dimLED, turnFrontServoCw,
+            turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configurationMode, configuration_mode_thruster_number);
         }
 
         //top menu bar
@@ -165,36 +186,36 @@ int main(int argc, char **argv) {
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("Config")) {
-                if (ImGui::MenuItem("Open Config Editor")) {
+            if (ImGui::BeginMenu("UserConfig")) {
+                if (ImGui::MenuItem("Open UserConfig Editor")) {
                     showConfigWindow = true;
                 }
-                if (ImGui::BeginMenu("Load Config")) {
+                if (ImGui::BeginMenu("Load UserConfig")) {
                     for (size_t i = 0; i < names.size(); i++) {
-                        if (names[i] == "global")
+                        if (names[i] == "waterwitch_config")
                         {
                             json configData = json::parse(configs[i]);
-                            if (!configData["servos"][0].is_null()) std::strncpy(global_config.servo1ip, configData["servos"][0].get<std::string>().c_str(), sizeof(global_config.servo1ip));
-                            if (!configData["servos"][1].is_null()) std::strncpy(global_config.servo2ip, configData["servos"][1].get<std::string>().c_str(), sizeof(global_config.servo2ip));
-                            for (size_t i = 0; i < std::size(global_config.thruster_map); i++){
-                                if (!configData["thrusters"][1].is_null()) std::strncpy(global_config.thruster_map[i], configData["thrusters"][i].get<std::string>().c_str(), sizeof(global_config.thruster_map[i]));
+                            if (!configData["servos"][0].is_null()) std::strncpy(waterwitch_config.servo1ip, configData["servos"][0].get<std::string>().c_str(), sizeof(waterwitch_config.servo1ip));
+                            if (!configData["servos"][1].is_null()) std::strncpy(waterwitch_config.servo2ip, configData["servos"][1].get<std::string>().c_str(), sizeof(waterwitch_config.servo2ip));
+                            for (size_t i = 0; i < std::size(waterwitch_config.thruster_map); i++){
+                                if (!configData["thruster_map"][1].is_null()) std::strncpy(waterwitch_config.thruster_map[i], configData["thruster_map"][i].get<std::string>().c_str(), sizeof(waterwitch_config.thruster_map[i]));
                             }
                             continue;
                         }
                         if (ImGui::MenuItem(names[i].c_str())) {
                             json configData = json::parse(configs[i]);
                             if (!configData["cameras"][0].is_null()) std::strncpy(
-                                config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(config.cam1ip));
-                            if (!configData["cameras"][1].is_null()) std::strncpy(config.cam2ip, configData["cameras"][1].get<std::string>().c_str(), sizeof(config.cam2ip));
-                            if (!configData["cameras"][2].is_null()) std::strncpy(config.cam3ip, configData["cameras"][2].get<std::string>().c_str(), sizeof(config.cam3ip));
-                            config.deadzone = configData.value("deadzone", 0.1f);
-                            config.buttonActions.clear();
+                                user_config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(user_config.cam1ip));
+                            if (!configData["cameras"][1].is_null()) std::strncpy(user_config.cam2ip, configData["cameras"][1].get<std::string>().c_str(), sizeof(user_config.cam2ip));
+                            if (!configData["cameras"][2].is_null()) std::strncpy(user_config.cam3ip, configData["cameras"][2].get<std::string>().c_str(), sizeof(user_config.cam3ip));
+                            user_config.deadzone = configData.value("deadzone", 0.1f);
+                            user_config.buttonActions.clear();
                             for (auto& mapping : configData["mappings"]["0"]["buttons"].items()) {
-                                config.buttonActions.push_back(stringToButtonAction(mapping.value()));
+                                user_config.buttonActions.push_back(stringToButtonAction(mapping.value()));
                             }
-                            config.axisActions.clear();
+                            user_config.axisActions.clear();
                             for (auto& mapping : configData["mappings"]["0"]["axes"].items()) {
-                                config.axisActions.push_back(stringToAxisAction(mapping.value()));
+                                user_config.axisActions.push_back(stringToAxisAction(mapping.value()));
                             }
                         }
                     
@@ -217,61 +238,62 @@ int main(int argc, char **argv) {
             ImGui::EndMainMenuBar();
         }
 
-        //config window
+        //user_config window
         if (showConfigWindow) {
             ImGui::Begin("Config Editor", &showConfigWindow);
             if (ImGui::BeginTabBar("Config Tabs")) {
-                if (ImGui::BeginTabItem("Cameras")) {
+                if (ImGui::BeginTabItem("Cameras (User)")) {
                     ImGui::Text("Camera 1 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera1", config.cam1ip, 64);
+                    ImGui::InputText("##camera1", user_config.cam1ip, 64);
                     ImGui::Text("Camera 2 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera2", config.cam2ip, 64);
+                    ImGui::InputText("##camera2", user_config.cam2ip, 64);
                     ImGui::Text("Camera 3 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera3", config.cam3ip, 64);
+                    ImGui::InputText("##camera3", user_config.cam3ip, 64);
                     ImGui::EndTabItem();
                     
                 }
-                // #################################
-                // Add the thruster map adn servo ips
-                // #################################
-               
-                if (ImGui::BeginTabItem("Servo")){
+                if (ImGui::BeginTabItem("Servo (Waterwitch)")){
                     ImGui::Text("Servo 1 IP");
                     ImGui::SameLine();
-                    ImGui::InputText("##servo1", global_config.servo1ip, 64);
+                    ImGui::InputText("##servo1", waterwitch_config.servo1ip, 64);
                     ImGui::Text("Servo 2 IP");
                     ImGui::SameLine();
-                    ImGui::InputText("##servo2", global_config.servo2ip, 64);
+                    ImGui::InputText("##servo2", waterwitch_config.servo2ip, 64);
                     ImGui::EndTabItem();
 
                 }
-                
-                if (ImGui::BeginTabItem("Thruster Map")){
+                if (ImGui::BeginTabItem("Thruster Map (Waterwitch)")){
                     ImGui::Text("For Star (Forward Right)");
                     ImGui::SameLine();
-                    ImGui::InputText("##for_star", global_config.thruster_map[0], 64);
+                    ImGui::InputText("##for_star", waterwitch_config.thruster_map[0], 64);
                     ImGui::Text("For Port (Forward Left)");
                     ImGui::SameLine();
-                    ImGui::InputText("##for_port", global_config.thruster_map[1], 64);
+                    ImGui::InputText("##for_port", waterwitch_config.thruster_map[1], 64);
                     ImGui::Text("Aft star (Back Right)");
                     ImGui::SameLine();
-                    ImGui::InputText("##aft_star", global_config.thruster_map[2], 64);
+                    ImGui::InputText("##aft_star", waterwitch_config.thruster_map[2], 64);
                     ImGui::Text("Aft Port (Back Left)");
                     ImGui::SameLine();
-                    ImGui::InputText("##aft_port", global_config.thruster_map[3], 64);
+                    ImGui::InputText("##aft_port", waterwitch_config.thruster_map[3], 64);
                     ImGui::Text("Star Top (Right Top)");
                     ImGui::SameLine();
-                    ImGui::InputText("##star_top", global_config.thruster_map[4], 64);
+                    ImGui::InputText("##star_top", waterwitch_config.thruster_map[4], 64);
                     ImGui::Text("[Port Top (Left Top)");
                     ImGui::SameLine();
-                    ImGui::InputText("##Port_top", global_config.thruster_map[5], 64);
+                    ImGui::InputText("##Port_top", waterwitch_config.thruster_map[5], 64);
+                    ImGui::Text("Configuration Mode Thruster Number");
+                    ImGui::SameLine();
+                    const char* thrusterNumbers[] = { "0", "1", "2", "3", "4", "5" };
+                    static int currentThrusterNumber = 0;
+                    if (ImGui::Combo("##thruster_number", &currentThrusterNumber, thrusterNumbers, IM_ARRAYSIZE(thrusterNumbers))) {
+                        configuration_mode_thruster_number = currentThrusterNumber;
+                    }
                     ImGui::EndTabItem();
-
                 }
-                if (ImGui::BeginTabItem("Controls")) {
+                if (ImGui::BeginTabItem("Controls (User)")) {
                     if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         int buttonCount, axisCount;
                         const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
@@ -279,14 +301,14 @@ int main(int argc, char **argv) {
                         ImGui::Text("Connected Controller: %s", glfwGetJoystickName(GLFW_JOYSTICK_1));
                         ImGui::Text("Axis Deadzone");
                         ImGui::SameLine();
-                        ImGui::SliderFloat("##deadzone", &config.deadzone, 0.f, 1.f);
+                        ImGui::SliderFloat("##deadzone", &user_config.deadzone, 0.f, 1.f);
                         ImGui::SeparatorText("Buttons");
                         for (int i = 0; i < buttonCount; i++) {
                             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, !buttons[i], 1, 1));
                             ImGui::Text("%s", (std::string("Button ") + std::to_string(i)).c_str());
                             ImGui::PopStyleColor();
                             ImGui::SameLine(); 
-                            if (ImGui::Combo((std::string("##button") + std::to_string(i)).c_str(), reinterpret_cast<int*>(&config.buttonActions[i]), buttonActionLabels, static_cast<int>(ButtonAction::SIZE))) {
+                            if (ImGui::Combo((std::string("##button") + std::to_string(i)).c_str(), reinterpret_cast<int*>(&user_config.buttonActions[i]), buttonActionLabels, static_cast<int>(ButtonAction::SIZE))) {
 
                             }
                         }
@@ -296,7 +318,7 @@ int main(int argc, char **argv) {
                             ImGui::Text("%s", (std::string("Axis ") + std::to_string(i)).c_str());
                             ImGui::PopStyleColor();
                             ImGui::SameLine();
-                            if (ImGui::Combo((std::string("##axis") + std::to_string(i)).c_str(), reinterpret_cast<int*>(&config.axisActions[i]), axisActionLabels, static_cast<int>(AxisAction::SIZE))) {
+                            if (ImGui::Combo((std::string("##axis") + std::to_string(i)).c_str(), reinterpret_cast<int*>(&user_config.axisActions[i]), axisActionLabels, static_cast<int>(AxisAction::SIZE))) {
                                 
                             }
                         }
@@ -306,52 +328,42 @@ int main(int argc, char **argv) {
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Save")) {
-                    ImGui::Text("Config Name");
+                    if (ImGui::Button("Save Global Config")) {
+                        json configJson;
+                        configJson["name"] = "waterwitch_config";
+                        configJson["servos"][0] = waterwitch_config.servo1ip;
+                        configJson["servos"][1] = waterwitch_config.servo2ip;
+
+                        for (size_t i = 0; i < waterwitch_config.thruster_map.size(); i++){
+                            configJson["thruster_map"][i] = waterwitch_config.thruster_map[i];
+                        }
+                        
+                        saveConfigNode->saveConfig("waterwitch_config", configJson.dump());
+                    }
+                    ImGui::Text("User Config Name");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##configName", config.name, 64);
+                    ImGui::InputText("##configName", user_config.name, 64);
                     if (!glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         ImGui::Text("Controller must be connected");
                     } else if (ImGui::Button("Save")) {
                         json configJson;
-                        configJson["name"] = config.name;
-                        configJson["cameras"][0] = config.cam1ip;
-                        configJson["cameras"][1] = config.cam2ip;
-                        configJson["cameras"][2] = config.cam3ip;
+                        configJson["name"] = user_config.name;
+                        configJson["cameras"][0] = user_config.cam1ip;
+                        configJson["cameras"][1] = user_config.cam2ip;
+                        configJson["cameras"][2] = user_config.cam3ip;
                         configJson["controller1"] = glfwGetJoystickName(GLFW_JOYSTICK_1);
                         configJson["controller2"] = "null";
-                        configJson["deadzone"] = config.deadzone;
-                        for (size_t i = 0; i < config.axisActions.size(); i++) {
-                            configJson["mappings"]["0"]["deadzones"][std::to_string(i)] = config.deadzone; //for compatability with react gui
+                        configJson["deadzone"] = user_config.deadzone;
+                        for (size_t i = 0; i < user_config.axisActions.size(); i++) {
+                            configJson["mappings"]["0"]["deadzones"][std::to_string(i)] = user_config.deadzone; //for compatability with react gui
                         }
-                        for (size_t i = 0; i < config.buttonActions.size(); i++) {
-                            configJson["mappings"]["0"]["buttons"][i] = buttonActionCodes[static_cast<int>(config.buttonActions[i])];
+                        for (size_t i = 0; i < user_config.buttonActions.size(); i++) {
+                            configJson["mappings"]["0"]["buttons"][i] = buttonActionCodes[static_cast<int>(user_config.buttonActions[i])];
                         }
-                        for (size_t i = 0; i < config.axisActions.size(); i++) {
-                            configJson["mappings"]["0"]["axes"][i] = axisActionCodes[static_cast<int>(config.axisActions[i])];
+                        for (size_t i = 0; i < user_config.axisActions.size(); i++) {
+                            configJson["mappings"]["0"]["axes"][i] = axisActionCodes[static_cast<int>(user_config.axisActions[i])];
                         }
-                        saveConfigNode->saveConfig(string(config.name), configJson.dump());
-                    }
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Save Global Config")) {
-                    ImGui::Text("Saves global config (thruster map and servo ips)");
-                    if (ImGui::Button("Save")) {
-                        json configJson;
-                        configJson["name"] = "global";
-                        configJson["servos"][0] = global_config.servo1ip;
-                        configJson["servos"][1] = global_config.servo2ip;
-
-                        RCLCPP_INFO(rclcpp::get_logger("logger_name"), "Servo 1 IP: %s", global_config.servo1ip);
-                        RCLCPP_INFO(rclcpp::get_logger("logger_name"), "Servo 2 IP: %s", global_config.servo2ip);
-                        for (int i = 0; i < std::size(global_config.thruster_map); i++) {
-                            RCLCPP_INFO(rclcpp::get_logger("logger_name"), "Thruster %d: %s", i, global_config.thruster_map[i]);
-                        }
-
-                        for (int i = 0; i < std::size(global_config.thruster_map); i++){
-                            configJson["thrusters"][i] = global_config.thruster_map[i];
-                        }
-                        
-                        saveConfigNode->saveConfig(string("global"), configJson.dump());
+                        saveConfigNode->saveConfig(string(user_config.name), configJson.dump());
                     }
                     ImGui::EndTabItem();
                 }
@@ -384,22 +396,13 @@ int main(int argc, char **argv) {
         //co-pilot controls window
         if (showPilotWindow) {
             ImGui::Begin("Co-Pilot Window", &showPilotWindow);
-
-            if (ImGui::SliderInt("Power", &power.power, 0, 100)) {
-                thrusterMultipliersNode->sendPower();
-            }
-            if (ImGui::SliderInt("Surge", &power.surge, 0, 100)) {
-                thrusterMultipliersNode->sendPower();
-            }
-            if (ImGui::SliderInt("Sway", &power.sway, 0, 100)) {
-                thrusterMultipliersNode->sendPower(); 
-            }
-            if (ImGui::SliderInt("Turn", &power.yaw, 0, 100)) {
-                thrusterMultipliersNode->sendPower();
-            }
-            if (ImGui::SliderInt("Heave", &power.heave, 0, 100)) {
-                thrusterMultipliersNode->sendPower();
-            }
+            
+            ImGui::SliderInt("Power", &power.power, 0, 100);
+            ImGui::SliderInt("Surge", &power.surge, 0, 100);
+            ImGui::SliderInt("Sway", &power.sway, 0, 100);
+            ImGui::SliderInt("Heave", &power.heave, 0, 100);
+            ImGui::SliderInt("Turn", &power.roll, 0, 100);
+            ImGui::SliderInt("Turn", &power.yaw, 0, 100);
 
             ImGui::SeparatorText("Keybinds");
             ImGui::Text("1 - Set all to 0%%");
@@ -410,25 +413,25 @@ int main(int argc, char **argv) {
                 power.power = 0;
                 power.surge = 0;
                 power.sway = 0;
-                power.yaw = 0;
                 power.heave = 0;
-                thrusterMultipliersNode->sendPower();
+                power.roll = 0;
+                power.yaw = 0;
             }
             if (ImGui::IsKeyPressed(ImGuiKey_2)) {
                 power.power = 50;
                 power.surge = 50;
                 power.sway = 50;
-                power.yaw = 50;
                 power.heave = 50;
-                thrusterMultipliersNode->sendPower();
+                power.roll = 50;
+                power.yaw = 50;
             }
             if (ImGui::IsKeyPressed(ImGuiKey_3)) {
                 power.power = 100;
                 power.surge = 0;
                 power.sway = 0;
-                power.yaw = 0;
                 power.heave = 100;
-                thrusterMultipliersNode->sendPower();
+                power.roll = 0;
+                power.yaw = 0;
             }
 
             ImGui::End();

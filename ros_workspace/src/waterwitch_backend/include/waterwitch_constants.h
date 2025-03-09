@@ -21,9 +21,6 @@ extern const int8_t THRUSTER_CONFIG_MATRIX[6][6];
 // Names of the thrusters
 extern const std::string THRUSTER_NAMES[6];
 
-// Map from thruster name to thruster address on RP2040
-extern const std::unordered_map<std::string, uint8_t> THRUSTER_MAP;
-
 // The maximum amount that the thrusters' thrust value changes in one iteration
 extern const float THRUSTER_ACCELERATION;
 

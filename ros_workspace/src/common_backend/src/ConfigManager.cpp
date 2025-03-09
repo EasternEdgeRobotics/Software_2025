@@ -104,10 +104,6 @@ class SaveConfigSubscriber : public rclcpp::Node {
     private:
         void topic_callback(const eer_interfaces::msg::SaveConfig::SharedPtr msg) const {
             string path = "configs/" + msg->name + ".json";
-
-            RCLCPP_INFO(this->get_logger(), "Received config name: %s", msg->name.c_str());
-
-            RCLCPP_INFO(this->get_logger(), "Received config data: %s", msg->data.c_str());
             
             std::ofstream ofs;
             ofs.open(path, std::ios::out | std::ios::trunc);

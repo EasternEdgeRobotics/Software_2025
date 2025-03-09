@@ -31,20 +31,39 @@ class PilotInputPublisher : public rclcpp::Node {
             publisher_ = this->create_publisher<eer_interfaces::msg::PilotInput>("/pilot_input", 10);
         }
 
-        void sendInput(const int& surge,
+        void sendInput(const Power& power,
+        const int& surge,
         const int& sway,
         const int& heave,
         const int& yaw,
         const bool& brightenLED,
-        const bool& dimLED) {
+        const bool& dimLED,
+        const bool& turnFrontServoCw,
+        const bool& turnFrontServoCcw,
+        const bool& turnBackServoCw,
+        const bool& turnBackServoCcw,
+        const bool& configurationMode,
+        const bool& configurationModeThrusterNumber) {
             auto msg = eer_interfaces::msg::PilotInput();
             msg.surge = surge;
             msg.sway = sway;
             msg.heave = heave;
             msg.yaw = yaw;
+            msg.power_multiplier = power.power;
+            msg.surge_multiplier = power.surge;
+            msg.sway_multiplier = power.sway;
+            msg.heave_multiplier = power.heave;
+            msg.roll_multiplier = power.roll;
+            msg.yaw_multiplier = power.yaw;
             //may need to remove these? not sure if leds are on the bot this year
             msg.brighten_led = brightenLED;
             msg.dim_led = dimLED;
+            msg.turn_front_servo_cw = turnFrontServoCw;
+            msg.turn_front_servo_ccw = turnFrontServoCcw;
+            msg.turn_back_servo_cw = turnBackServoCw;
+            msg.turn_back_servo_ccw = turnBackServoCcw;
+            msg.configuration_mode = configurationMode;
+            msg.configuration_mode_thruster_number = configurationModeThrusterNumber;
             publisher_->publish(msg);
             // ########################
             // Add more inputs to this function
@@ -53,34 +72,6 @@ class PilotInputPublisher : public rclcpp::Node {
 
     private:
         rclcpp::Publisher<eer_interfaces::msg::PilotInput>::SharedPtr publisher_;
-};
-
-class ThrusterMultipliersPublisher : public rclcpp::Node {
-    public:
-        ThrusterMultipliersPublisher(Power* powerPtr) : Node("thruster_multipliers_publisher") {
-            publisher_ = this->create_publisher<eer_interfaces::msg::ThrusterMultipliers>("/thruster_multipliers", 10);
-            this->powerPtr = powerPtr;
-        }
-
-        void sendPower() {
-            Power power = *powerPtr;
-
-            //surge sway heave itch roll yaw
-            auto msg = eer_interfaces::msg::ThrusterMultipliers();
-            msg.power = power.power;
-            msg.surge = power.surge;
-            msg.sway = power.sway;
-            msg.heave = power.heave;
-            msg.pitch = 0; //pitch is not possible with our thruster configuration
-            //msg.roll = 0; //roll is possible, but not used? can be discussed later
-            msg.yaw = power.yaw;
-            publisher_->publish(msg);
-        }
-
-    private:
-        rclcpp::Publisher<eer_interfaces::msg::ThrusterMultipliers>::SharedPtr publisher_;
-  
-        Power* powerPtr;
 };
 
 std::array<std::vector<std::string>, 2> getConfigs() {
