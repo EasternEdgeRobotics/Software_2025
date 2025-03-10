@@ -3,5 +3,4 @@
 	<node pkg="common_backend" exec="config_manager"/>
 	<node pkg="beaumont_backend" exec="task_manager.py"/>
 	<node pkg="beaumont_backend" exec="i2c_master.py"/>
-	<node pkg="beaumont_backend" exec="autonomus_brain_coral_transplant.py"/>
 </launch>

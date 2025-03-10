@@ -14,7 +14,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 	"srv/GetConfig.srv" 
 	"srv/DeleteConfig.srv" 
 	"srv/Cameras.srv" 
-	"msg/ThrusterMultipliers.msg" 
 	"msg/PilotInput.msg" 
 	"msg/SaveConfig.msg" 
 	"msg/WaterwitchControl.msg" 

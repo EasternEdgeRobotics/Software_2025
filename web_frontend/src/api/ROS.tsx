@@ -52,27 +52,6 @@ export function InitROS() {
         }, 1000);
     }, []);
 
-    // Create a publisher on the "/thruster_multipliers" ros2 topic using a custom EER message interface 
-    const thrusterValsTopic = new ROSLIB.Topic({
-        ros: ros,
-        name: "/thruster_multipliers",
-        messageType: "eer_interfaces/ThrusterMultipliers"
-    });
-
-    // Publish the new power multipliers whenever they change
-    React.useEffect(() => {
-        const thrusterVals = new ROSLIB.Message({
-            power: thrusterMultipliers[0],
-            surge: thrusterMultipliers[1],
-            sway: thrusterMultipliers[2],
-            heave: thrusterMultipliers[3],
-            pitch: thrusterMultipliers[4],
-            yaw: thrusterMultipliers[5]
-        });
-        if (hasRecieved) thrusterValsTopic.publish(thrusterVals);
-    }
-        , [thrusterMultipliers]);
-
     // Create a publisher on the "/pilot_input" ros2 topic, using the default String message which will be used from transporting JSON data
     const controllerInputTopic = new ROSLIB.Topic({
         ros: ros,
@@ -101,7 +80,14 @@ export function InitROS() {
             turn_stepper_cw: controllerInput[20] ? true : false,
             turn_stepper_ccw: controllerInput[21] ? true : false,
             read_outside_temperature_probe: controllerInput[22] ? true : false,
-            enter_auto_mode: controllerInput[23] ? true : false
+            enter_auto_mode: controllerInput[23] ? true : false,
+            power_multiplier: thrusterMultipliers[0],
+            surge_multiplier: thrusterMultipliers[1],
+            sway_multiplier: thrusterMultipliers[2],
+            heave_multiplier: thrusterMultipliers[3],
+            pitch_multiplier: thrusterMultipliers[4],
+            roll_multiplier: thrusterMultipliers[5],
+            yaw_multiplier: thrusterMultipliers[6]
         });
         controllerInputTopic.publish(controllerInputVals);
         first_input_sent = true;
@@ -237,6 +223,9 @@ export function InitROS() {
                     for (let i = 0; i < result.configs.length; i++) {
                         try {
                             const config = JSON.parse(result.configs[i]);
+                            
+                            // Ignore `waterwitch_config`, which has a different format
+                            if (config.name == "waterwitch_config") continue;
 
                             profilesList.push({
                                 id: profilesList.length,

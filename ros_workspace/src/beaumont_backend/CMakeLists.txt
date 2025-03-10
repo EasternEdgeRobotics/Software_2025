@@ -20,7 +20,6 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables 
 install(PROGRAMS
-  beaumont_backend/autonomus_brain_coral_transplant.py
   beaumont_backend/i2c_master.py
   beaumont_backend/simulation_bot_control.py
   beaumont_backend/task_manager.py

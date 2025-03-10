@@ -11,6 +11,8 @@ find_package(std_msgs REQUIRED)
 find_package(eer_interfaces REQUIRED) 
 find_package(rosidl_default_generators REQUIRED)
 
+add_subdirectory(include/json)
+
 # Include directories
 include_directories(
   ${eer_interfaces_INCLUDE_DIRS} 
@@ -29,9 +31,9 @@ ament_target_dependencies(simulation_bot_control rclcpp std_msgs eer_interfaces)
 ament_target_dependencies(pilot_listener rclcpp std_msgs eer_interfaces)
 ament_target_dependencies(i2c_master rclcpp std_msgs eer_interfaces)
 
-target_link_libraries(pilot_listener "${cpp_typesupport_target}" waterwitch_constants)
-target_link_libraries(simulation_bot_control "${cpp_typesupport_target}" waterwitch_constants)
-target_link_libraries(i2c_master "${cpp_typesupport_target}" waterwitch_constants)
+target_link_libraries(pilot_listener "${cpp_typesupport_target}" waterwitch_constants nlohmann_json::nlohmann_json)
+target_link_libraries(simulation_bot_control "${cpp_typesupport_target}" waterwitch_constants nlohmann_json::nlohmann_json)
+target_link_libraries(i2c_master "${cpp_typesupport_target}" waterwitch_constants nlohmann_json::nlohmann_json)
 
 install(TARGETS
   pilot_listener
