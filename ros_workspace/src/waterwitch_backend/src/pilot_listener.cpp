@@ -121,12 +121,13 @@ private:
       pilot_input->roll = (pilot_input->roll_cw - pilot_input->roll_ccw) * 100;
 
     // Apply the multipliers 
-    pilot_input->surge = pilot_input->surge * pilot_input->surge_multiplier * pilot_input->power_multiplier * 0.0001f;
-    pilot_input->sway = pilot_input->sway * pilot_input->sway_multiplier * pilot_input->power_multiplier * 0.0001f;
-    pilot_input->heave = pilot_input->heave * pilot_input->heave_multiplier * pilot_input->power_multiplier * 0.0001f;
-    pilot_input->pitch = pilot_input->pitch * pilot_input->pitch_multiplier * pilot_input->power_multiplier * 0.0001f;
-    pilot_input->roll = pilot_input->roll * pilot_input->roll_multiplier * pilot_input->power_multiplier * 0.0001f;
-    pilot_input->yaw = pilot_input->yaw * pilot_input->yaw_multiplier * pilot_input->power_multiplier * 0.0001f;
+    float overall_multiplier = pilot_input->power_multiplier * 0.0001f;
+    pilot_input->surge = pilot_input->surge * pilot_input->surge_multiplier * overall_multiplier;
+    pilot_input->sway = pilot_input->sway * pilot_input->sway_multiplier * overall_multiplier;
+    pilot_input->heave = pilot_input->heave * pilot_input->heave_multiplier * overall_multiplier;
+    pilot_input->pitch = pilot_input->pitch * pilot_input->pitch_multiplier * overall_multiplier;
+    pilot_input->roll = pilot_input->roll * pilot_input->roll_multiplier * overall_multiplier;
+    pilot_input->yaw = pilot_input->yaw * pilot_input->yaw_multiplier * overall_multiplier;
 
     // Lambda function to compute thrust value for each thruster
     auto compute_thrust_value = [this](int thruster_index, const eer_interfaces::msg::PilotInput* pilot_input, std::array<float, 6>& target_thrust_values) 
@@ -174,10 +175,8 @@ private:
       // If single_thruster_configuration_mode is going from true to false, get the waterwitch config again
       if (!pilot_input->configuration_mode && single_thruster_configuration_mode)
       {
-        if (!single_thruster_configuration_mode) get_waterwitch_config();
-        RCLCPP_INFO(this->get_logger(), "Configuration Mode");
+        get_waterwitch_config();
       }
-
 
       single_thruster_configuration_mode = pilot_input->configuration_mode;
 
@@ -212,12 +211,6 @@ private:
     // Publish the waterwitch control values
     {
       std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
-      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 0: %d", current_waterwitch_control_values.thruster_map[0]);
-      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 1: %d", current_waterwitch_control_values.thruster_map[1]);
-      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 2: %d", current_waterwitch_control_values.thruster_map[2]);
-      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 3: %d", current_waterwitch_control_values.thruster_map[3]);
-      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 4: %d", current_waterwitch_control_values.thruster_map[4]);
-      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 5: %d", current_waterwitch_control_values.thruster_map[5]);
       waterwitch_control_publisher->publish(current_waterwitch_control_values);
     }
   }
@@ -228,8 +221,6 @@ private:
     auto request = std::make_shared<eer_interfaces::srv::GetConfig::Request>();
     request->name = "waterwitch_config";
 
-    RCLCPP_INFO(this->get_logger(), "Got here 1.1");
-    
     // Send the request to this config client
     auto result = waterwitch_config_client->async_send_request(request, 
       [this](rclcpp::Client<eer_interfaces::srv::GetConfig>::SharedFuture future) {
@@ -237,11 +228,9 @@ private:
 
           // Check if the response is empty
           if (response->config.empty()) {
-            RCLCPP_INFO(this->get_logger(), "Emoty response");
+            RCLCPP_INFO(this->get_logger(), "Waterwitch backend recieved empty config response");
             return;
           } 
-
-          RCLCPP_INFO(this->get_logger(), "Received config: %s", response->config.c_str());
 
           try {
               nlohmann::json configuration_data = nlohmann::json::parse(response->config);
@@ -279,6 +268,7 @@ private:
                       current_waterwitch_control_values.thruster_map[i] = static_cast<uint8_t>(configuration_data["thruster_map"][i].get<int>());
                   }
               }
+              
           } catch (const nlohmann::json::parse_error& e) {
               RCLCPP_ERROR(this->get_logger(), "JSON parse error: %s", e.what());
           }

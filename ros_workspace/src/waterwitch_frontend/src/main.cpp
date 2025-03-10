@@ -109,8 +109,6 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnBackServoCcw = true;
-                RCLCPP_INFO(pilotInputNode->get_logger(), "Keyboard Input: Surge: %d, Sway: %d, Heave: %d, Yaw: %d, Brighten LED: %d, Dim LED: %d, Turn Front Servo CW: %d, Turn Front Servo CCW: %d, Turn Back Servo CW: %d, Turn Back Servo CCW: %d",
-                            surge, sway, heave, yaw, brightenLED, dimLED, turnFrontServoCw, turnFrontServoCcw, turnBackServoCw, turnBackServoCcw);
             }
             else if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
