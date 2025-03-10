@@ -26,6 +26,7 @@ vector<string> names;
 vector<string> configs;
 int configuration_mode_thruster_number = 0;
 bool configuration_mode = false;
+bool keyboard_mode = false;
 
 int main(int argc, char **argv) {
     //initialize glfw, imgui, and rclcpp (ros)    
@@ -78,106 +79,129 @@ int main(int argc, char **argv) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        //controller loop
-        if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
-            int buttonCount, axisCount;
-            const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
-            const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
-            if (buttonCount > 0 && user_config.buttonActions.empty()) user_config.buttonActions = vector<ButtonAction>(buttonCount, ButtonAction::NONE);
-            if (axisCount > 0 && user_config.axisActions.empty()) user_config.axisActions = vector<AxisAction>(axisCount, AxisAction::NONE);
-            int surge = 0;
-            int sway = 0;
-            int heave = 0;
-            int yaw = 0;
-            bool brightenLED = false;
-            bool dimLED = false;
-            bool turnFrontServoCw = false;
-            bool turnFrontServoCcw = false;
-            bool turnBackServoCw = false;
-            bool turnBackServoCcw = false;
-            // ########################
-            // Add more buttons
-            // ########################
-            for (int i = 0; i < buttonCount; i++) {
-                if (!buttons[i]) continue;
-                switch (user_config.buttonActions[i]) { 
-                    case ButtonAction::SURGE_BACKWARD:
-                        surge -= 100;
-                        break;
-                    case ButtonAction::SURGE_FORWARD:
-                        surge += 100;
-                        break;
-                    case ButtonAction::SWAY_LEFT:
-                        sway -= 100;
-                        break;
-                    case ButtonAction::SWAY_RIGHT:
-                        sway += 100;
-                        break;
-                    case ButtonAction::HEAVE_DOWN:
-                        heave -= 100;
-                        break;
-                    case ButtonAction::HEAVE_UP:
-                        heave += 100;
-                        break;
-                    case ButtonAction::YAW_LEFT:
-                        yaw -= 100;
-                        break;
-                    case ButtonAction::YAW_RIGHT:
-                        yaw += 100;
-                        break;
-                    case ButtonAction::BRIGHTEN_LED:
-                        brightenLED = true;
-                        break;
-                    case ButtonAction::DIM_LED:
-                        dimLED = true;
-                        break;
-                    case ButtonAction::TURN_FRONT_SERVO_CW:
-                        turnFrontServoCw = true;
-                        break;
-                    case ButtonAction::TURN_FRONT_SERVO_CCW:
-                        turnFrontServoCcw = true;
-                        break;
-                    case ButtonAction::TURN_BACK_SERVO_CW:
-                        turnBackServoCw = true;
-                        break;
-                    case ButtonAction::TURN_BACK_SERVO_CCW:
-                        turnBackServoCcw = true;
-                        break;
-                    case ButtonAction::CONFIGURATION_MODE:
-                        // Can either be set by user input for through the GUI
-                        configuration_mode = !configuration_mode;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            for (size_t i = 0; i < user_config.axisActions.size(); i++) {
-                if (std::abs(axes[i]) <= user_config.deadzone) continue;
-                switch (user_config.axisActions[i]) {
-                    case AxisAction::SURGE:
-                        if (surge == 0) surge = -(int)(axes[i]*100);
-                        break;
-                    case AxisAction::SWAY:
-                        if (sway == 0) sway = -(int)(axes[i]*100);
-                        break;
-                    case AxisAction::YAW:
-                        if (yaw == 0) yaw = -(int)(axes[i]*100);
-                        break;
-                    case AxisAction::HEAVE:
-                        if (heave == 0) heave = -(int)(axes[i]*100);
-                        break;
-                    default:
-                        break;
-                }
-            }
+        int surge = 0;
+        int sway = 0;
+        int heave = 0;
+        int yaw = 0;
+        bool brightenLED = false;
+        bool dimLED = false;
+        bool turnFrontServoCw = false;
+        bool turnFrontServoCcw = false;
+        bool turnBackServoCw = false;
+        bool turnBackServoCcw = false;
 
+        //controller loop
+        if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
+        {
+            if (keyboard_mode) {
+                // Keyboard input handling
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) surge += 100;
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) surge -= 100;
+                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) sway -= 100;
+                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) sway += 100;
+                if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) yaw -= 100;
+                if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) yaw += 100;
+                if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) heave += 100;
+                if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) heave -= 100;
+                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) brightenLED = true;
+                if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED = true;
+                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turnFrontServoCw = true;
+                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
+                if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnBackServoCcw = true;
+                RCLCPP_INFO(pilotInputNode->get_logger(), "Keyboard Input: Surge: %d, Sway: %d, Heave: %d, Yaw: %d, Brighten LED: %d, Dim LED: %d, Turn Front Servo CW: %d, Turn Front Servo CCW: %d, Turn Back Servo CW: %d, Turn Back Servo CCW: %d",
+                            surge, sway, heave, yaw, brightenLED, dimLED, turnFrontServoCw, turnFrontServoCcw, turnBackServoCw, turnBackServoCcw);
+            }
+            else if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
+                int buttonCount, axisCount;
+                const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+                const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
+                if (buttonCount > 0 && user_config.buttonActions.empty()) user_config.buttonActions = vector<ButtonAction>(buttonCount, ButtonAction::NONE);
+                if (axisCount > 0 && user_config.axisActions.empty()) user_config.axisActions = vector<AxisAction>(axisCount, AxisAction::NONE);
+                // ########################
+                // Add more buttons
+                // ########################
+                for (int i = 0; i < buttonCount; i++) {
+                    if (!buttons[i]) continue;
+                    switch (user_config.buttonActions[i]) { 
+                        case ButtonAction::SURGE_BACKWARD:
+                            surge -= 100;
+                            break;
+                        case ButtonAction::SURGE_FORWARD:
+                            surge += 100;
+                            break;
+                        case ButtonAction::SWAY_LEFT:
+                            sway -= 100;
+                            break;
+                        case ButtonAction::SWAY_RIGHT:
+                            sway += 100;
+                            break;
+                        case ButtonAction::HEAVE_DOWN:
+                            heave -= 100;
+                            break;
+                        case ButtonAction::HEAVE_UP:
+                            heave += 100;
+                            break;
+                        case ButtonAction::YAW_LEFT:
+                            yaw -= 100;
+                            break;
+                        case ButtonAction::YAW_RIGHT:
+                            yaw += 100;
+                            break;
+                        case ButtonAction::BRIGHTEN_LED:
+                            brightenLED = true;
+                            break;
+                        case ButtonAction::DIM_LED:
+                            dimLED = true;
+                            break;
+                        case ButtonAction::TURN_FRONT_SERVO_CW:
+                            turnFrontServoCw = true;
+                            break;
+                        case ButtonAction::TURN_FRONT_SERVO_CCW:
+                            turnFrontServoCcw = true;
+                            break;
+                        case ButtonAction::TURN_BACK_SERVO_CW:
+                            turnBackServoCw = true;
+                            break;
+                        case ButtonAction::TURN_BACK_SERVO_CCW:
+                            turnBackServoCcw = true;
+                            break;
+                        case ButtonAction::CONFIGURATION_MODE:
+                            // Can either be set by user input for through the GUI
+                            configuration_mode = !configuration_mode;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                for (size_t i = 0; i < user_config.axisActions.size(); i++) {
+                    if (std::abs(axes[i]) <= user_config.deadzone) continue;
+                    switch (user_config.axisActions[i]) {
+                        case AxisAction::SURGE:
+                            if (surge == 0) surge = -(int)(axes[i]*100);
+                            break;
+                        case AxisAction::SWAY:
+                            if (sway == 0) sway = -(int)(axes[i]*100);
+                            break;
+                        case AxisAction::YAW:
+                            if (yaw == 0) yaw = -(int)(axes[i]*100);
+                            break;
+                        case AxisAction::HEAVE:
+                            if (heave == 0) heave = -(int)(axes[i]*100);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            } 
             //should probably move this out of the main render loop?
             // ########################
             // Add more inputs here
             // ########################
             pilotInputNode->sendInput(power, surge, sway, heave, yaw, brightenLED, dimLED, turnFrontServoCw,
-            turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, configuration_mode_thruster_number);
+                turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, configuration_mode_thruster_number);
         }
+        
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
@@ -187,8 +211,8 @@ int main(int argc, char **argv) {
                 }
                 ImGui::EndMenu();
             }
-            if (ImGui::BeginMenu("UserConfig")) {
-                if (ImGui::MenuItem("Open UserConfig Editor")) {
+            if (ImGui::BeginMenu("Config")) {
+                if (ImGui::MenuItem("Open Config Editor")) {
                     showConfigWindow = true;
                 }
                 if (ImGui::BeginMenu("Load UserConfig")) {
@@ -199,7 +223,7 @@ int main(int argc, char **argv) {
                             if (!configData["servos"][0].is_null()) std::strncpy(waterwitch_config.servo1ip, configData["servos"][0].get<std::string>().c_str(), sizeof(waterwitch_config.servo1ip));
                             if (!configData["servos"][1].is_null()) std::strncpy(waterwitch_config.servo2ip, configData["servos"][1].get<std::string>().c_str(), sizeof(waterwitch_config.servo2ip));
                             for (size_t i = 0; i < std::size(waterwitch_config.thruster_map); i++){
-                                if (!configData["thruster_map"][1].is_null()) std::strncpy(waterwitch_config.thruster_map[i], configData["thruster_map"][i].get<std::string>().c_str(), sizeof(waterwitch_config.thruster_map[i]));
+                                if (!configData["thruster_map"][i].is_null()) std::strncpy(waterwitch_config.thruster_map[i], std::to_string(configData["thruster_map"][i].get<int>()).c_str(), sizeof(waterwitch_config.thruster_map[i]));
                             }
                             continue;
                         }
@@ -293,6 +317,7 @@ int main(int argc, char **argv) {
                         configuration_mode_thruster_number = currentThrusterNumber;
                     }
                     ImGui::Checkbox("Configuration Mode", &configuration_mode);
+                    ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Controls (User)")) {
@@ -337,7 +362,7 @@ int main(int argc, char **argv) {
                         configJson["servos"][1] = waterwitch_config.servo2ip;
 
                         for (size_t i = 0; i < waterwitch_config.thruster_map.size(); i++){
-                            configJson["thruster_map"][i] = waterwitch_config.thruster_map[i];
+                            configJson["thruster_map"][i] = std::stoi(waterwitch_config.thruster_map[i]);
                         }
                         
                         saveConfigNode->saveConfig("waterwitch_config", configJson.dump());

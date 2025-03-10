@@ -106,15 +106,10 @@ private:
     // a call to shared_from_this(), we need to call this in the `pilot_listener_callback` to avoid runtime error
     if (!inital_configuration_set)
     {
-      RCLCPP_INFO(this->get_logger(), "Got here 1");
-
       std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
       // Get configs
       get_waterwitch_config();
       inital_configuration_set = true;
-
-      RCLCPP_INFO(this->get_logger(), "Got here 2");
-
     }
 
     // Check if thrust is being controlled using a bool input
@@ -143,7 +138,7 @@ private:
       if (single_thruster_configuration_mode && pilot_input->configuration_mode_thruster_number != thruster_index) {
         return;
       } else if (single_thruster_configuration_mode) {
-        target_thrust_values[thruster_index] = pilot_input->surge ? 1.0f : 0.0f;
+        target_thrust_values[thruster_index] = pilot_input->surge ? std::copysign(1.0f, pilot_input->surge) : 0.0f;
       } else {
         // Calculate the thrust value based on pilot input and configuration matrix
         float thrust_value = (pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
@@ -156,7 +151,7 @@ private:
         // Clamp the thrust value between -1.0 and 1.0
         target_thrust_values[thruster_index] = std::max(-1.0f, std::min(thrust_value, 1.0f));
       }
-    };
+    }; 
 
     std::vector<std::thread> threads;
 
@@ -180,7 +175,9 @@ private:
       if (!pilot_input->configuration_mode && single_thruster_configuration_mode)
       {
         if (!single_thruster_configuration_mode) get_waterwitch_config();
+        RCLCPP_INFO(this->get_logger(), "Configuration Mode");
       }
+
 
       single_thruster_configuration_mode = pilot_input->configuration_mode;
 
@@ -215,6 +212,12 @@ private:
     // Publish the waterwitch control values
     {
       std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
+      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 0: %d", current_waterwitch_control_values.thruster_map[0]);
+      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 1: %d", current_waterwitch_control_values.thruster_map[1]);
+      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 2: %d", current_waterwitch_control_values.thruster_map[2]);
+      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 3: %d", current_waterwitch_control_values.thruster_map[3]);
+      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 4: %d", current_waterwitch_control_values.thruster_map[4]);
+      RCLCPP_INFO(this->get_logger(), "Thruster address for thruster 5: %d", current_waterwitch_control_values.thruster_map[5]);
       waterwitch_control_publisher->publish(current_waterwitch_control_values);
     }
   }
@@ -228,15 +231,17 @@ private:
     RCLCPP_INFO(this->get_logger(), "Got here 1.1");
     
     // Send the request to this config client
-    // Send the request to this config client
     auto result = waterwitch_config_client->async_send_request(request, 
       [this](rclcpp::Client<eer_interfaces::srv::GetConfig>::SharedFuture future) {
           auto response = future.get();
 
           // Check if the response is empty
           if (response->config.empty()) {
+            RCLCPP_INFO(this->get_logger(), "Emoty response");
             return;
           } 
+
+          RCLCPP_INFO(this->get_logger(), "Received config: %s", response->config.c_str());
 
           try {
               nlohmann::json configuration_data = nlohmann::json::parse(response->config);
@@ -258,6 +263,13 @@ private:
                   for (size_t i = 0; i < current_waterwitch_control_values.thruster_map.size(); i++) {
                       if (i >= configuration_data["thruster_map"].size() || configuration_data["thruster_map"][i].is_null() || !configuration_data["thruster_map"][i].is_number_integer()) {
                           valid_thruster_map = false;
+                          if (i >= configuration_data["thruster_map"].size()) {
+                            RCLCPP_ERROR(this->get_logger(), "Thruster map index %zu is out of range", i);
+                          } else if (configuration_data["thruster_map"][i].is_null()) {
+                            RCLCPP_ERROR(this->get_logger(), "Thruster map index %zu is null", i);
+                          } else if (!configuration_data["thruster_map"][i].is_number_integer()) {
+                            RCLCPP_ERROR(this->get_logger(), "Thruster map index %zu is not an integer", i);
+                          }
                           break; // Exit the loop early if an invalid entry is found
                       }
                   }
