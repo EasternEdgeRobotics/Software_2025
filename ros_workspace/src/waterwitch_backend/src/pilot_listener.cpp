@@ -24,7 +24,7 @@ public:
     // #####################################
 
     // Default Waterwitch Camera Servo Ips
-    current_waterwitch_control_values.camera_servo_ips = {"picam0.local", "picam1.local"};
+    current_waterwitch_control_values.servo_ssh_targets = {"picam0.local", "picam1.local"};
 
     // Default Waterwitch Thruster Mapping to RP2040
     current_waterwitch_control_values.thruster_map = {0,1,2,3,4,5};
@@ -246,9 +246,9 @@ private:
               nlohmann::json configuration_data = nlohmann::json::parse(response->config);
 
               if (configuration_data.contains("servos") && configuration_data["servos"].is_array()) {
-                  for (size_t i = 0; i < current_waterwitch_control_values.camera_servo_ips.size(); ++i) {
+                  for (size_t i = 0; i < current_waterwitch_control_values.servo_ssh_targets.size(); ++i) {
                       if (i < configuration_data["servos"].size() && !configuration_data["servos"][i].is_null()) {
-                          current_waterwitch_control_values.camera_servo_ips[i] = configuration_data["servos"][i].get<std::string>();
+                          current_waterwitch_control_values.servo_ssh_targets[i] = configuration_data["servos"][i].get<std::string>();
                       }
                   }
               }

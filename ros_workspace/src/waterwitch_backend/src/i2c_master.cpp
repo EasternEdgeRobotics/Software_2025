@@ -1,6 +1,9 @@
 #include <memory>
 #include <thread>
 #include <vector>
+#include <array>
+#include <stdexcept>
+#include <sys/wait.h> 
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -14,6 +17,10 @@
 #include "waterwitch_constants.h"
 
 #define I2C_BUS "/dev/i2c-1"
+#define THRUST_SCALE 127.5
+#define SERVO_ANGLE_INCREMENT 10
+#define MIN_SERVO_ANGLE 0
+#define MAX_SERVO_ANGLE 270
 
 class I2CMaster : public rclcpp::Node
 {
@@ -26,10 +33,29 @@ public:
         for (int thruster_index = 0; thruster_index < 6; thruster_index++) {
 
             // Map the thrust value from the range [-1, 1] to [0, 255]
-            uint8_t thrust = static_cast<uint8_t>((control_values_msg->thrust[thruster_index] + 1) * 127.5);
+            uint8_t thrust = static_cast<uint8_t>((control_values_msg->thrust[thruster_index] + 1) * THRUST_SCALE);
 
             // Publish on i2c bus
             write_to_i2c(RP2040_ADDRESS, 2, control_values_msg->thruster_map[thruster_index], thrust);
+        }
+
+        servo_ssh_targets = control_values_msg->servo_ssh_targets;
+
+        for (size_t i = 0; i < servo_ssh_targets.size(); i++)
+        {
+          if (control_values_msg->camera_servos[i])
+          {
+            servo_angles[i] += SERVO_ANGLE_INCREMENT * control_values_msg->camera_servos[i];
+            servo_angles[i] = std::clamp(servo_angles[i], MIN_SERVO_ANGLE, MAX_SERVO_ANGLE);
+            std::string command = "ssh " + servo_ssh_targets[i] + " python3 servo.py " + std::to_string(servo_angles[i]);
+            int ret = system(command.c_str());
+            if (ret == -1) {
+              RCLCPP_ERROR(this->get_logger(), "Failed to execute SSH command %s", command.c_str());
+            } else if (WIFEXITED(ret) && WEXITSTATUS(ret) != 0) {
+              RCLCPP_ERROR(this->get_logger(), "SSH command %s failed with exit status %d", command.c_str(), WEXITSTATUS(ret));
+            }
+          }
+
         }
       };
 
@@ -54,6 +80,8 @@ public:
 
 private:
   rclcpp::Subscription<eer_interfaces::msg::WaterwitchControl>::SharedPtr control_values_subscriber;
+  std::array<int, 2> servo_angles = {0, 0};
+  std::array<std::string, 2> servo_ssh_targets = {"easternedge@picam0.local", "easternedge@picam1.local"};
   int i2c_file;
 
   void write_to_i2c(int device_address, uint8_t num_bytes, uint8_t byte_1, uint8_t byte_2 = 0)
