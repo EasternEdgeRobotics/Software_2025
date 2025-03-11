@@ -32,3 +32,9 @@ const float THRUSTER_ACCELERATION = 0.1f;
 const int RP2040_ADDRESS = 0x69;
 
 const int SOFTWARE_TO_BOARD_COMMUNICATION_RATE = 100;
+
+const int SERVO_ANGLE_INCREMENT = 10;
+
+const int MIN_SERVO_ANGLE = 0;
+
+const int MAX_SERVO_ANGLE = 270;

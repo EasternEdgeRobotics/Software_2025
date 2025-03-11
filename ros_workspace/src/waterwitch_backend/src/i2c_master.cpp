@@ -16,11 +16,9 @@
 #include "eer_interfaces/msg/waterwitch_control.hpp"
 #include "waterwitch_constants.h"
 
-#define I2C_BUS "/dev/i2c-1"
 #define THRUST_SCALE 127.5
-#define SERVO_ANGLE_INCREMENT 10
-#define MIN_SERVO_ANGLE 0
-#define MAX_SERVO_ANGLE 270
+#define I2C_BUS_FILE "/dev/i2c-1"
+
 
 class I2CMaster : public rclcpp::Node
 {
@@ -60,7 +58,7 @@ public:
       };
 
     // Open the i2c file
-    if ((i2c_file = open(I2C_BUS, O_RDWR)) < 0) {
+    if ((i2c_file = open(I2C_BUS_FILE, O_RDWR)) < 0) {
       RCLCPP_ERROR(this->get_logger(), "Failed to open the i2c bus");
     }
 
