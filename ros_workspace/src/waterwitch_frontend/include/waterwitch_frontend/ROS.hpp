@@ -42,7 +42,7 @@ class PilotInputPublisher : public rclcpp::Node {
         const bool& turnBackServoCw,
         const bool& turnBackServoCcw,
         const bool& configurationMode,
-        const bool& configurationModeThrusterNumber) {
+        const int& configurationModeThrusterNumber) {
             auto msg = eer_interfaces::msg::PilotInput();
             msg.surge = surge;
             msg.sway = sway;

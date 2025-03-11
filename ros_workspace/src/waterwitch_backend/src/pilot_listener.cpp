@@ -99,6 +99,16 @@ private:
   bool inital_configuration_set = false;
   bool single_thruster_configuration_mode = false;
 
+  // Indicates if the corresponding thruster's direction should be flipped 
+  std::array<int8_t, 6> thruster_direction = {    
+    1, // for_star
+    1, // for_port
+    1, // aft_star
+    1, // aft_port
+    1, // star_top
+    1 //  port_top
+  };
+
   void pilot_listener_callback(eer_interfaces::msg::PilotInput::UniquePtr pilot_input)
   { 
 
@@ -139,15 +149,15 @@ private:
       if (single_thruster_configuration_mode && pilot_input->configuration_mode_thruster_number != thruster_index) {
         return;
       } else if (single_thruster_configuration_mode) {
-        target_thrust_values[thruster_index] = pilot_input->surge ? std::copysign(1.0f, pilot_input->surge) : 0.0f;
+        target_thrust_values[thruster_index] = (pilot_input->surge ? std::copysign(1.0f, pilot_input->surge) : 0.0f) * thruster_direction[thruster_index];
       } else {
         // Calculate the thrust value based on pilot input and configuration matrix
-        float thrust_value = (pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
+        float thrust_value = ((pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
                               pilot_input->sway * THRUSTER_CONFIG_MATRIX[thruster_index][SWAY] +
                               pilot_input->heave * THRUSTER_CONFIG_MATRIX[thruster_index][HEAVE] +
                               pilot_input->pitch * THRUSTER_CONFIG_MATRIX[thruster_index][PITCH] +
                               pilot_input->roll * THRUSTER_CONFIG_MATRIX[thruster_index][ROLL] +
-                              pilot_input->yaw * THRUSTER_CONFIG_MATRIX[thruster_index][YAW]) / 100.0f;
+                              pilot_input->yaw * THRUSTER_CONFIG_MATRIX[thruster_index][YAW]) / 100.0f) * thruster_direction[thruster_index];
 
         // Clamp the thrust value between -1.0 and 1.0
         target_thrust_values[thruster_index] = std::max(-1.0f, std::min(thrust_value, 1.0f));
@@ -243,29 +253,24 @@ private:
                   }
               }
 
-              // In the case of the thruster map, we should ensure that each element in the received config
-              // is not null and convertible to an integer
-              bool valid_thruster_map = true;
-              if (!configuration_data.contains("thruster_map")) {
-                  valid_thruster_map = false;
+              // Ensure that the config related to thruster configuration is valid
+              bool valid_thruster_configuration = true;
+              if (!(configuration_data.contains("thruster_map") && configuration_data.contains("reverse_thrusters"))) {
+                  valid_thruster_configuration = false;
               } else {
                   for (size_t i = 0; i < current_waterwitch_control_values.thruster_map.size(); i++) {
-                      if (i >= configuration_data["thruster_map"].size() || configuration_data["thruster_map"][i].is_null() || !configuration_data["thruster_map"][i].is_number_integer()) {
-                          valid_thruster_map = false;
-                          if (i >= configuration_data["thruster_map"].size()) {
-                            RCLCPP_ERROR(this->get_logger(), "Thruster map index %zu is out of range", i);
-                          } else if (configuration_data["thruster_map"][i].is_null()) {
-                            RCLCPP_ERROR(this->get_logger(), "Thruster map index %zu is null", i);
-                          } else if (!configuration_data["thruster_map"][i].is_number_integer()) {
-                            RCLCPP_ERROR(this->get_logger(), "Thruster map index %zu is not an integer", i);
-                          }
+                      if (i >= configuration_data["thruster_map"].size() || configuration_data["thruster_map"][i].is_null() || !configuration_data["thruster_map"][i].is_number_integer()
+                          || i >= configuration_data["reverse_thrusters"].size() || configuration_data["reverse_thrusters"][i].is_null() || !configuration_data["reverse_thrusters"][i].is_boolean()) {
+                          valid_thruster_configuration = false;
+                          
                           break; // Exit the loop early if an invalid entry is found
                       }
                   }
               }
-              if (valid_thruster_map) {
+              if (valid_thruster_configuration) {
                   for (size_t i = 0; i < current_waterwitch_control_values.thruster_map.size(); i++) {
-                      current_waterwitch_control_values.thruster_map[i] = static_cast<uint8_t>(configuration_data["thruster_map"][i].get<int>());
+                      current_waterwitch_control_values.thruster_map[i] = static_cast<int8_t>(std::abs(configuration_data["thruster_map"][i].get<int>()));
+                      thruster_direction[i] = configuration_data["reverse_thrusters"][i].get<bool>() ? -1: 1;
                   }
               }
               
