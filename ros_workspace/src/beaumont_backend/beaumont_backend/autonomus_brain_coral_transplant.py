@@ -376,8 +376,6 @@ class AutonomusBrainCoralTransplant(Node):
         # Action loop is exited. Ensure to switch over control to pilot by resetting the multipliers to their inital value and publishing empty pilot input
         pilot_input = PilotInput()
 
-        pilot_input.is_autonomous = True
-
         restored_power_multipliers = ThrusterMultipliers()
         restored_power_multipliers.power = goal_handle.request.starting_power
         restored_power_multipliers.surge = goal_handle.request.starting_surge

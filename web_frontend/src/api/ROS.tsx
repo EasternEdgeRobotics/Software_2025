@@ -3,27 +3,27 @@ import ROSLIB, { Ros } from "roslib";
 import {
     IsROSConnected, ROSIP, CameraURLs, ThrusterMultipliers, RequestingConfig,
     RequestingProfilesList, Mappings, ProfilesList, CurrentProfile, ControllerInput,
-    RequestingCameraURLs, DiagnosticsData1, DiagnosticsData2
+    DiagnosticsData1, DiagnosticsData2, PilotActions
 } from "./Atoms";
 import React from "react";
 
-let initial_page_load = true
-let first_input_sent = false
+let initial_page_load = true;
+let first_input_sent = false;
 
 export function InitROS() {
     const [RosIP] = useAtom(ROSIP); // The ip of the device running the rosbridge server (will be the Pi4 in enclosure)
     const [, setIsRosConnected] = useAtom(IsROSConnected); // Used in BotTab, indicates if we are communicating with the rosbridge server
-    const [thrusterMultipliers, setThrusterMultipliers] = useAtom(ThrusterMultipliers);
+    const [thrusterMultipliers] = useAtom(ThrusterMultipliers);
     const [requestingConfig, setRequestingConfig] = useAtom(RequestingConfig); // Used for requesting controller mappings data from the database running in the Pi4
     const [requestingProfilesList, setRequestingProfilesList] = useAtom(RequestingProfilesList); // Used for requesting profiles data from the database running in the Pi4
-    const [requestingCameraURLs, setRequestingCameraURLs] = useAtom(RequestingCameraURLs); // Used for requsting camera URL data from databse running in the PI4
     const [mappings, setMappings] = useAtom(Mappings); // Controller mappings
     const [, setProfilesList] = useAtom(ProfilesList); // The known list of pilot profiles
     const [cameraURLs, setCameraURLs] = useAtom(CameraURLs);
     const [currentProfile,] = useAtom(CurrentProfile);
-    const [controllerInput, setControllerInput] = useAtom(ControllerInput); // The current controller input from the pilot
+    const [controllerInput] = useAtom(ControllerInput); // The current controller input from the pilot
     const [, setDiagnosticsData1] = useAtom(DiagnosticsData1);
     const [, setDiagnosticsData2] = useAtom(DiagnosticsData2);
+    const [pilotActions] = useAtom(PilotActions);
 
     const [hasRecieved, setHasRecieved] = React.useState<boolean>(false);
     const [ros, setRos] = React.useState<Ros>(new ROSLIB.Ros({}));
@@ -40,8 +40,7 @@ export function InitROS() {
         setIsRosConnected(false);
         setHasRecieved(false);
     });
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    ros.on("error", () => { }); // to prevent page breaking
+    ros.on("error", () => { /* empty */ }); // to prevent page breaking
 
     React.useEffect(() => {
         ros.connect(`ws://${RosIP}:9090`);
@@ -87,18 +86,12 @@ export function InitROS() {
         const controllerInputVals = new ROSLIB.Message({
             surge: controllerInput[0],
             sway: controllerInput[1],
-            heave: controllerInput[2],
-            pitch: controllerInput[3],
-            roll: controllerInput[4],
+            heave: (controllerInput[8] || controllerInput[9]) ? ((controllerInput[8]||0)-(controllerInput[9]||0))*100 : controllerInput[2],
+            pitch: (controllerInput[10] || controllerInput[11]) ? ((controllerInput[10]||0)-(controllerInput[11]||0))*100 : controllerInput[3],
+            roll: (controllerInput[12] || controllerInput[13]) ? ((controllerInput[12]||0)-(controllerInput[13]||0))*100 : controllerInput[4],
             yaw: controllerInput[5],
             open_claw: controllerInput[6] ? true : false,
             close_claw: controllerInput[7] ? true : false,
-            heave_up: controllerInput[8] ? true : false,
-            heave_down: controllerInput[9] ? true : false,
-            pitch_up: controllerInput[10] ? true : false,
-            pitch_down: controllerInput[11] ? true : false,
-            roll_cw: controllerInput[12] ? true : false,
-            roll_ccw: controllerInput[13] ? true : false,
             turn_front_servo_cw: controllerInput[14] ? true : false,
             turn_front_servo_ccw: controllerInput[15] ? true : false,
             turn_back_servo_cw: controllerInput[16] ? true : false,
@@ -118,85 +111,143 @@ export function InitROS() {
     // Create a ROS service on the "/profile_config" topic using a custom EER service interface
     const configClient = new ROSLIB.Service({
         ros: ros,
-        name: "/profile_config",
-        serviceType: "eer_interfaces/Config"
+        name: "/get_config",
+        serviceType: "eer_interfaces/srv/GetConfig"
     });
 
+    const saveConfigPublisher = new ROSLIB.Topic({
+        ros: ros,
+        name: "/save_config",
+        messageType: "eer_interfaces/msg/SaveConfig"
+    });
+
+    
     // Run the block of code below whenever the RequestingConfig global state is changed
     React.useEffect(() => {
         if (requestingConfig.state == 0) { // State 0 indicates that we are saving mappings for a certain profile to the database
-            const request = new ROSLIB.ServiceRequest({
-                state: requestingConfig.state,
-                data: JSON.stringify({
-                    "profileName": requestingConfig.profileName, "controller1": requestingConfig.controller1,
-                    "controller2": requestingConfig.controller2, "associated_mappings": mappings
-                })
-            }); // Turn the JSON object into a string to send over ROS
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            configClient.callService(request, () => { });
+            const config: {name: string, controller1: string, controller2: string, cameras: string[], mappings: {[controller: number]: { [type: string]: { [index: number]: string}}} } = {
+                name: requestingConfig.name,
+                controller1: requestingConfig.controller1,
+                controller2: requestingConfig.controller2,
+                cameras: cameraURLs,
+                mappings: mappings
+            };
+
+            const message = new ROSLIB.Message({
+                name: requestingConfig.name,
+                data: JSON.stringify(config)
+            });
+
+            saveConfigPublisher.publish(message);
         }
         else if (requestingConfig.state == 1) { // State 1 indicates that we are requesting mappings for a certain profile from the database
             const request = new ROSLIB.ServiceRequest({
-                state: requestingConfig.state,
-                data: requestingConfig.profileName
+                name: requestingConfig.name
             });
+
+            console.log("requesting config " + requestingConfig.name);
 
             // When a response is recieved for a ROS service request, it is expected to be run through a "callback function". In this case, the function definition is being
             // used as a parameter to configClient.callService instead of a reference to the function.
             configClient.callService(request, function (result) {
-                const databaseStoredMappings = JSON.parse(result.result); // Turn the recieved string into a JSON object
+                const databaseStoredMappings = JSON.parse(result.config)["mappings"]; // Turn the recieved string into a JSON object 
                 const tmp = mappings;
-
-                // For each controller, store the mappings in a temporary object
-
+                
                 for (let i = 0; i < 2; i++) {
                     if ([requestingConfig.controller1, requestingConfig.controller2][i] == "recognized") {
                         tmp[i] = { "buttons": {}, "axes": {}, "deadzones": {} };
-                        tmp[i]["buttons"] = databaseStoredMappings[i]["buttons"];
-                        tmp[i]["axes"] = databaseStoredMappings[i]["axes"];
+                        tmp[i]["buttons"] = Object.keys(databaseStoredMappings[i]["buttons"]).reduce((acc, key) => {
+                            const action = databaseStoredMappings[i]["buttons"][key as unknown as number];
+                            acc[key as unknown as number] = pilotActions.includes(action) ? action : "None";
+                            return acc;
+                        }, {} as { [index: number]: string });
+                          
+                        tmp[i]["axes"] = Object.keys(databaseStoredMappings[i]["axes"]).reduce((acc, key) => {
+                            const action = databaseStoredMappings[i]["axes"][key as unknown as number];
+                            acc[key as unknown as number] = pilotActions.includes(action) ? action : "None";
+                            return acc;
+                        }, {} as { [index: number]: string });
                         tmp[i]["deadzones"] = databaseStoredMappings[i]["deadzones"];
                     }
                 }
+
+                const cameraIPs = [];
+
+                for (let i = 0; i < 4; i++) {
+                    try {
+                        cameraIPs.push(JSON.parse(result.config)["cameras"][i]);
+                    } catch (err) {
+                        cameraIPs.push("http://");
+                    }
+                }
+
+                setCameraURLs(cameraIPs);
 
                 // Set the global Mappings state to the tmp object which now holds the mappings recieved from the database. Note that just running setMappings(databaseStoredMappings) didn't work
                 setMappings(tmp);
             });
         }
         if (requestingConfig.state != 2) { // State 2 doesn't do anything, and is used as the default state. Whenever a service call is done for state 0 or 1, RequestingConfig returns to state 2
-            setRequestingConfig({ state: 2, profileName: "default", controller1: "null", controller2: "null" });
+            setRequestingConfig({ state: 2, name: "default", controller1: "null", controller2: "null" });
         }
     }
         , [requestingConfig]);
 
 
     // Create a ROS service on the "/profile_list" topic using a custom EER service interface
-    const profilesListClient = new ROSLIB.Service({
+    const listProfilesService = new ROSLIB.Service({
         ros: ros,
-        name: "/profiles_list",
-        serviceType: "eer_interfaces/Config"
+        name: "/list_configs",
+        serviceType: "eer_interfaces/srv/ListConfig"
+    });
+
+    const deleteProfilesService = new ROSLIB.Service({
+        ros: ros,
+        name: "/delete_config",
+        serviceType: "eer_interfaces/srv/DeleteConfig" 
     });
 
     // Run the block of code below whenever the RequestingProfilesList global state is changed
     React.useEffect(() => {
         if (requestingProfilesList == 0) { // State 0 indicates that we would like to delete a profile from the database.
             // Note that profiles are created when RequestingConfig state 0 is called and the database doesn't recognize the name of the profile coming from the GUI
+ 
             const request = new ROSLIB.ServiceRequest({
-                state: 0,
-                data: currentProfile
+                name: currentProfile
             });
-            profilesListClient.callService(request, function (result) {
-                console.log(result.result); // Should return "Profile Deleted" or "Profile Not Found"
+
+            deleteProfilesService.callService(request, function (result) {
+                console.log(result.success); // Returns true if success, false if failure.
+                setRequestingProfilesList(1); // Re-fetch the profile list
             });
         }
         else if (requestingProfilesList == 1) { // State 1 indicates that we are requesting the entire list of profiles from the database
-            const request = new ROSLIB.ServiceRequest({
-                state: 1,
-                data: JSON.stringify(mappings)
-            }); // Turn the mappings JSON object into a string to send over ROS
+            const request = new ROSLIB.ServiceRequest({});
 
-            profilesListClient.callService(request, function (result) {
-                if (result.result != "[]") { // Do not load the result if there are no profiles stored (i.e. empty list is returned)
-                    setProfilesList(JSON.parse(result.result));
+            listProfilesService.callService(request, function (result) {
+                if (result.names != "[]" && result.configs != "[]") { // Do not load the result if there are no profiles stored (i.e. empty list is returned)
+
+                    const profilesList: {
+                        id: number;
+                        name: string;
+                        controller1: string;
+                        controller2: string;
+                    }[] = [];
+
+                    for (let i = 0; i < result.configs.length; i++) {
+                        try {
+                            const config = JSON.parse(result.configs[i]);
+
+                            profilesList.push({
+                                id: profilesList.length,
+                                name: config.name,
+                                controller1: config.controller1,
+                                controller2: config.controller2
+                            });
+
+                            setProfilesList(profilesList);
+                        } catch (err) { console.log("Could not load " + result.names[i] + ": " + err); }
+                    }
                 }
                 else { // If we recieve an empty list, then just set the profile to "default". The pilot will have to create a profile on the fly that will only be saved locally, and will be gone on page reload
                     setProfilesList([{ id: 0, name: "default", controller1: "null", controller2: "null" }]);
@@ -207,66 +258,33 @@ export function InitROS() {
     }
         , [requestingProfilesList]);
 
-    // Create a ROS service on the "/camera_urls" topic using a custom EER service interface
-    const cameraURLsClient = new ROSLIB.Service({
-        ros: ros,
-        name: "/camera_urls",
-        serviceType: "eer_interfaces/Cameras"
-    });
-
-    // Run the block of code below whenever the RequestingCameraURLs global state is changed
     React.useEffect(() => {
-        if (requestingCameraURLs == 0) { // State 0 indicates that we would like to save camera URLs into database
-            const request = new ROSLIB.ServiceRequest({
-                state: 0,
-                camera_urls_json: JSON.stringify(cameraURLs),
-            });
-            cameraURLsClient.callService(request, function (result) { null; });
-        }
-        else if (requestingCameraURLs == 1) { // State 1 indicates that we are looking to fetch camera URLs from database
-            const request = new ROSLIB.ServiceRequest({
-                state: 1,
-            }); // What's in the data field is not important in this case
-            cameraURLsClient.callService(request, function (result) {
-                if (result.camera_urls_json != "[]") {
-                    setCameraURLs(JSON.parse(result.camera_urls_json));
-                }
-                else {
-                    console.log("No camera URLs stored in database")
-                }
-            });
-        }
-        setRequestingCameraURLs(2);
-    }
-        , [requestingCameraURLs]);
+        setRequestingProfilesList(1);
+    }, []);
 
     if (initial_page_load && first_input_sent) {
-
         const DiagnosticsData1Listener = new ROSLIB.Topic({
             ros: ros,
             name: "/diagnostics_data_1",
             messageType: "std_msgs/String"
-        })
+        });
 
         DiagnosticsData1Listener.subscribe(function (message) {
-
-            setDiagnosticsData1((message as any).data);
-        })
+            setDiagnosticsData1((message as { data: string }).data);
+        });
 
         const DiagnosticsData2Listener = new ROSLIB.Topic({
             ros: ros,
             name: "/diagnostics_data_2",
             messageType: "std_msgs/String"
-        })
+        });
 
         DiagnosticsData2Listener.subscribe(function (message) {
-            setDiagnosticsData2((message as any).data);
-        })
+            setDiagnosticsData2((message as { data: string }).data);
+        });
 
-        initial_page_load = false
+        initial_page_load = false;
     }
-
-
 
     return (null);
 }

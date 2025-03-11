@@ -194,7 +194,7 @@ export function BotTab() {
             );
             window.addEventListener(
                 "keyup",
-                function (e) {
+                function () {
                     pressed_key = "";
                 },
                 false
@@ -210,7 +210,7 @@ export function BotTab() {
             );
             window.removeEventListener(
                 "keyup",
-                function (e) {
+                function () {
                     pressed_key = "";
                 },
                 false
@@ -243,7 +243,7 @@ export function BotTab() {
         return () => clearInterval(interval); // Stop listening for input when we click off the BotTab
     }, [keyboardMode, currentProfile]);
 
-    const textStyle = { fontSize: "1.3rem" } // This makes it so that values stay on one line for thruster multipliers
+    const textStyle = { fontSize: "1.3rem" }; // This makes it so that values stay on one line for thruster multipliers
 
     return (
         <Grid container justifyContent={"center"} spacing={1}>

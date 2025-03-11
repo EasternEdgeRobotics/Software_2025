@@ -5,7 +5,7 @@ from rclpy.action import ActionClient
 
 from eer_interfaces.msg import ThrusterMultipliers, PilotInput
 from eer_interfaces.action import BeaumontAutoMode 
-from beaumont_backend.srv import HSVColours
+from eer_interfaces.srv import HSVColours
 from std_msgs.msg import String
 
 from rclpy.callback_groups import ReentrantCallbackGroup
@@ -440,13 +440,16 @@ class I2CMaster(Node):
                 self.tick_thrusters()
                 self.stm32_communications(msg)
         
-        if msg.enter_auto_mode:
-            if not self.autonomous_mode_active:
-                self.autonomous_mode_active = True
-                self.send_autonomous_mode_goal()
-            else:
-                future = self.goal_handle.cancel_goal_async()
-                future.add_done_callback(self.cancel_done)
+        # March 2025: Auto mode does not work anymore due to a series of changes
+        # This code is commented out to prevent i2c_master.py from crashing or getting stuck
+
+        # if msg.enter_auto_mode:
+        #     if not self.autonomous_mode_active:
+        #         self.autonomous_mode_active = True
+        #         self.send_autonomous_mode_goal()
+        #     else:
+        #         future = self.goal_handle.cancel_goal_async()
+        #         future.add_done_callback(self.cancel_done)
 
     def stm32_communications(self, controller_inputs):
         '''
@@ -585,7 +588,7 @@ class I2CMaster(Node):
 
                 diagnostics_data.data += f"Outside Temperature Probe: {round((float(((readMSBs<<8)|readLSBs) & 0b0000011111111111)/16) * (-1 if readMSBs >= 16 else 1), 4)}C\n"
 
-            self.diagnostics_data_publisher.publish(diagnostics_data)
+            self.diagnostics_data_publisher_1.publish(diagnostics_data)
 
                 
                 
@@ -609,15 +612,15 @@ class I2CMaster(Node):
         sway = controller_inputs.sway * self.power_multiplier * self.sway_multiplier * 0.01
         yaw = controller_inputs.yaw * self.power_multiplier * self.yaw_multiplier * 0.01
 
-        if controller_inputs.heave_up or controller_inputs.heave_down:
-            heave = ((self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_up else 0) + ((-self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_down else 0)
-        else:
-            heave = controller_inputs.heave * self.power_multiplier * self.heave_multiplier * 0.01  
+        # if controller_inputs.heave_up or controller_inputs.heave_down:
+            # heave = ((self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_up else 0) + ((-self.power_multiplier * self.heave_multiplier) if controller_inputs.heave_down else 0)
+        # else:
+        heave = controller_inputs.heave * self.power_multiplier * self.heave_multiplier * 0.01  
 
-        if controller_inputs.pitch_up or controller_inputs.pitch_down:
-            pitch = ((self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_up else 0) + ((-self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_down else 0)
-        else:
-            pitch = controller_inputs.pitch * self.power_multiplier * self.pitch_multiplier * 0.01  
+        # if controller_inputs.pitch_up or controller_inputs.pitch_down:
+        #     pitch = ((self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_up else 0) + ((-self.power_multiplier * self.pitch_multiplier) if controller_inputs.pitch_down else 0)
+        # else:
+        pitch = controller_inputs.pitch * self.power_multiplier * self.pitch_multiplier * 0.01  
 
         sum_of_magnitudes_of_linear_movements = abs(surge) + abs(sway) + abs(heave)
         sum_of_magnitudes_of_rotational_movements = abs(pitch) + abs(yaw)

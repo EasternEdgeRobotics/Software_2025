@@ -70,20 +70,20 @@ export default function ProfileEditor(props: {
 	}, []);
 
 	// Function to check if a certain profile exists
-	const profileExists = (profileName: string) => {
+	const profileExists = (name: string) => {
 		for (let i = 0; i < profilesList.length; i++) {
-			if (profilesList[i].name == profileName) {
+			if (profilesList[i].name == name) {
 				return true;
 			}
 		}
 		return false;
 	};
 
-	const getProfileInfo = (profileName: string) => {
+	const getProfileInfo = (name: string) => {
 		for (let i = 0; i < profilesList.length; i++) {
-			if (profilesList[i].name == profileName) {
+			if (profilesList[i].name == name) {
 				return (
-					profileName +
+					name +
 					", Controller 1: " +
 					profilesList[i].controller1 +
 					", Controller 2: " +
@@ -92,7 +92,7 @@ export default function ProfileEditor(props: {
 			}
 		}
 		return (
-			profileName +
+			name +
 			", Controller 1: " +
 			"Unassigned" +
 			", Controller 2: " +
@@ -141,7 +141,7 @@ export default function ProfileEditor(props: {
 												console.log("Controller recognized");
 												setRequestingConfig({
 													state: 1,
-													profileName: currentProfile,
+													name: currentProfile,
 													controller1: "recognized",
 													controller2: "null",
 												}); // Recieve latest controller mappings for this controller
@@ -226,7 +226,7 @@ export default function ProfileEditor(props: {
 												console.log("Controller 2 Recognized");
 												setRequestingConfig({
 													state: 1,
-													profileName: currentProfile,
+													name: currentProfile,
 													controller1: "null",
 													controller2: "recognized",
 												}); // Recieve latest controller mappings for this controller
@@ -350,7 +350,7 @@ export default function ProfileEditor(props: {
 						setController2(-1);
 						setRequestingConfig({
 							state: 0,
-							profileName: currentProfile,
+							name: currentProfile,
 							controller1: controller1Name || "null",
 							controller2: controller2Name || "null",
 						}); // Write (or overwrite) this profile into the database
