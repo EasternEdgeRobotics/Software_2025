@@ -23,7 +23,7 @@ This project uses ROS2 Jazzy.
 | **waterwitch_backend** | Backend code for interfacing with the ROV named Waterwitch.               |
 | **common_backend**    | Common backend ROS nodes for all ROVs.                                      |
 | **eer_interfaces**    | Custom ROS2 interfaces used by all packages.                                |
-| **waterwitch_frotnend**     | A frontend built using C++ r with a GUI interface.                          |
+| **waterwitch_frotnend**     | A frontend built using C++ with a GUI interface, meant for driving the ROV named Waterwitch.                          |
 
 More details [here](./ros_workspace/)
 

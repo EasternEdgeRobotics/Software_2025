@@ -8,22 +8,23 @@ This README.md details how to setup the ROS Worksapce.
 
 2. Install [ROS2 Jazzy](https://docs.ros.org/en/jazzy/Releases/Release-Jazzy-Jalisco.html)
 
-3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2025/ros_worksapce/Dockerfile`) for the most up-to-date list of dependancies.
+3. Install necessary dependencies for our ROS2 workspace. You can look through the Dockerfile (`Software_2025/ros_workspace/Dockerfile`) for the most up-to-date list of dependancies.
 
 4. Run `colcon build` in `Software_2025/ros_workspace`
 
 5. Source the workspace by running `source setup.bash` in `Software_2025/ros_workspace/install`
 
-To run our C++ frontend (which is a standalone alternative to the Web Frontend)
-```
-ros2 run cpp_frontend cpp_frontend_node
-```
 
-Choose the backend launch file to run based on the ROV (ex. Waterwitch or Beaumont) and whether or not you are using the [simulation_environment](https://github.com/EasternEdgeRobotics/rov-sim). Once chosen, you can run:
+You can choose the backend launch file to run based on the ROV (ex. Waterwitch or Beaumont) and whether or not you are using the [simulation_environment](https://github.com/EasternEdgeRobotics/rov-sim). Once chosen, you can run:
 ```
 ros2 launch <backend package (ex. beaumont_backend)> <launch file <ex. simulation_beaumont_startup>>
 ```
 If the launch file run starts an instance of ROSBridge Server, you can control the ROV using the [Web Frontend](../web_frontend/)
+
+If you are using Waterwitch, you can also run our Waterwitch Frontend 
+```
+ros2 run waterwitch_frontend waterwitch_frontend
+```
 
 If you make changes and would like to recompile, restart from step 4.
 
