@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action import ActionClient
 
-from eer_interfaces.msg import ThrusterMultipliers, PilotInput
+from eer_interfaces.msg import PilotInput
 from eer_interfaces.action import BeaumontAutoMode 
 from eer_interfaces.srv import HSVColours
 
@@ -38,7 +38,6 @@ class SimulationBotControl(Node):
     def __init__(self):
         super().__init__('simulation_bot_control')
 
-        self.copilot_listener = self.create_subscription(ThrusterMultipliers, 'thruster_multipliers', self.copilot_listener_callback, 10)
         self.pilot_listener = self.create_subscription(PilotInput, 'pilot_input', self.pilot_listener_callback, 1)
         
         self.diagnostics_data_publisher_1 = self.create_publisher(String, "diagnostics_data_1", 10)
@@ -128,20 +127,18 @@ class SimulationBotControl(Node):
         self.bot_yaw_to_claw_yaw_factor = 90
 
         # prevent unused variable warning
-        self.copilot_listener 
         self.pilot_listener
-
-    def copilot_listener_callback(self, msg):
-        self.power_multiplier = float(msg.power/100)
-        self.surge_multiplier = float(msg.surge/100)
-        self.sway_multiplier = float(msg.sway/100)
-        self.heave_multiplier = float(msg.heave/100)
-        self.pitch_multiplier = float(msg.pitch/100)
-        self.yaw_multiplier = float(msg.yaw/100)
     
 
     def pilot_listener_callback(self, msg):  
         '''Called when new controller input from pilot is recieved'''
+
+        self.power_multiplier = float(msg.power_multiplier/100)
+        self.surge_multiplier = float(msg.surge_multiplier/100)
+        self.sway_multiplier = float(msg.sway_multiplier/100)
+        self.heave_multiplier = float(msg.heave_multiplier/100)
+        self.pitch_multiplier = float(msg.pitch_multiplier/100)
+        self.yaw_multiplier = float(msg.yaw_multiplier/100)
         
         if not self.autonomus_mode_active or (self.autonomus_mode_active):
             thruster_forces = self.simulation_rov_math(msg)
@@ -187,16 +184,19 @@ class SimulationBotControl(Node):
             
             if TEST_BACKEND_PUBLISHERS:
                 self.simulate_backend_publishers(msg)
+        
+        # March 2025: Auto mode does not work anymore due to a series of changes
+        # This code is commented out to prevent i2c_master.py from crashing or getting stuck
 
-        if msg.enter_auto_mode:
-            if not self.autonomus_mode_active:
-                self.autonomus_mode_active = True
-                self.send_autonomus_mode_goal()
-            else:
-                # self._action_client.wait_for_server()
+        # if msg.enter_auto_mode:
+        #     if not self.autonomus_mode_active:
+        #         self.autonomus_mode_active = True
+        #         self.send_autonomus_mode_goal()
+        #     else:
+        #         # self._action_client.wait_for_server()
 
-                future = self.goal_handle.cancel_goal_async()
-                future.add_done_callback(self.cancel_done)
+        #         future = self.goal_handle.cancel_goal_async()
+        #         future.add_done_callback(self.cancel_done)
 
     def simulate_backend_publishers(self, controller_inputs):
 
@@ -247,82 +247,82 @@ class SimulationBotControl(Node):
 
             self.claws_publisher.publish(claws_velocity)
 
-    def send_autonomus_mode_goal(self):
+    # def send_autonomus_mode_goal(self):
 
-        self.fetch_brain_coral_hsv_colour_bounds()
-        goal_msg = BeaumontAutoMode.Goal()
-        goal_msg.is_for_sim = True
+    #     self.fetch_brain_coral_hsv_colour_bounds()
+    #     goal_msg = BeaumontAutoMode.Goal()
+    #     goal_msg.is_for_sim = True
 
-        # HSV (hue,shade,value) bounds for filtering brain coral area
-        goal_msg.lower_hsv_bound = self.brain_coral_hsv_colour_bounds["lower_hsv"]
-        goal_msg.upper_hsv_bound = self.brain_coral_hsv_colour_bounds["upper_hsv"]
+    #     # HSV (hue,shade,value) bounds for filtering brain coral area
+    #     goal_msg.lower_hsv_bound = self.brain_coral_hsv_colour_bounds["lower_hsv"]
+    #     goal_msg.upper_hsv_bound = self.brain_coral_hsv_colour_bounds["upper_hsv"]
 
-        goal_msg.starting_power = int(self.power_multiplier * 100)
-        goal_msg.starting_surge = int(self.surge_multiplier * 100)
-        goal_msg.starting_sway = int(self.sway_multiplier * 100)
-        goal_msg.starting_heave = int(self.heave_multiplier * 100)
-        goal_msg.starting_pitch = int(self.pitch_multiplier * 100)
-        goal_msg.starting_yaw = int(self.yaw_multiplier * 100) 
+    #     goal_msg.starting_power = int(self.power_multiplier * 100)
+    #     goal_msg.starting_surge = int(self.surge_multiplier * 100)
+    #     goal_msg.starting_sway = int(self.sway_multiplier * 100)
+    #     goal_msg.starting_heave = int(self.heave_multiplier * 100)
+    #     goal_msg.starting_pitch = int(self.pitch_multiplier * 100)
+    #     goal_msg.starting_yaw = int(self.yaw_multiplier * 100) 
 
-        self._action_client.wait_for_server()
+    #     self._action_client.wait_for_server()
 
-        self._send_goal_future = self._action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
+    #     self._send_goal_future = self._action_client.send_goal_async(goal_msg, feedback_callback=self.feedback_callback)
 
-        self._send_goal_future.add_done_callback(self.goal_response_callback)
+    #     self._send_goal_future.add_done_callback(self.goal_response_callback)
 
-    def goal_response_callback(self, future):
-        self.goal_handle = future.result()
-        if not self.goal_handle.accepted:
-            self.get_logger().info('Goal rejected :(')
-            return
+    # def goal_response_callback(self, future):
+    #     self.goal_handle = future.result()
+    #     if not self.goal_handle.accepted:
+    #         self.get_logger().info('Goal rejected :(')
+    #         return
 
-        self.get_logger().info('Goal accepted :)')
+    #     self.get_logger().info('Goal accepted :)')
 
-        self._get_result_future = self.goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self.get_result_callback)
+    #     self._get_result_future = self.goal_handle.get_result_async()
+    #     self._get_result_future.add_done_callback(self.get_result_callback)
 
 
-    def get_result_callback(self, future):
-        result = future.result().result
-        autonomous_mode_status = String()
-        autonomous_mode_status.data = "Autonomous Mode off, {0}".format("Mission Success" if result.success else "Mission Failed")
-        self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
-        self.autonomus_mode_active = False
+    # def get_result_callback(self, future):
+    #     result = future.result().result
+    #     autonomous_mode_status = String()
+    #     autonomous_mode_status.data = "Autonomous Mode off, {0}".format("Mission Success" if result.success else "Mission Failed")
+    #     self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
+    #     self.autonomus_mode_active = False
 
-    def feedback_callback(self, feedback_msg):
-        feedback = feedback_msg.feedback
-        autonomous_mode_status = String()
-        autonomous_mode_status.data = "Autonomous Mode on, {0}".format(feedback.status)
-        self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
+    # def feedback_callback(self, feedback_msg):
+    #     feedback = feedback_msg.feedback
+    #     autonomous_mode_status = String()
+    #     autonomous_mode_status.data = "Autonomous Mode on, {0}".format(feedback.status)
+    #     self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
     
-    def cancel_done(self, future):
-        cancel_response = future.result()
-        if len(cancel_response.goals_canceling) > 0:
-            autonomous_mode_status = String()
-            autonomous_mode_status.data = 'Auto mode successfully canceled'
-            self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
-        else:
-            autonomous_mode_status = String()
-            autonomous_mode_status.data = 'Auto mode failed to cancel'
-            self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
+    # def cancel_done(self, future):
+    #     cancel_response = future.result()
+    #     if len(cancel_response.goals_canceling) > 0:
+    #         autonomous_mode_status = String()
+    #         autonomous_mode_status.data = 'Auto mode successfully canceled'
+    #         self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
+    #     else:
+    #         autonomous_mode_status = String()
+    #         autonomous_mode_status.data = 'Auto mode failed to cancel'
+    #         self.diagnostics_data_publisher_2.publish(autonomous_mode_status)
 
-    def fetch_brain_coral_hsv_colour_bounds(self):
+    # def fetch_brain_coral_hsv_colour_bounds(self):
 
-        hsv_colour_bounds_request = HSVColours.Request()
+    #     hsv_colour_bounds_request = HSVColours.Request()
 
-        # load_to_database = False indicates loading FROM database
-        hsv_colour_bounds_request.load_to_database = False 
+    #     # load_to_database = False indicates loading FROM database
+    #     hsv_colour_bounds_request.load_to_database = False 
 
-        # Ensure the database server is up before continuing 
-        self.brain_coral_hsv_colour_bounds_client.wait_for_service()
+    #     # Ensure the database server is up before continuing 
+    #     self.brain_coral_hsv_colour_bounds_client.wait_for_service()
             
-        future = self.brain_coral_hsv_colour_bounds_client.call(hsv_colour_bounds_request)
+    #     future = self.brain_coral_hsv_colour_bounds_client.call(hsv_colour_bounds_request)
         
-        if future.success: # Means that HSV colours were stored in the database at this time
-            self.brain_coral_hsv_colour_bounds["upper_hsv"] = future.upper_hsv
-            self.brain_coral_hsv_colour_bounds["lower_hsv"] = future.lower_hsv
-        else:
-            self.get_logger().info("No HSV colour bounds stored in database. Will keep using default.")
+    #     if future.success: # Means that HSV colours were stored in the database at this time
+    #         self.brain_coral_hsv_colour_bounds["upper_hsv"] = future.upper_hsv
+    #         self.brain_coral_hsv_colour_bounds["lower_hsv"] = future.lower_hsv
+    #     else:
+    #         self.get_logger().info("No HSV colour bounds stored in database. Will keep using default.")
 
 
 
