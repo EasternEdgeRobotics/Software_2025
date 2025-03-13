@@ -10,7 +10,11 @@ DEV_MODE=$2
 if [ ! -e /app/install/setup.sh ]
 then 
   cd /app
-  colcon build
+  if [ $ROV_NAME == "beaumont" ]; then
+    colcon build --packages-ignore waterwitch_backend waterwitch_frontend
+  else
+    colcon build --packages-ignore beaumont_backend waterwitch_frontend
+  fi
 fi
 
 source /app/install/setup.sh

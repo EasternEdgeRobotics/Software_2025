@@ -13,7 +13,7 @@ services:
     network_mode: host # Run in host mode to allow ros2 communication with host network
     ipc: host # Required for ros2 communication with host network
     volumes:
-      - ./ros_workspace/src/common_backend/common_backend/config:/app/src/common_backend/common_backend/config # Mount the config directory so that it persists between container restarts
+      - ./ros_workspace/configs:/app/configs # Mount the config directory so that it persists between container restarts
   web_frontend: 
     build: ./web_frontend
     container_name: web_frontend
