@@ -74,6 +74,7 @@ int main(int argc, char **argv) {
             json configData = json::parse(configs[i]);
             if (!configData["servos"][0].is_null()) std::strncpy(waterwitch_config.servo1SSHTarget, configData["servos"][0].get<std::string>().c_str(), sizeof(waterwitch_config.servo1SSHTarget));
             if (!configData["servos"][1].is_null()) std::strncpy(waterwitch_config.servo2SSHTarget, configData["servos"][1].get<std::string>().c_str(), sizeof(waterwitch_config.servo2SSHTarget));
+            if (!configData["thruster_acceleration"].is_null()) waterwitch_config.thruster_acceleration = configData["thruster_acceleration"].get<float>();
             for (size_t i = 0; i < std::size(waterwitch_config.thruster_map); i++){
                 if (!configData["thruster_map"][i].is_null()) std::strncpy(waterwitch_config.thruster_map[i], std::to_string(configData["thruster_map"][i].get<int>()).c_str(), sizeof(waterwitch_config.thruster_map[i]));
                 if (!configData["reverse_thrusters"][i].is_null()) waterwitch_config.reverse_thrusters[i] = configData["reverse_thrusters"][i].get<bool>();
@@ -290,39 +291,10 @@ int main(int argc, char **argv) {
                     ImGui::EndTabItem();
                     
                 }
-                if (ImGui::BeginTabItem("Servo (Waterwitch)")){
+                if (ImGui::BeginTabItem("Waterwitch Config")){
                     if (!(keyboard_mode || glfwJoystickPresent(GLFW_JOYSTICK_1)))
                     {
-                        ImGui::Text("Connect controller or enable keyboard mode to configure servos");
-                    }
-                    else
-                    {
-                        bool configuration_mode_checkbox = configuration_mode;
-                        ImGui::Checkbox("Configuration Mode", &configuration_mode_checkbox);
-                        if (!configuration_mode_checkbox && configuration_mode)
-                        {
-                            // The backend uses the negative edge of configuration_mode to load the new config
-                            // Thus, on the negative edge of configuration_mode, we should save the new global config
-                            saveGlobalConfig(saveConfigNode, waterwitch_config);
-                        }
-                        if (configuration_mode_checkbox) { 
-                            ImGui::Text("Servo 1 (Front Servo) SSH Target");
-                            ImGui::SameLine();
-                            ImGui::InputText("##servo1", waterwitch_config.servo1SSHTarget, 64);
-                            ImGui::Text("Servo 2 (Front Servo) SSH Target");
-                            ImGui::SameLine();
-                            ImGui::InputText("##servo2", waterwitch_config.servo2SSHTarget, 64);
-
-                            ImGui::Text("Untick checkbox to save this config");
-                        }
-                        configuration_mode = configuration_mode_checkbox;
-                    }
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Thruster Configuration (Waterwitch)")){
-                    if (!(keyboard_mode || glfwJoystickPresent(GLFW_JOYSTICK_1)))
-                    {
-                        ImGui::Text("Connect controller or enable keyboard mode to configure thrusters");
+                        ImGui::Text("Connect controller or enable keyboard mode to configure Waterwitch");
                     }
                     else
                     {
@@ -370,6 +342,14 @@ int main(int argc, char **argv) {
                             ImGui::InputText("##Port_top", waterwitch_config.thruster_map[5], 64);
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##port_top_rev_thruster", &waterwitch_config.reverse_thrusters[5]);
+                            
+                            ImGui::Separator();
+                            
+                            ImGui::Text("The thruster acceleration determines how fast thrusters ramp up to the commanded speed");
+
+                            ImGui::Text("Thruster Acceleration");
+                            ImGui::SameLine();
+                            ImGui::SliderFloat("##thruster_acceleration", &waterwitch_config.thruster_acceleration, 0.1f, 1.0f, "%.05f");
 
                             const char* thrusterNumbers[] = { "0", "1", "2", "3", "4", "5" };
                             static int currentThrusterNumber = 0;
@@ -378,6 +358,14 @@ int main(int argc, char **argv) {
                             if (ImGui::Combo("##thruster_number", &currentThrusterNumber, thrusterNumbers, IM_ARRAYSIZE(thrusterNumbers))) {
                                 configuration_mode_thruster_number = currentThrusterNumber;
                             }
+                            
+                            ImGui::Text("Servo 1 (Front Servo) SSH Target");
+                            ImGui::SameLine();
+                            ImGui::InputText("##servo1", waterwitch_config.servo1SSHTarget, 64);
+                            ImGui::Text("Servo 2 (Front Servo) SSH Target");
+                            ImGui::SameLine();
+                            ImGui::InputText("##servo2", waterwitch_config.servo2SSHTarget, 64);
+
                             ImGui::Text("Untick checkbox to save this config");
                         }
                         configuration_mode = configuration_mode_checkbox;
@@ -558,6 +546,7 @@ void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const
     configJson["name"] = "waterwitch_config";
     configJson["servos"][0] = waterwitch_config.servo1SSHTarget;
     configJson["servos"][1] = waterwitch_config.servo2SSHTarget;
+    configJson["thruster_acceleration"] = waterwitch_config.thruster_acceleration;
 
     for (size_t i = 0; i < waterwitch_config.thruster_map.size(); i++) {
         configJson["thruster_map"][i] = std::stoi(waterwitch_config.thruster_map[i]);

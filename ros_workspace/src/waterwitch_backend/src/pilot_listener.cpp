@@ -109,6 +109,8 @@ private:
     1 //  port_top
   };
 
+  float thruster_acceleration = 0.5f;
+
   void pilot_listener_callback(eer_interfaces::msg::PilotInput::UniquePtr pilot_input)
   { 
 
@@ -202,14 +204,16 @@ private:
       // Ensure varaibles are not updated as they are being accessed
       std::scoped_lock lock(target_thrust_mutexes[thruster_index], current_waterwitch_control_values_mutex);
 
+      RCLCPP_INFO(this->get_logger(), "Thruster %d acceleration: %f", thruster_index, thruster_acceleration);
+
       // Only update the thrust value of each thruster if the target value is different
       if (target_thrust_values[thruster_index] != current_waterwitch_control_values.thrust[thruster_index]) 
       {
         float difference = target_thrust_values[thruster_index] - current_waterwitch_control_values.thrust[thruster_index];
 
-        if (abs(difference) > THRUSTER_ACCELERATION) 
+        if (abs(difference) > thruster_acceleration) 
         { 
-          current_waterwitch_control_values.thrust[thruster_index] += std::copysign(difference * THRUSTER_ACCELERATION, difference);
+          current_waterwitch_control_values.thrust[thruster_index] += std::copysign(difference * thruster_acceleration, difference);
         } 
         else
         {
@@ -251,6 +255,11 @@ private:
                           current_waterwitch_control_values.servo_ssh_targets[i] = configuration_data["servos"][i].get<std::string>();
                       }
                   }
+              }
+
+              if (configuration_data.contains("thruster_acceleration") && !configuration_data["thruster_acceleration"].is_null() && configuration_data["thruster_acceleration"].is_number_float())
+              {
+                thruster_acceleration = configuration_data["thruster_acceleration"];
               }
 
               // Ensure that the config related to thruster configuration is valid
