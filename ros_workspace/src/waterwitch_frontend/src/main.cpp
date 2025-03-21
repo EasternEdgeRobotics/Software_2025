@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
                     else
                     {
                         bool configuration_mode_checkbox = configuration_mode;
-                        ImGui::Checkbox("Configuration Mode", &configuration_mode_checkbox);
+                        ImGui::Checkbox("Configuration Mode (Toggle to Save)", &configuration_mode_checkbox);
                         if (!configuration_mode_checkbox && configuration_mode)
                         {
                             // The backend uses the negative edge of configuration_mode to load the new config
@@ -343,8 +343,6 @@ int main(int argc, char **argv) {
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##port_top_rev_thruster", &waterwitch_config.reverse_thrusters[5]);
                             
-                            ImGui::Separator();
-                            
                             ImGui::Text("The thruster acceleration determines how fast thrusters ramp up to the commanded speed");
 
                             ImGui::Text("Thruster Acceleration");
@@ -365,8 +363,6 @@ int main(int argc, char **argv) {
                             ImGui::Text("Servo 2 (Front Servo) SSH Target");
                             ImGui::SameLine();
                             ImGui::InputText("##servo2", waterwitch_config.servo2SSHTarget, 64);
-
-                            ImGui::Text("Untick checkbox to save this config");
                         }
                         configuration_mode = configuration_mode_checkbox;
                     }
