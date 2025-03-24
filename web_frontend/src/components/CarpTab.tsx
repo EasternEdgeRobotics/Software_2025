@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState } from "react";
-import Tesseract from "tesseract.js";
 import { Button } from "@mui/material";
 
 type RegionName = "Region 1" | "Region 2" | "Region 3" | "Region 4" | "Region 5";
@@ -7,12 +6,10 @@ type RegionName = "Region 1" | "Region 2" | "Region 3" | "Region 4" | "Region 5"
 const CarpAnimationGUI: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [imageData, setImageData] = useState<string | null>(null);
-  const [animationData, setAnimationData] = useState<Record<RegionName, boolean[]> | null>(null);
+  const [animationData, setAnimationData] = useState<Record<number, Record<RegionName, boolean>> | null>(null);
   const [capturing, setCapturing] = useState(false);
-  const [paused, setPaused] = useState(true);
-  const [animationStarted, setAnimationStarted] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [frame, setFrame] = useState(0);
 
   const regions: Record<RegionName, number[][]> = {
@@ -32,27 +29,21 @@ const CarpAnimationGUI: React.FC = () => {
   };
 
   useEffect(() => {
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-      } catch (error) {
-        console.error("Error accessing camera:", error);
-      }
-    };
-
-    startCamera();
+      })
+      .catch((err) => console.error("Camera access error:", err));
   }, []);
 
   const captureImage = () => {
     if (!videoRef.current || !canvasRef.current) return;
+
     const ctx = canvasRef.current.getContext("2d");
-    if (!ctx) return;
-
-    ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-
+    ctx?.drawImage(videoRef.current, 0, 0, 640, 480);
     const image = canvasRef.current.toDataURL("image/png");
     setImageData(image);
   };
@@ -62,112 +53,79 @@ const CarpAnimationGUI: React.FC = () => {
     setCapturing(true);
 
     try {
-      const { data: { text } } = await Tesseract.recognize(imageData, "eng", {
-        logger: (m) => console.log(m),
+      // Convert base64 image to Blob
+      const blob = await fetch(imageData).then((res) => res.blob());
+      const formData = new FormData();
+      formData.append("image", blob, "image.png");
+
+      // Send to Flask backend
+      const response = await fetch("http://localhost:5000/process-table", {
+        method: "POST",
+        body: formData,
       });
 
-      console.log("Extracted Text:", text);
-      setAnimationData(parseTextToData(text));
+      const data = await response.json();
+      console.log("Extracted Data from Backend:", data);
+      setAnimationData(data);
     } catch (error) {
-      console.error("OCR Error:", error);
+      console.error("Error processing image:", error);
     }
-    
     setCapturing(false);
   };
 
-  const parseTextToData = (text: string) => {
-    console.log("Raw OCR Output:", text);
-    const lines = text.split("\n").map(line => line.trim()).filter(line => line);
-    console.log("Processed Lines:", lines);
+  const drawRegions = (ctx: CanvasRenderingContext2D, yearIndex: number) => {
+    if (!animationData) return;
 
-    const data: Record<RegionName, boolean[]> = {
-      "Region 1": [],
-      "Region 2": [],
-      "Region 3": [],
-      "Region 4": [],
-      "Region 5": [],
-    };
+    Object.entries(regions).forEach(([region, coords]) => {
+      const typedRegion = region as RegionName;
+      const color = animationData[2016 + yearIndex]?.[typedRegion]
+        ? regionColors[typedRegion]
+        : "rgba(255, 255, 255, 0)";
 
-    const yearData = lines.slice(1);
-
-    yearData.forEach((line) => {
-      const parts = line.split(/\s+/);
-      const year = parts[0];
-      const regionsData = parts.slice(1);
-
-      regionsData.forEach((value, index) => {
-        const region = `Region ${index + 1}` as RegionName;
-        if (Object.prototype.hasOwnProperty.call(data, region)) {
-          data[region].push(value.toUpperCase() === "Y");
-        }
-      });
+      ctx.beginPath();
+      ctx.moveTo(coords[0][0], coords[0][1]);
+      coords.forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = "black";
+      ctx.stroke();
     });
-
-    console.log("Parsed Data:", data);
-    return data;
   };
 
-  const startAnimation = () => {
-    if (!animationData) {
-      console.error("No animation data available.");
-      return;
-    }
-    setAnimationStarted(true);
-    setPaused(false);
-  };
+  useEffect(() => {
+    if (!animationData || paused) return;
 
-  const drawAnimation = () => {
-    if (!animationCanvasRef.current || !animationData || frame === 0) return;
-    const ctx = animationCanvasRef.current.getContext("2d");
-    if (!ctx) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
 
-    const year = 2016 + frame;
-    ctx.clearRect(0, 0, animationCanvasRef.current.width, animationCanvasRef.current.height);
-    
-    const riverImg = new Image();
-    riverImg.src = "/River.png";
-    riverImg.onload = () => {
-      if (animationCanvasRef.current && ctx) {
-        ctx.drawImage(riverImg, 0, 0, animationCanvasRef.current.width, animationCanvasRef.current.height);
+    let currentFrame = 0;
+    const animate = () => {
+      if (!animationData || paused) return;
+      if (currentFrame >= Object.keys(animationData).length) return;
 
-        Object.keys(animationData).forEach((regionKey) => {
-          const region = regionKey as RegionName;
-          const regionData = animationData[region];
-          const regionFrameData = regionData[frame];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawRegions(ctx, currentFrame);
+      ctx.font = "20px Arial";
+      ctx.fillStyle = "black";
+      ctx.fillText(`Year: ${2016 + currentFrame}`, 20, 30);
 
-          if (regionFrameData) {
-            const [x, y] = regions[region][0];
-            ctx.beginPath();
-            ctx.arc(x, y, 50, 0, 2 * Math.PI);
-            ctx.fillStyle = regionColors[region];
-            ctx.fill();
-          }
-        });
-      }
+      setFrame(currentFrame);
+      currentFrame++;
+
+      setTimeout(animate, 1000);
     };
-  };
 
-  useEffect(() => {
-    if (animationStarted && animationData && frame < 10) {
-      const interval = setInterval(() => {
-        setFrame((prev) => prev + 1);
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [animationStarted, frame, animationData]);
-
-  useEffect(() => {
-    drawAnimation();
-  }, [frame]);
+    animate();
+  }, [animationData, paused]);
 
   return (
     <div style={{ textAlign: "center" }}>
       <h2>Carp Animation GUI</h2>
-      
-      <video ref={videoRef} autoPlay playsInline width="640" height="480" style={{ border: "1px solid black" }} />
-      
-      <canvas ref={canvasRef} width="640" height="480" style={{ display: "none" }} />
-      
+      <video ref={videoRef} width="640" height="480" autoPlay />
+      <canvas ref={canvasRef} width="640" height="480" style={{ border: "1px solid black", marginTop: "10px" }} />
+
       <div style={{ marginTop: "20px" }}>
         <Button variant="contained" color="primary" onClick={captureImage}>
           Capture Image
@@ -183,14 +141,11 @@ const CarpAnimationGUI: React.FC = () => {
         </Button>
       </div>
 
-      <canvas ref={animationCanvasRef} width="640" height="480" style={{ border: "1px solid black", marginTop: "10px" }} />
-      
       {animationData && (
         <div style={{ marginTop: "20px" }}>
-          <Button variant="contained" color="success" onClick={startAnimation} disabled={animationStarted}>
-            Start Animation
-          </Button>
-          <Button variant="contained" color="success" onClick={() => setPaused(!paused)}>
+          <h3>Extracted Data</h3>
+          <pre>{JSON.stringify(animationData, null, 2)}</pre>
+          <Button variant="contained" color="success" onClick={() => setPaused(!paused)} style={{ marginTop: "10px" }}>
             {paused ? "Resume" : "Pause"}
           </Button>
         </div>
