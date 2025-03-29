@@ -12,13 +12,17 @@ CORS(app)
 
 def preprocess_image(image_path):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    _, binary = cv2.threshold(image, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    blurred = cv2.GaussianBlur(image, (5, 5), 0)
+    _, binary = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    cv2.imwrite("debug_preprocessed.png", binary)
     return binary
 
 def detect_table_cells(image_path):
     image = preprocess_image(image_path)
-    contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+    kernel = np.ones((3, 3), np.uint8)
+    dilated = cv2.dilate(image, kernel, iterations=2)
+
+    contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cells = [cv2.boundingRect(c) for c in contours if cv2.boundingRect(c)[2] > 20 and cv2.boundingRect(c)[3] > 20]
     cells = sorted(cells, key=lambda b: (b[1] // 10, b[0]))
 
@@ -35,7 +39,7 @@ def extract_text_from_cells(cells):
     extracted_data = []
     for cell in cells:
         gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
-        text = pytesseract.image_to_string(gray, config="--psm 6 --oem 3 -c tessedit_char_whitelist=YyNn")
+        text = pytesseract.image_to_string(gray, config="--psm 6 --oem 3 -c tessedit_char_whitelist=YyNn0123456789")
         extracted_data.append(text.strip().upper())
 
     return extracted_data
@@ -65,12 +69,6 @@ def process_table():
         cells = detect_table_cells(file_path)
         extracted_data = extract_text_from_cells(cells)
         structured_data = structure_data(extracted_data)
-
-        
-        if cells:  
-            cv2.imwrite("debug_preprocessed.png", cells[0]) 
-        else:
-            print("No cells detected to save.")
 
         os.remove(file_path)
 
