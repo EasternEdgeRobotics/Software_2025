@@ -1,5 +1,5 @@
 import { Box, Button, Tab, Tabs } from "@mui/material";
-import { ArrowUpRightSquare, Bot, Camera, Wrench } from "lucide-react";
+import { ArrowUpRightSquare, Bot, Camera, FishIcon, Wrench } from "lucide-react";
 import { useState } from "react";
 import CameraTab from "./CameraTab";
 import SettingsTab from "./SettingsTab";
@@ -7,6 +7,10 @@ import React from "react";
 import SafetyDisclaimer from "./SafetyDisclaimer";
 import { InitROS } from "../api/ROS";
 import { BotTab } from "./BotTab";
+import CarpTab from "./CarpTab";
+
+
+
 
 // Navbar, calls to render each window, and a popout button
 
@@ -16,6 +20,7 @@ export function RenderTab(props: { tab: number }) {
         case 0: return (<CameraTab />);
         case 1: return (<BotTab />);
         case 2: return (<SettingsTab />);
+        case 3: return (<CarpTab />);
         default: return (null);
     }
 }
@@ -31,6 +36,7 @@ export default function App() {
                 <Tab label={<Camera />} />
                 <Tab label={<Bot />} />
                 <Tab label={<Wrench />} />
+                <Tab label ={<FishIcon />} />
             </Tabs>
             <br />
             {/* Popout window button, only for camera and bot tasks*/}
