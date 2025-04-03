@@ -6,7 +6,7 @@ import os
 import json
 from flask_cors import CORS
 
-#Can be removed later. Put in so I can access tesseract here.
+#Put in so I can access tesseract here.
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 app = Flask(__name__)
@@ -75,7 +75,7 @@ def extract_text_from_cells(image_path, cells):
         text = text.replace("YY", "Y").replace("NN", "N")
 
         if text == "":
-            print(f"⚠️ OCR failed on cell {idx}, adding '?' placeholder")
+            print(f"OCR failed on cell {idx}, adding '?' placeholder")
             text = "?"
 
 
