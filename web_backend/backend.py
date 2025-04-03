@@ -21,7 +21,7 @@ def preprocess_image(image_path):
 
     print("Applying preprocessing...")
     blurred = cv2.GaussianBlur(image, (5, 5), 0)
-    processed = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    processed = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 3)
     
     cv2.imwrite("debug_preprocessed.png", processed)
     print("Preprocessing complete. Check debug_preprocessed.png")
@@ -34,7 +34,7 @@ def detect_table_cells(image_path):
     if image is None:
         return []
 
-    edges = cv2.Canny(image, 50, 150)
+    edges = cv2.Canny(image, 100, 500)
     kernel = np.ones((3,1), np.uint8)
     edges = cv2.dilate(edges, kernel, iterations=1)
     cv2.imwrite("debug_edges.png", edges)
@@ -43,14 +43,14 @@ def detect_table_cells(image_path):
     print(f"Found {len(contours)} contours.")
 
     
-    cells = [cv2.boundingRect(c) for c in contours if 20 < cv2.boundingRect(c)[2] < 200 and 15 < cv2.boundingRect(c)[3] < 100]
+    cells = [cv2.boundingRect(c) for c in contours if 15 < cv2.boundingRect(c)[2] < 500 and 15 < cv2.boundingRect(c)[3] < 500]
     print(f"Identified {len(cells)} possible table cells.")
     
     cells = sorted(cells, key=lambda b: (b[1], b[0]))  
 
     debug_image = cv2.imread(image_path)
     for x, y, w, h in cells:
-        cv2.rectangle(debug_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(debug_image, (x, y), (x + w, y + h), (0, 255, 0), 1)
     cv2.imwrite("debug_detected_cells.png", debug_image)
     
     return cells
@@ -67,9 +67,8 @@ def extract_text_from_cells(image_path, cells):
         
         cv2.imwrite(f"debug_cell_{idx}.png", gray)
 
-        text = pytesseract.image_to_string(
-            gray, config="--psm 6 --oem 3 -c tessedit_char_whitelist=YyNn0123456789"
-        )
+        text = pytesseract.image_to_string(gray, config="--psm 7 --oem 3 -c tessedit_char_whitelist=YN0123456789")
+
         text = text.encode("utf-8", "ignore").decode("utf-8").strip().upper()
 
         
