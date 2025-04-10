@@ -19,7 +19,7 @@ const CarpAnimationGUI: React.FC = () => {
 
   const regionShapes: Record<RegionName, number[][]> = {
     "Region 1": [
-      [125, 320],    
+      [125, 320],    // X and Y axis, increase x to go right, increase y to go down.
       [145, 330],
       [160, 300],
       [180, 250],   
