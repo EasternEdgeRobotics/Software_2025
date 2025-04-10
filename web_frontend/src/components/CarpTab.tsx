@@ -18,11 +18,36 @@ const CarpAnimationGUI: React.FC = () => {
   const [paused, setPaused] = useState(false);
 
   const regionShapes: Record<RegionName, number[][]> = {
-    "Region 1": [[50, 60], [150, 60], [150, 160], [50, 160]],
-    "Region 2": [[200, 80], [300, 80], [300, 180], [200, 180]],
-    "Region 3": [[350, 100], [450, 100], [450, 200], [350, 200]],
-    "Region 4": [[100, 220], [200, 220], [200, 320], [100, 320]],
-    "Region 5": [[250, 250], [350, 250], [350, 350], [250, 350]],
+    "Region 1": [
+      [120, 360],
+      [150, 345],
+      [150, 390],
+      [132, 463],
+    ],
+    "Region 2": [
+      [150, 345],
+      [180, 310],
+      [220, 290],
+      [170, 345],
+    ],
+    "Region 3": [
+      [220, 290],
+      [250, 200],
+      [290, 220],
+      [220, 300],
+    ],
+    "Region 4": [
+      [280, 230],
+      [370, 200],
+      [410, 150],
+      [275, 215],
+    ],
+    "Region 5": [
+      [400, 120],
+      [440, 100],
+      [460, 140],
+      [420, 160],
+    ],
   };
 
   useEffect(() => {
@@ -61,7 +86,6 @@ const CarpAnimationGUI: React.FC = () => {
   const extractDataFromImage = async () => {
     if (!imageData) return;
     setCapturing(true);
-
     try {
       const blob = await fetch(imageData).then((res) => res.blob());
       const formData = new FormData();
@@ -74,7 +98,30 @@ const CarpAnimationGUI: React.FC = () => {
 
       const data = await response.json();
       console.log("Extracted Data:", data);
-      setAnimationData(data);
+
+      const raw = data.raw_ocr;
+      const startIndex = raw.findIndex((v: string) => /^20\d\d$/.test(v));
+      const sliced = raw.slice(startIndex);
+      const rowCount = Math.floor(sliced.length / 6);
+
+      const structured: Record<number, Record<RegionName, boolean>> = {};
+
+      for (let i = 0; i < rowCount; i++) {
+        const year = parseInt(sliced[i * 6]);
+        const row = sliced.slice(i * 6 + 1, i * 6 + 6);
+        structured[year] = {
+          "Region 1": ["Y", "YES"].includes(row[0].toUpperCase()),
+          "Region 2": ["Y", "YES"].includes(row[1].toUpperCase()),
+          "Region 3": ["Y", "YES"].includes(row[2].toUpperCase()),
+          "Region 4": ["Y", "YES"].includes(row[3].toUpperCase()),
+          "Region 5": ["Y", "YES"].includes(row[4].toUpperCase()),
+        };
+      }
+
+      setAnimationData({
+        ...data,
+        structured,
+      });
     } catch (error) {
       console.error("Error processing image:", error);
     }
@@ -124,14 +171,15 @@ const CarpAnimationGUI: React.FC = () => {
       if (!paused) {
         frame++;
       }
-      animationId = requestAnimationFrame(drawFrame);
+
+      animationId = window.setTimeout(() => requestAnimationFrame(drawFrame), 1000);
     };
 
     baseImage.onload = () => {
       drawFrame();
     };
 
-    return () => cancelAnimationFrame(animationId);
+    return () => clearTimeout(animationId);
   }, [animationData, paused]);
 
   return (
@@ -181,11 +229,7 @@ const CarpAnimationGUI: React.FC = () => {
 
       {animationData && (
         <div style={{ marginTop: "20px" }}>
-          <h3>Extracted Data</h3>
-          <h4>Structured Data</h4>
-          <pre>{JSON.stringify(animationData.structured, null, 2)}</pre>
-
-          <h4 style={{ marginTop: "20px" }}>Raw OCR Text (Parsed)</h4>
+          <h3>Raw OCR Text (Parsed)</h3>
           {(() => {
             const raw = animationData.raw_ocr;
             const startIndex = raw.findIndex((v) => /^20\d\d$/.test(v));
