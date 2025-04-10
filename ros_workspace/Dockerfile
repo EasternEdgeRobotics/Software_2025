@@ -25,7 +25,7 @@ COPY src /app/src
 COPY docker_entry_script.sh /app
 
 ARG CACHEBUST=1
-RUN . /opt/ros/$ROS_DISTRO/setup.sh && colcon build
+RUN . /opt/ros/$ROS_DISTRO/setup.sh && colcon build --packages-skip waterwitch_frontend
 RUN echo 'source /app/install/setup.bash $ROV_NAME $DEV_MODE' >> /etc/bash.bashrc
 RUN dos2unix /app/docker_entry_script.sh
 

@@ -8,6 +8,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(eer_interfaces REQUIRED) 
+find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(OpenCV REQUIRED)
 
@@ -66,6 +67,12 @@ install(TARGETS waterwitch_frontend
 
 install(DIRECTORY include/
   DESTINATION include
+)
+
+# Add the launch files
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
 )
 
 ament_package()

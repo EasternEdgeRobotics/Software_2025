@@ -219,16 +219,16 @@ export function BotTab() {
         document.addEventListener("keypress", (event) => {
             switch (event.key) {
                 case "0":
-                    setThrusterMultipliers([0, 0, 0, 0, 0, 0]);
+                    setThrusterMultipliers([0, 0, 0, 0, 0, 0, 0]);
                     break;
                 case "1":
-                    setThrusterMultipliers([100, 100, 100, 100, 100, 70]);
+                    setThrusterMultipliers([100, 100, 100, 100, 100, 100, 70]);
                     break;
                 case "2":
-                    setThrusterMultipliers([100, 0, 0, 100, 0, 0]);
+                    setThrusterMultipliers([100, 0, 0, 100, 0, 0, 0]);
                     break;
                 case "3":
-                    setThrusterMultipliers([0, 100, 0, 0, 0, 0]);
+                    setThrusterMultipliers([0, 100, 0, 0, 0, 0, 0]);
                     break;
                 default:
                     break;
@@ -250,7 +250,7 @@ export function BotTab() {
 
             <Grid item xs={8}>
                 <Grid container justifyContent="center" spacing={1} marginBottom={3}>
-                    {["Power", "Surge", "Sway", "Heave", "Pitch", "Yaw"].map((label, index) => {
+                    {["Power", "Surge", "Sway", "Heave", "Pitch", "Roll", "Yaw"].map((label, index) => {
                         return (
                             <Grid item xs="auto" key={index} display="flex" justifyContent="center" alignItems="center" flexWrap="wrap" height="275px">
                                 <Slider orientation="vertical" valueLabelDisplay="auto" step={5} defaultValue={thrusterMultipliers[index]} onChange={(_, value) => setThrusterMultipliers(thrusterMultipliers.map((v, i) => { if (i == index) return value as number; else return v; }))} />

@@ -10,3 +10,6 @@
 [submodule "ros_workspace/src/waterwitch_frontend/include/stb"]
 	path = ros_workspace/src/waterwitch_frontend/include/stb
 	url = https://github.com/nothings/stb
+[submodule "ros_workspace/src/waterwitch_backend/include/json"]
+	path = ros_workspace/src/waterwitch_backend/include/json
+	url = https://github.com/nlohmann/json
