@@ -17,7 +17,7 @@ const CarpAnimationGUI: React.FC = () => {
   const [capturing, setCapturing] = useState(false);
   const [paused, setPaused] = useState(false);
 
-  const regionLines: Record<RegionName, number[][]> = {
+  const regionShapes: Record<RegionName, number[][]> = {
     "Region 1": [[125, 320], [145, 330], [160, 300], [180, 250], [150, 230], [130, 280]],
     "Region 2": [[170, 230], [190, 210], [220, 190], [200, 220], [180, 230]],
     "Region 3": [[220, 180], [230, 160], [310, 140], [260, 190], [230, 210]],
@@ -39,10 +39,11 @@ const CarpAnimationGUI: React.FC = () => {
     if (!ctx) return;
 
     // Pre-draw the lines for each region and store them
-    Object.entries(regionLines).forEach(([regionName, coords]) => {
+    Object.entries(regionShapes).forEach(([regionName, coords]) => {
       const path = new Path2D();
       path.moveTo(coords[0][0], coords[0][1]);
-      coords.forEach(([x, y]) => path.lineTo(x, y)); // Draw lines instead of filling areas
+      coords.forEach(([x, y]) => path.lineTo(x, y));
+      path.closePath(); // To make it a closed shape if you need
       pathsRef.current[regionName as RegionName] = path;
     });
   }, []); // Run only once when the component is mounted
@@ -153,13 +154,12 @@ const CarpAnimationGUI: React.FC = () => {
           const path = pathsRef.current[regionName as RegionName];
           if (path) {
             ctx.strokeStyle = "black";
-            ctx.lineWidth = 2;
-            ctx.stroke(path); // Draw the line for the region
+            ctx.lineWidth = 3;
+            ctx.stroke(path); // Draw the pre-drawn path
 
-            // Change the line color based on the value
-            ctx.strokeStyle = value ? "rgba(76, 175, 80, 1)" : "rgba(244, 67, 54, 1)";
-            ctx.lineWidth = 4;
-            ctx.stroke(path);
+            // Change the fill style based on the value
+            ctx.fillStyle = value ? "rgba(76, 175, 80, 0.5)" : "rgba(244, 67, 54, 0.5)";
+            ctx.fill(path);
           }
         });
       }
