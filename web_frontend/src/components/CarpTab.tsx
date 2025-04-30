@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Button } from "@mui/material";
+import { Button, Select, MenuItem } from "@mui/material";
 
 type RegionName = "Region 1" | "Region 2" | "Region 3" | "Region 4" | "Region 5";
 
@@ -25,15 +25,27 @@ const CarpAnimationGUI: React.FC = () => {
     "Region 5": [[390, 110], [420, 90], [440, 70], [460, 90], [430, 120]],
   };
 
+  const [manualData, setManualData] = useState<Record<number, Record<RegionName, boolean>>>(() => {
+    const initialData: Record<number, Record<RegionName, boolean>> = {};
+    for (let year = 2016; year <= 2025; year++) {
+      initialData[year] = {
+        "Region 1": false,
+        "Region 2": false,
+        "Region 3": false,
+        "Region 4": false,
+        "Region 5": false,
+      };
+    }
+    return initialData;
+  });
+
+  const baseImage = new Image();
+  baseImage.src = "/river.png";
+
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      })
-      .catch((err) => console.error("Camera access error:", err));
+    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    }).catch((err) => console.error("Camera access error:", err));
   }, []);
 
   const captureImage = () => {
@@ -72,8 +84,6 @@ const CarpAnimationGUI: React.FC = () => {
       });
 
       const data = await response.json();
-      console.log("Extracted Data:", data);
-
       const raw = data.raw_ocr;
       const startIndex = raw.findIndex((v: string) => /^20\d\d$/.test(v));
       const sliced = raw.slice(startIndex);
@@ -92,37 +102,31 @@ const CarpAnimationGUI: React.FC = () => {
         };
       }
 
-      setAnimationData({
-        ...data,
-        structured,
-      });
+      setAnimationData({ ...data, structured });
     } catch (error) {
       console.error("Error processing image:", error);
     }
     setCapturing(false);
   };
 
-  const baseImage = new Image();
-  baseImage.src = "/river.png";
-
-  useEffect(() => {
-    if (!canvasRef.current || !animationData) return;
+  const drawAnimation = (structuredData: Record<number, Record<RegionName, boolean>>) => {
+    if (!canvasRef.current) return;
 
     let frame = 0;
     let animationId: number;
 
     const drawFrame = () => {
       const ctx = canvasRef.current?.getContext("2d");
-      if (!ctx || !animationData.structured) return;
+      if (!ctx) return;
 
-      const years = Object.keys(animationData.structured).sort();
+      const years = Object.keys(structuredData).sort();
       const year = years[frame % years.length];
-      const regionData = animationData.structured?.[parseInt(year)];
+      const regionData = structuredData[parseInt(year)];
 
       ctx.clearRect(0, 0, 640, 480);
       ctx.drawImage(baseImage, 0, 0, 640, 480);
 
-      if (regionData && typeof regionData === "object") {
+      if (regionData) {
         Object.entries(regionData).forEach(([regionName, value]) => {
           const coords = regionShapes[regionName as RegionName];
           if (!coords) return;
@@ -137,143 +141,87 @@ const CarpAnimationGUI: React.FC = () => {
           ctx.strokeStyle = "black";
           ctx.stroke();
         });
-      } else {
-        console.warn("Invalid or missing structured data for year:", year);
       }
 
       ctx.fillStyle = "black";
       ctx.font = "20px Arial";
       ctx.fillText(`Year: ${year}`, 20, 30);
 
-      if (!paused) {
-        frame++;
-      }
-
+      if (!paused) frame++;
       animationId = window.setTimeout(() => requestAnimationFrame(drawFrame), 1000);
     };
 
-    baseImage.onload = () => {
-      drawFrame();
-    };
+    baseImage.onload = () => drawFrame();
+    drawFrame();
 
     return () => clearTimeout(animationId);
-  }, [animationData, paused]);
+  };
 
   return (
     <div style={{ textAlign: "center" }}>
       <h2>Carp Animation GUI</h2>
+
       <video ref={videoRef} width="640" height="480" autoPlay />
-      <canvas
-        ref={canvasRef}
-        width="640"
-        height="480"
-        style={{ border: "1px solid black", marginTop: "10px" }}
-      />
+      <canvas ref={canvasRef} width="640" height="480" style={{ border: "1px solid black", marginTop: "10px" }} />
 
       <div style={{ marginTop: "20px" }}>
-        <Button variant="contained" color="primary" onClick={captureImage}>
-          Capture Image
-        </Button>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          style={{ marginLeft: "10px" }}
-        />
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={extractDataFromImage}
-          disabled={capturing}
-          style={{ marginLeft: "10px" }}
-        >
+        <Button variant="contained" onClick={captureImage}>Capture Image</Button>
+        <input type="file" accept="image/*" onChange={handleFileUpload} style={{ marginLeft: "10px" }} />
+        <Button variant="contained" color="secondary" onClick={extractDataFromImage} disabled={capturing} style={{ marginLeft: "10px" }}>
           {capturing ? "Processing..." : "Extract Data"}
         </Button>
       </div>
 
-      {imageData && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Selected Image</h3>
-          <img
-            src={imageData}
-            alt="Uploaded Screenshot"
-            width="320"
-            height="240"
-            style={{ border: "1px solid black" }}
-          />
-        </div>
-      )}
-
       {animationData && (
         <div style={{ marginTop: "20px" }}>
-          <h3>Raw OCR Text (Parsed)</h3>
-          {(() => {
-            const raw = animationData.raw_ocr;
-            const startIndex = raw.findIndex((v) => /^20\d\d$/.test(v));
-            const sliced = raw.slice(startIndex);
-            const rowCount = Math.floor(sliced.length / 6);
-            const tableRows = [];
-
-            for (let i = 0; i < rowCount; i++) {
-              const year = sliced[i * 6];
-              const row = sliced.slice(i * 6 + 1, i * 6 + 6);
-              tableRows.push({ year, row });
-            }
-
-            return (
-              <table style={{ margin: "0 auto", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={{ border: "1px solid #ccc", padding: "4px" }}>Year</th>
-                    {["Region 1", "Region 2", "Region 3", "Region 4", "Region 5"].map((region) => (
-                      <th key={region} style={{ border: "1px solid #ccc", padding: "4px" }}>
-                        {region}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tableRows.map(({ year, row }) => (
-                    <tr key={year}>
-                      <td style={{ border: "1px solid #ccc", padding: "4px" }}>{year}</td>
-                      {row.map((value, index) => (
-                        <td
-                          key={index}
-                          style={{
-                            border: "1px solid #ccc",
-                            padding: "4px",
-                            backgroundColor:
-                              value === "Y" || value === "YES"
-                                ? "#c8e6c9"
-                                : value === "N" || value === "NO"
-                                ? "#ffcdd2"
-                                : "#fff9c4",
-                          }}
-                        >
-                          {value}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            );
-          })()}
-
-          <p style={{ marginTop: "10px" }}>
-            <strong>Total Cells Detected:</strong> {animationData.cell_count ?? 0}
-          </p>
-
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => setPaused(!paused)}
-            style={{ marginTop: "10px" }}
-          >
-            {paused ? "Resume" : "Pause"}
-          </Button>
+          <h3>Extracted Table</h3>
+          <p><strong>Total Cells Detected:</strong> {animationData.cell_count ?? 0}</p>
+          <Button variant="contained" color="success" onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</Button>
         </div>
       )}
+
+      <div style={{ marginTop: "40px" }}>
+        <h3>Manual Entry Table (2016-2025)</h3>
+        <table style={{ margin: "0 auto", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th>Year</th>
+              {["Region 1", "Region 2", "Region 3", "Region 4", "Region 5"].map(region => (
+                <th key={region}>{region}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(manualData).map(([yearStr, values]) => (
+              <tr key={yearStr}>
+                <td>{yearStr}</td>
+                {Object.entries(values).map(([region, val]) => (
+                  <td key={region}>
+                    <Select
+                      value={val ? "Y" : "N"}
+                      onChange={(e) => {
+                        const newVal = e.target.value === "Y";
+                        setManualData(prev => ({
+                          ...prev,
+                          [yearStr]: {
+                            ...prev[+yearStr],
+                            [region]: newVal,
+                          },
+                        }));
+                      }}
+                      size="small"
+                    >
+                      <MenuItem value="Y">Y</MenuItem>
+                      <MenuItem value="N">N</MenuItem>
+                    </Select>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <Button variant="contained" style={{ marginTop: 20 }} onClick={() => drawAnimation(manualData)}>Run Animation with Manual Data</Button>
+      </div>
     </div>
   );
 };
