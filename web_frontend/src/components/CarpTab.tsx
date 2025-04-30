@@ -17,13 +17,35 @@ const CarpAnimationGUI: React.FC = () => {
   const [capturing, setCapturing] = useState(false);
   const [paused, setPaused] = useState(false);
 
-  const regionShapes: Record<RegionName, number[][]> = {
+  const regionLines: Record<RegionName, number[][]> = {
     "Region 1": [[125, 320], [145, 330], [160, 300], [180, 250], [150, 230], [130, 280]],
     "Region 2": [[170, 230], [190, 210], [220, 190], [200, 220], [180, 230]],
     "Region 3": [[220, 180], [230, 160], [310, 140], [260, 190], [230, 210]],
     "Region 4": [[300, 160], [340, 150], [370, 140], [400, 120], [330, 130]],
     "Region 5": [[390, 110], [420, 90], [440, 70], [460, 90], [430, 120]],
   };
+
+  // Pre-draw lines and store paths in a ref
+  const pathsRef = useRef<Record<RegionName, Path2D | null>>({
+    "Region 1": null,
+    "Region 2": null,
+    "Region 3": null,
+    "Region 4": null,
+    "Region 5": null,
+  });
+
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (!ctx) return;
+
+    // Pre-draw the lines for each region and store them
+    Object.entries(regionLines).forEach(([regionName, coords]) => {
+      const path = new Path2D();
+      path.moveTo(coords[0][0], coords[0][1]);
+      coords.forEach(([x, y]) => path.lineTo(x, y)); // Draw lines instead of filling areas
+      pathsRef.current[regionName as RegionName] = path;
+    });
+  }, []); // Run only once when the component is mounted
 
   const [manualData, setManualData] = useState<Record<number, Record<RegionName, boolean>>>(() => {
     const initialData: Record<number, Record<RegionName, boolean>> = {};
@@ -128,18 +150,17 @@ const CarpAnimationGUI: React.FC = () => {
 
       if (regionData) {
         Object.entries(regionData).forEach(([regionName, value]) => {
-          const coords = regionShapes[regionName as RegionName];
-          if (!coords) return;
+          const path = pathsRef.current[regionName as RegionName];
+          if (path) {
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.stroke(path); // Draw the line for the region
 
-          ctx.beginPath();
-          ctx.moveTo(coords[0][0], coords[0][1]);
-          coords.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
-          ctx.closePath();
-
-          ctx.fillStyle = value ? "rgba(76, 175, 80, 0.5)" : "rgba(244, 67, 54, 0.5)";
-          ctx.fill();
-          ctx.strokeStyle = "black";
-          ctx.stroke();
+            // Change the line color based on the value
+            ctx.strokeStyle = value ? "rgba(76, 175, 80, 1)" : "rgba(244, 67, 54, 1)";
+            ctx.lineWidth = 4;
+            ctx.stroke(path);
+          }
         });
       }
 
