@@ -18,42 +18,11 @@ const CarpAnimationGUI: React.FC = () => {
   const [paused, setPaused] = useState(false);
 
   const regionShapes: Record<RegionName, number[][]> = {
-    "Region 1": [
-      [125, 320],    // X and Y axis, increase x to go right, increase y to go down.
-      [145, 330],
-      [160, 300],
-      [180, 250],   
-      [150, 230],
-      [130, 280],
-    ],
-  "Region 2": [
-    [170, 230],  
-    [190, 210],
-    [220, 190],
-    [200, 220],
-    [180, 230],
-    ],
-    "Region 3": [
-      [220, 180],
-      [230, 160],
-      [310, 140],
-      [260, 190],
-      [230, 210],
-    ],
-    "Region 4": [
-      [300, 160],
-      [340, 150],
-      [370, 140],
-      [400, 120],  
-      [330, 130],
-    ],
-    "Region 5": [
-      [390, 110],
-      [420, 90],
-      [440, 70],
-      [460, 90],
-      [430, 120],
-    ],
+    "Region 1": [[125, 320], [145, 330], [160, 300], [180, 250], [150, 230], [130, 280]],
+    "Region 2": [[170, 230], [190, 210], [220, 190], [200, 220], [180, 230]],
+    "Region 3": [[220, 180], [230, 160], [310, 140], [260, 190], [230, 210]],
+    "Region 4": [[300, 160], [340, 150], [370, 140], [400, 120], [330, 130]],
+    "Region 5": [[390, 110], [420, 90], [440, 70], [460, 90], [430, 120]],
   };
 
   useEffect(() => {
@@ -111,16 +80,15 @@ const CarpAnimationGUI: React.FC = () => {
       const rowCount = Math.floor(sliced.length / 6);
 
       const structured: Record<number, Record<RegionName, boolean>> = {};
-
       for (let i = 0; i < rowCount; i++) {
         const year = parseInt(sliced[i * 6]);
         const row = sliced.slice(i * 6 + 1, i * 6 + 6);
         structured[year] = {
-          "Region 1": ["Y", "YES"].includes(row[0].toUpperCase()),
-          "Region 2": ["Y", "YES"].includes(row[1].toUpperCase()),
-          "Region 3": ["Y", "YES"].includes(row[2].toUpperCase()),
-          "Region 4": ["Y", "YES"].includes(row[3].toUpperCase()),
-          "Region 5": ["Y", "YES"].includes(row[4].toUpperCase()),
+          "Region 1": ["Y", "YES"].includes(row[0]?.toUpperCase()),
+          "Region 2": ["Y", "YES"].includes(row[1]?.toUpperCase()),
+          "Region 3": ["Y", "YES"].includes(row[2]?.toUpperCase()),
+          "Region 4": ["Y", "YES"].includes(row[3]?.toUpperCase()),
+          "Region 5": ["Y", "YES"].includes(row[4]?.toUpperCase()),
         };
       }
 
@@ -149,26 +117,29 @@ const CarpAnimationGUI: React.FC = () => {
 
       const years = Object.keys(animationData.structured).sort();
       const year = years[frame % years.length];
+      const regionData = animationData.structured?.[parseInt(year)];
 
       ctx.clearRect(0, 0, 640, 480);
       ctx.drawImage(baseImage, 0, 0, 640, 480);
 
-      const regionData = animationData.structured[parseInt(year)];
+      if (regionData && typeof regionData === "object") {
+        Object.entries(regionData).forEach(([regionName, value]) => {
+          const coords = regionShapes[regionName as RegionName];
+          if (!coords) return;
 
-      Object.entries(regionData).forEach(([regionName, value]) => {
-        const coords = regionShapes[regionName as RegionName];
-        if (!coords) return;
+          ctx.beginPath();
+          ctx.moveTo(coords[0][0], coords[0][1]);
+          coords.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+          ctx.closePath();
 
-        ctx.beginPath();
-        ctx.moveTo(coords[0][0], coords[0][1]);
-        coords.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
-        ctx.closePath();
-
-        ctx.fillStyle = value ? "rgba(76, 175, 80, 0.5)" : "rgba(244, 67, 54, 0.5)";
-        ctx.fill();
-        ctx.strokeStyle = "black";
-        ctx.stroke();
-      });
+          ctx.fillStyle = value ? "rgba(76, 175, 80, 0.5)" : "rgba(244, 67, 54, 0.5)";
+          ctx.fill();
+          ctx.strokeStyle = "black";
+          ctx.stroke();
+        });
+      } else {
+        console.warn("Invalid or missing structured data for year:", year);
+      }
 
       ctx.fillStyle = "black";
       ctx.font = "20px Arial";
