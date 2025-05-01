@@ -14,7 +14,7 @@ const regionLines: Record<RegionName, number[][]> = {
     
   ],
   "Region 3": [
-    [255, 180, 275, 135, 300, 145],
+    [255, 180, 275, 140, 300, 145],
     
   ],
   "Region 4": [
