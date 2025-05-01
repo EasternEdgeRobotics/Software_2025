@@ -3,32 +3,25 @@ import { Button, Select, MenuItem } from "@mui/material";
 
 type RegionName = "Region 1" | "Region 2" | "Region 3" | "Region 4" | "Region 5";
 
-
 const regionLines: Record<RegionName, number[][]> = {
   "Region 1": [
     [160, 230, 110, 310, 160, 320], // end x, y, x curve start, y curve start, x curve end, y curve end, start x, y
-    
   ],
   "Region 2": [
     [160, 230, 200, 230, 255, 180],
-    
   ],
   "Region 3": [
     [255, 180, 275, 140, 300, 145],
-    
   ],
   "Region 4": [
     [300, 145, 400, 150, 390, 120],
     [390, 120, 440, 110, 440, 100],
-    
   ],
   "Region 5": [
     [440, 100, 415, 95, 420, 50],
     [420, 70, 430, 170, 540, 105],
-    
   ],
 };
-
 
 const regionColors: Record<RegionName, string> = {
   "Region 1": "red",
@@ -133,6 +126,19 @@ const CarpAnimationGUI: React.FC = () => {
         });
       });
 
+      
+      const legendX = 480;  
+      const legendYStart = 350;  
+      let legendY = legendYStart;
+
+      Object.entries(regionColors).forEach(([regionName, color]) => {
+        ctx.fillStyle = color;
+        ctx.fillRect(legendX, legendY, 15, 15);
+        ctx.fillStyle = "black";
+        ctx.fillText(regionName, legendX + 20, legendY + 12);
+        legendY += 25;
+      });
+
       ctx.fillStyle = "black";
       ctx.font = "20px Arial";
       ctx.fillText(`Year: ${year}`, 20, 30);
@@ -169,7 +175,9 @@ const CarpAnimationGUI: React.FC = () => {
   return (
     <div style={{ textAlign: "center" }}>
       <h2>Carp Animation GUI</h2>
-      <canvas ref={canvasRef} width="640" height="480" style={{ border: "1px solid black" }} />
+      <div style={{ position: "relative", marginBottom: "20px" }}>
+        <canvas ref={canvasRef} width="640" height="480" style={{ border: "1px solid black" }} />
+      </div>
       <div style={{ marginTop: "20px" }}>
         <Button
           variant="contained"
