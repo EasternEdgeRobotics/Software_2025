@@ -3,35 +3,33 @@ import { Button, Select, MenuItem } from "@mui/material";
 
 type RegionName = "Region 1" | "Region 2" | "Region 3" | "Region 4" | "Region 5";
 
-// Define Bézier segments per region
+
 const regionLines: Record<RegionName, number[][]> = {
   "Region 1": [
-    [110, 370, 115, 360, 120, 340],
-    [120, 340, 125, 325, 130, 310],
-    [130, 310, 135, 295, 140, 280],
+    [160, 230, 110, 310, 160, 320], // end x, y, x curve start, y curve start, x curve end, y curve end, start x, y
+    
   ],
   "Region 2": [
-    [140, 280, 150, 270, 160, 260],
-    [160, 260, 170, 250, 180, 240],
-    [180, 240, 190, 230, 200, 220],
+    [160, 230, 200, 230, 255, 180],
+    
   ],
   "Region 3": [
-    [200, 220, 210, 210, 220, 200],
-    [220, 200, 230, 190, 240, 180],
-    [240, 180, 250, 170, 260, 160],
+    [255, 180, 275, 140, 300, 145],
+    
   ],
   "Region 4": [
-    [260, 160, 275, 150, 290, 140],
-    [290, 140, 310, 130, 330, 120],
-    [330, 120, 350, 110, 370, 100],
+    [300, 145, 400, 150, 390, 120],
+    [390, 120, 440, 110, 440, 100],
+    
   ],
   "Region 5": [
-    [370, 100, 390, 90, 410, 80],
-    [410, 80, 430, 70, 450, 60],
+    [440, 100, 415, 95, 420, 50],
+    [420, 70, 430, 170, 540, 105],
+    
   ],
 };
 
-// Color map
+
 const regionColors: Record<RegionName, string> = {
   "Region 1": "red",
   "Region 2": "green",
