@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
             // ########################
             // Add more inputs here
             // ########################
-            pilotInputNode->sendInput(power, surge, sway, heave, yaw, brightenLED, dimLED, turnFrontServoCw,
+            pilotInputNode->sendInput(power, surge, -sway, heave, -yaw, brightenLED, dimLED, turnFrontServoCw,
                 turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, configuration_mode_thruster_number);
         }
         
