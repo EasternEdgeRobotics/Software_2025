@@ -458,7 +458,7 @@ int main(int argc, char **argv) {
         if (showCameraWindow) {
             ImGui::SetNextWindowSize(ImVec2(io.DisplaySize.x, (io.DisplaySize.y - ImGui::GetFrameHeight())));
             ImGui::SetNextWindowPos(ImVec2{0, ImGui::GetFrameHeight()});
-            ImGui::Begin("Camera Window", &showCameraWindow, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+            ImGui::Begin("Camera Window", &showCameraWindow, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus);
         
             ImVec2 windowPos = ImGui::GetWindowPos();
             ImVec2 availPos = ImGui::GetContentRegionAvail();
