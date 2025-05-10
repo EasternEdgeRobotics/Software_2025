@@ -204,8 +204,6 @@ private:
       // Ensure varaibles are not updated as they are being accessed
       std::scoped_lock lock(target_thrust_mutexes[thruster_index], current_waterwitch_control_values_mutex);
 
-      RCLCPP_INFO(this->get_logger(), "Thruster %d acceleration: %f", thruster_index, thruster_acceleration);
-
       // Only update the thrust value of each thruster if the target value is different
       if (target_thrust_values[thruster_index] != current_waterwitch_control_values.thrust[thruster_index]) 
       {
