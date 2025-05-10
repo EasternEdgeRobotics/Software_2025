@@ -9,9 +9,9 @@ using namespace std;
 
 enum class ButtonAction { NONE, SURGE_FORWARD, SURGE_BACKWARD, SWAY_LEFT, SWAY_RIGHT, YAW_LEFT, YAW_RIGHT, HEAVE_UP, HEAVE_DOWN, BRIGHTEN_LED, DIM_LED,
                         TURN_FRONT_SERVO_CW, TURN_FRONT_SERVO_CCW, TURN_BACK_SERVO_CW, TURN_BACK_SERVO_CCW, CONFIGURATION_MODE, SIZE };
-const char* buttonActionLabels[] = { "None", "Surge Forward", "Surge Backward", "Sway Left", "Sway Right", "Yaw Left", "Yaw Right", "Heave Up", "Heave Down", "Brighten LED", "Dim LED"
+const char* buttonActionLabels[] = { "None", "Surge Forward", "Surge Backward", "Sway Left", "Sway Right", "Yaw Left", "Yaw Right", "Heave Up", "Heave Down", "Brighten LED", "Dim LED",
                         "Turn Front Servo CW", "Turn Front Servo CCW", "Turn Back Servo CW", "Turn Back Servo CCW", "Configuration Mode" };
-const char* buttonActionCodes[] = { "none", "surge_forward", "surge_backward", "sway_left", "sway_right", "yaw_left", "yaw_right", "heave_up", "heave_down", "brighten_led", "dim_led" 
+const char* buttonActionCodes[] = { "none", "surge_forward", "surge_backward", "sway_left", "sway_right", "yaw_left", "yaw_right", "heave_up", "heave_down", "brighten_led", "dim_led",
                         "turn_front_servo_cw", "turn_front_servo_ccw", "turn_back_servo_cw", "turn_back_servo_ccw", "configuration_mode"};
 enum class AxisAction { NONE, SURGE, SWAY, YAW, HEAVE, SIZE };
 const char* axisActionLabels[] = { "None", "Surge", "Sway", "Yaw", "Heave" };
