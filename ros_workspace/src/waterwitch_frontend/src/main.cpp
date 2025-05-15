@@ -129,6 +129,12 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnBackServoCcw = true;
+                if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) {
+                    RCLCPP_INFO(rclcpp::get_logger("waterwitch_frontend"), "Flipping Camera 1 vertically");
+                    cam1.flip_vertically();
+                }
+                if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) cam2.flip_vertically();
+                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) cam3.flip_vertically();
             }
             else if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
@@ -187,6 +193,15 @@ int main(int argc, char **argv) {
                         case ButtonAction::CONFIGURATION_MODE:
                             // Can either be set by user input for through the GUI
                             configuration_mode = !configuration_mode;
+                            break;
+                        case ButtonAction::FLIP_CAMERA_1:
+                            cam1.flip_vertically();
+                            break;
+                        case ButtonAction::FLIP_CAMERA_2:
+                            cam2.flip_vertically();
+                            break;
+                        case ButtonAction::FLIP_CAMERA_3:
+                            cam3.flip_vertically();
                             break;
                         default:
                             break;
@@ -387,6 +402,9 @@ int main(int argc, char **argv) {
                         ImGui::Text("Left Arrow - Turn Front Servo Counter-Clockwise");
                         ImGui::Text("Page Up - Turn Back Servo Clockwise");
                         ImGui::Text("Page Down - Turn Back Servo Counter-Clockwise");
+                        ImGui::Text("I - Flip Camera 1 Vertically");
+                        ImGui::Text("O - Flip Camera 2 Vertically");
+                        ImGui::Text("P - Flip Camera 3 Vertically");
                     }
                     if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         int buttonCount, axisCount;
