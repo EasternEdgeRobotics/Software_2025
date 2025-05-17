@@ -29,6 +29,10 @@ int configuration_mode_thruster_number = 0;
 bool configuration_mode = false;
 bool keyboard_mode = false;
 
+bool flipCam1ButtonPressedLatch = false;
+bool flipCam2ButtonPressedLatch = false;
+bool flipCam3ButtonPressedLatch = false;
+
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const WaterwitchConfig& waterwitch_config);
 
@@ -109,6 +113,9 @@ int main(int argc, char **argv) {
         bool turnFrontServoCcw = false;
         bool turnBackServoCw = false;
         bool turnBackServoCcw = false;
+        bool flipCam1ButtonPressed = false;
+        bool flipCam2ButtonPressed = false;
+        bool flipCam3ButtonPressed = false;
 
         //control loop
         if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
@@ -129,12 +136,9 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnBackServoCcw = true;
-                if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) {
-                    RCLCPP_INFO(rclcpp::get_logger("waterwitch_frontend"), "Flipping Camera 1 vertically");
-                    cam1.flip_vertically();
-                }
-                if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) cam2.flip_vertically();
-                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) cam3.flip_vertically();
+                if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1ButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2ButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3ButtonPressed = true;
             }
             else if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
@@ -142,9 +146,6 @@ int main(int argc, char **argv) {
                 const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
                 if (buttonCount > 0 && user_config.buttonActions.empty()) user_config.buttonActions = vector<ButtonAction>(buttonCount, ButtonAction::NONE);
                 if (axisCount > 0 && user_config.axisActions.empty()) user_config.axisActions = vector<AxisAction>(axisCount, AxisAction::NONE);
-                // ########################
-                // Add more buttons
-                // ########################
                 for (int i = 0; i < buttonCount; i++) {
                     if (!buttons[i]) continue;
                     switch (user_config.buttonActions[i]) { 
@@ -195,18 +196,40 @@ int main(int argc, char **argv) {
                             configuration_mode = !configuration_mode;
                             break;
                         case ButtonAction::FLIP_CAMERA_1:
-                            cam1.flip_vertically();
+                            flipCam1ButtonPressed = true;
                             break;
                         case ButtonAction::FLIP_CAMERA_2:
-                            cam2.flip_vertically();
+                            flipCam2ButtonPressed = true;
                             break;
                         case ButtonAction::FLIP_CAMERA_3:
-                            cam3.flip_vertically();
+                            flipCam3ButtonPressed = true;
                             break;
                         default:
                             break;
                     }
                 }
+
+                // We only want this input to be registered once per button hit 
+                // rather than toggling every frame as long as button is pressed
+                if (flipCam1ButtonPressed) {
+                    if (!flipCam1ButtonPressedLatch) cam1.flip_vertically();
+                    flipCam1ButtonPressedLatch = true;
+                } else {
+                    flipCam1ButtonPressedLatch = false;
+                }
+                if (flipCam2ButtonPressed) {
+                    if (!flipCam2ButtonPressedLatch) cam2.flip_vertically();
+                    flipCam2ButtonPressedLatch = true;
+                } else {
+                    flipCam2ButtonPressedLatch = false;
+                }
+                if (flipCam3ButtonPressed) {
+                    if (!flipCam3ButtonPressedLatch) cam3.flip_vertically();
+                    flipCam3ButtonPressedLatch = true;
+                } else {
+                    flipCam3ButtonPressedLatch = false;
+                }
+
                 for (size_t i = 0; i < user_config.axisActions.size(); i++) {
                     if (std::abs(axes[i]) <= user_config.deadzone) continue;
                     switch (user_config.axisActions[i]) {
