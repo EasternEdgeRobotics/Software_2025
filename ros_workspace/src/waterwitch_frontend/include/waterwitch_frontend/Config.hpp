@@ -46,5 +46,7 @@ class WaterwitchConfig {
         char servo2SSHTarget[64];
         std::array<char[64], 6> thruster_map = {"0", "1", "2", "3", "4", "5"};
         std::array<bool, 6> reverse_thrusters = {false, false, false, false, false};
+        std::array<bool, 6> stronger_side_positive = {false, false, false, false, false};
+        float thruster_stronger_side_attenuation_constant = 1.0f;
         float thruster_acceleration = 1.0f;
 };

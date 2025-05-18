@@ -109,7 +109,18 @@ private:
     1 //  port_top
   };
 
+  // Indicates if the corresponding thruster's positive direction is stronger  
+  std::array<bool, 6> stronger_side_positive = {    
+    false, // for_star
+    false, // for_port
+    false, // aft_star
+    false, // aft_port
+    false, // star_top
+    false //  port_top
+  };
+
   float thruster_acceleration = 0.5f;
+  float thruster_stronger_side_attenuation_constant = 1.0f;
 
   void pilot_listener_callback(eer_interfaces::msg::PilotInput::UniquePtr pilot_input)
   { 
@@ -152,6 +163,7 @@ private:
         return;
       } else if (single_thruster_configuration_mode) {
         target_thrust_values[thruster_index] = (pilot_input->surge ? std::copysign(1.0f, pilot_input->surge) : 0.0f) * thruster_direction[thruster_index];
+        if (target_thrust_values[thruster_index] > 0.0f && stronger_side_positive[thruster_index]) target_thrust_values[thruster_index] = target_thrust_values[thruster_index] * thruster_stronger_side_attenuation_constant;
       } else {
         // Calculate the thrust value based on pilot input and configuration matrix
         float thrust_value = ((pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
@@ -160,6 +172,8 @@ private:
                               pilot_input->pitch * THRUSTER_CONFIG_MATRIX[thruster_index][PITCH] +
                               pilot_input->roll * THRUSTER_CONFIG_MATRIX[thruster_index][ROLL] +
                               pilot_input->yaw * THRUSTER_CONFIG_MATRIX[thruster_index][YAW]) / 100.0f) * thruster_direction[thruster_index];
+
+        if (thrust_value > 0.0f && stronger_side_positive[thruster_index]) thrust_value = thrust_value * thruster_stronger_side_attenuation_constant;
 
         // Clamp the thrust value between -1.0 and 1.0
         target_thrust_values[thruster_index] = std::max(-1.0f, std::min(thrust_value, 1.0f));
@@ -260,14 +274,21 @@ private:
                 thruster_acceleration = configuration_data["thruster_acceleration"];
               }
 
+              if (configuration_data.contains("thruster_stronger_side_attenuation_constant") && !configuration_data["thruster_stronger_side_attenuation_constant"].is_null() && configuration_data["thruster_stronger_side_attenuation_constant"].is_number_float())
+              {
+                thruster_stronger_side_attenuation_constant = configuration_data["thruster_stronger_side_attenuation_constant"];
+              }
+
               // Ensure that the config related to thruster configuration is valid
               bool valid_thruster_configuration = true;
-              if (!(configuration_data.contains("thruster_map") && configuration_data.contains("reverse_thrusters"))) {
+              if (!(configuration_data.contains("thruster_map") && configuration_data.contains("reverse_thrusters") && configuration_data.contains("stronger_side_positive"))) {
                   valid_thruster_configuration = false;
               } else {
                   for (size_t i = 0; i < current_waterwitch_control_values.thruster_map.size(); i++) {
                       if (i >= configuration_data["thruster_map"].size() || configuration_data["thruster_map"][i].is_null() || !configuration_data["thruster_map"][i].is_number_integer()
-                          || i >= configuration_data["reverse_thrusters"].size() || configuration_data["reverse_thrusters"][i].is_null() || !configuration_data["reverse_thrusters"][i].is_boolean()) {
+                          || i >= configuration_data["reverse_thrusters"].size() || configuration_data["reverse_thrusters"][i].is_null() || !configuration_data["reverse_thrusters"][i].is_boolean()
+                          || i >= configuration_data["stronger_side_positive"].size() || configuration_data["stronger_side_positive"][i].is_null() || !configuration_data["stronger_side_positive"][i].is_boolean()
+                        ) {
                           valid_thruster_configuration = false;
                           
                           break; // Exit the loop early if an invalid entry is found
@@ -278,6 +299,7 @@ private:
                   for (size_t i = 0; i < current_waterwitch_control_values.thruster_map.size(); i++) {
                       current_waterwitch_control_values.thruster_map[i] = static_cast<int8_t>(std::abs(configuration_data["thruster_map"][i].get<int>()));
                       thruster_direction[i] = configuration_data["reverse_thrusters"][i].get<bool>() ? -1: 1;
+                      stronger_side_positive[i] = configuration_data["stronger_side_positive"][i].get<bool>();
                   }
               }
               

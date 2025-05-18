@@ -79,9 +79,11 @@ int main(int argc, char **argv) {
             if (!configData["servos"][0].is_null()) std::strncpy(waterwitch_config.servo1SSHTarget, configData["servos"][0].get<std::string>().c_str(), sizeof(waterwitch_config.servo1SSHTarget));
             if (!configData["servos"][1].is_null()) std::strncpy(waterwitch_config.servo2SSHTarget, configData["servos"][1].get<std::string>().c_str(), sizeof(waterwitch_config.servo2SSHTarget));
             if (!configData["thruster_acceleration"].is_null()) waterwitch_config.thruster_acceleration = configData["thruster_acceleration"].get<float>();
+            if (!configData["thruster_stronger_side_attenuation_constant"].is_null()) waterwitch_config.thruster_stronger_side_attenuation_constant = configData["thruster_stronger_side_attenuation_constant"].get<float>();
             for (size_t i = 0; i < std::size(waterwitch_config.thruster_map); i++){
                 if (!configData["thruster_map"][i].is_null()) std::strncpy(waterwitch_config.thruster_map[i], std::to_string(configData["thruster_map"][i].get<int>()).c_str(), sizeof(waterwitch_config.thruster_map[i]));
                 if (!configData["reverse_thrusters"][i].is_null()) waterwitch_config.reverse_thrusters[i] = configData["reverse_thrusters"][i].get<bool>();
+                if (!configData["stronger_side_positive"][i].is_null()) waterwitch_config.stronger_side_positive[i] = configData["stronger_side_positive"][i].get<bool>();
             }
             break;
         }
@@ -350,42 +352,61 @@ int main(int argc, char **argv) {
                             ImGui::InputText("##for_star", waterwitch_config.thruster_map[0], 64);
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##for_star_rev_thruster", &waterwitch_config.reverse_thrusters[0]);
+                            ImGui::SameLine();
+
+                            ImGui::Checkbox("Stronger Side Positive##for_star_thruster_stronger_size_positive", &waterwitch_config.stronger_side_positive[0]);
         
                             ImGui::Text("For Port (Forward Left)");
                             ImGui::SameLine();
                             ImGui::InputText("##for_port", waterwitch_config.thruster_map[1], 64);
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##for_port_rev_thruster", &waterwitch_config.reverse_thrusters[1]);
+                            ImGui::SameLine();
+                            ImGui::Checkbox("Stronger Side Positive##for_port_thruster_stronger_size_positive", &waterwitch_config.stronger_side_positive[1]);
         
                             ImGui::Text("Aft star (Back Right)");
                             ImGui::SameLine();
                             ImGui::InputText("##aft_star", waterwitch_config.thruster_map[2], 64);
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##aft_star_rev_thruster", &waterwitch_config.reverse_thrusters[2]);
+                            ImGui::SameLine();
+                            ImGui::Checkbox("Stronger Side Positive##aft_star_thruster_stronger_size_positive", &waterwitch_config.stronger_side_positive[2]);
         
                             ImGui::Text("Aft Port (Back Left)");
                             ImGui::SameLine();
                             ImGui::InputText("##aft_port", waterwitch_config.thruster_map[3], 64);
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##aft_port_rev_thruster", &waterwitch_config.reverse_thrusters[3]);
+                            ImGui::SameLine();
+                            ImGui::Checkbox("Stronger Side Positive##aft_port_thruster_stronger_size_positive", &waterwitch_config.stronger_side_positive[3]);
         
                             ImGui::Text("Star Top (Right Top)");
                             ImGui::SameLine();
                             ImGui::InputText("##star_top", waterwitch_config.thruster_map[4], 64);
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##star_top_rev_thruster", &waterwitch_config.reverse_thrusters[4]);
+                            ImGui::SameLine();
+                            ImGui::Checkbox("Stronger Side Positive##star_top_thruster_stronger_size_positive", &waterwitch_config.stronger_side_positive[4]);
         
                             ImGui::Text("Port Top (Left Top)");
                             ImGui::SameLine();
                             ImGui::InputText("##Port_top", waterwitch_config.thruster_map[5], 64);
                             ImGui::SameLine();
                             ImGui::Checkbox("Reverse Thruster##port_top_rev_thruster", &waterwitch_config.reverse_thrusters[5]);
+                            ImGui::SameLine();
+                            ImGui::Checkbox("Stronger Side Positive##port_top_thruster_stronger_size_positive", &waterwitch_config.stronger_side_positive[5]);
                             
                             ImGui::Text("The thruster acceleration determines how fast thrusters ramp up to the commanded speed");
 
                             ImGui::Text("Thruster Acceleration");
                             ImGui::SameLine();
                             ImGui::SliderFloat("##thruster_acceleration", &waterwitch_config.thruster_acceleration, 0.1f, 1.0f, "%.05f");
+                            
+                            ImGui::Text("The thruster acceleration determines how fast thrusters ramp up to the commanded speed");
+
+                            ImGui::Text("Thruster Stronger Side Attenuation Constant");
+                            ImGui::SameLine();
+                            ImGui::SliderFloat("##thruster_stronger_side_attenuation_constant", &waterwitch_config.thruster_stronger_side_attenuation_constant, 0.0f, 2.0f, "%.005f");
 
                             const char* thrusterNumbers[] = { "0", "1", "2", "3", "4", "5" };
                             static int currentThrusterNumber = 0;
@@ -584,10 +605,12 @@ void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const
     configJson["servos"][0] = waterwitch_config.servo1SSHTarget;
     configJson["servos"][1] = waterwitch_config.servo2SSHTarget;
     configJson["thruster_acceleration"] = waterwitch_config.thruster_acceleration;
+    configJson["thruster_stronger_side_attenuation_constant"] = waterwitch_config.thruster_stronger_side_attenuation_constant;
 
     for (size_t i = 0; i < waterwitch_config.thruster_map.size(); i++) {
         configJson["thruster_map"][i] = std::stoi(waterwitch_config.thruster_map[i]);
         configJson["reverse_thrusters"][i] = waterwitch_config.reverse_thrusters[i];
+        configJson["stronger_side_positive"][i] = waterwitch_config.stronger_side_positive[i];
     }
 
     saveConfigNode->saveConfig("waterwitch_config", configJson.dump());
