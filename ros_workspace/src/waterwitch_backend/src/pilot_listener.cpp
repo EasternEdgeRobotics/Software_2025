@@ -164,6 +164,7 @@ private:
       } else if (single_thruster_configuration_mode) {
         target_thrust_values[thruster_index] = (pilot_input->surge ? std::copysign(1.0f, pilot_input->surge) : 0.0f) * thruster_direction[thruster_index];
         if (target_thrust_values[thruster_index] > 0.0f && stronger_side_positive[thruster_index]) target_thrust_values[thruster_index] = target_thrust_values[thruster_index] * thruster_stronger_side_attenuation_constant;
+        else if (target_thrust_values[thruster_index] < 0.0f && !stronger_side_positive[thruster_index]) target_thrust_values[thruster_index] = target_thrust_values[thruster_index] * thruster_stronger_side_attenuation_constant;
       } else {
         // Calculate the thrust value based on pilot input and configuration matrix
         float thrust_value = ((pilot_input->surge * THRUSTER_CONFIG_MATRIX[thruster_index][SURGE] +
@@ -174,6 +175,7 @@ private:
                               pilot_input->yaw * THRUSTER_CONFIG_MATRIX[thruster_index][YAW]) / 100.0f) * thruster_direction[thruster_index];
 
         if (thrust_value > 0.0f && stronger_side_positive[thruster_index]) thrust_value = thrust_value * thruster_stronger_side_attenuation_constant;
+        else if (thrust_value < 0.0f && !stronger_side_positive[thruster_index]) thrust_value = thrust_value * thruster_stronger_side_attenuation_constant;
 
         // Clamp the thrust value between -1.0 and 1.0
         target_thrust_values[thruster_index] = std::max(-1.0f, std::min(thrust_value, 1.0f));
