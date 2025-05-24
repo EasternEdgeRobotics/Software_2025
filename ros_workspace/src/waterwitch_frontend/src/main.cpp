@@ -114,6 +114,7 @@ int main(int argc, char **argv) {
         int surge = 0;
         int sway = 0;
         int heave = 0;
+        int roll = 0;
         int yaw = 0;
         bool brightenLED = false;
         bool dimLED = false;
@@ -140,6 +141,8 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) sway += 100;
                 if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) yaw -= 100;
                 if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) yaw += 100;
+                if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) roll += 100;
+                if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) roll -= 100;
                 if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) heave += 100;
                 if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) heave -= 100;
                 if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) brightenLED = true;
@@ -190,6 +193,12 @@ int main(int argc, char **argv) {
                             break;
                         case ButtonAction::YAW_RIGHT:
                             yaw += 100;
+                            break;
+                        case ButtonAction::ROLL_CW:
+                            roll += 100;
+                            break;
+                        case ButtonAction::ROLL_CCW:
+                            roll -= 100;
                             break;
                         case ButtonAction::BRIGHTEN_LED:
                             brightenLED = true;
@@ -278,6 +287,9 @@ int main(int argc, char **argv) {
                         case AxisAction::YAW:
                             if (yaw == 0) yaw = -(int)(axes[i]*100);
                             break;
+                        case AxisAction::ROLL:
+                            if (roll == 0) roll = -(int)(axes[i]*100);
+                            break;
                         case AxisAction::HEAVE:
                             if (heave == 0) heave = -(int)(axes[i]*100);
                             break;
@@ -290,7 +302,7 @@ int main(int argc, char **argv) {
             // ########################
             // Add more inputs here
             // ########################
-            pilotInputNode->sendInput(power, surge, sway, heave, yaw, brightenLED, dimLED, turnFrontServoCw,
+            pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
                 turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
                 backServoAngle, configuration_mode_thruster_number);
         }
@@ -496,6 +508,8 @@ int main(int argc, char **argv) {
                         ImGui::Text("D - Sway Right");
                         ImGui::Text("Q - Yaw Left");
                         ImGui::Text("E - Yaw Right");
+                        ImGui::Text("T - Roll CW");
+                        ImGui::Text("G - Roll CCW");
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("Z - Brighten LED");

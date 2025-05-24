@@ -35,6 +35,7 @@ class PilotInputPublisher : public rclcpp::Node {
         const int& sway,
         const int& heave,
         const int& yaw,
+        const int& roll,
         const bool& brightenLED,
         const bool& dimLED,
         const bool& turnFrontServoCw,
@@ -50,6 +51,7 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.sway = sway;
             msg.heave = heave;
             msg.yaw = yaw;
+            msg.roll = roll;
             msg.power_multiplier = power.power;
             msg.surge_multiplier = power.surge;
             msg.sway_multiplier = power.sway;
