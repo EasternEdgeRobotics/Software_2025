@@ -288,9 +288,11 @@ int main(int argc, char **argv) {
                             if (yaw == 0) yaw = -(int)(axes[i]*100);
                             break;
                         case AxisAction::ROLL:
+                            RCLCPP_INFO(rclcpp::get_logger("waterwitch_frontend"), "Axis %zu (ROLL) value: %f", i, axes[i]);
                             if (roll == 0) roll = -(int)(axes[i]*100);
                             break;
                         case AxisAction::HEAVE:
+                            RCLCPP_INFO(rclcpp::get_logger("waterwitch_frontend"), "Axis %zu (ROLL) value: %f", i, axes[i]);
                             if (heave == 0) heave = -(int)(axes[i]*100);
                             break;
                         default:
