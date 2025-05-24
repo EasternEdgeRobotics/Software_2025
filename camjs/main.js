@@ -6,6 +6,7 @@ let lastSetPwmTime = 0;
 const PWM_THROTTLE_INTERVAL = 100; // in milliseconds
 const PWM_MIN = 500;
 const PWM_MAX = 2500;
+const FRONT_CAMERA = true;
 
 var ros = new ROSLIB.Ros({
   url: 'ws://192.168.137.250:9090'
@@ -30,11 +31,33 @@ var listener = new ROSLIB.Topic({
 });
 
 listener.subscribe(function (message) {
-  if (message.turn_front_servo_cw) {
-    servo_pwm -= 3;
-  }
-  if (message.turn_front_servo_ccw) {
-    servo_pwm += 3;
+
+  // Allow the user to set the angle directly
+  if (FRONT_CAMERA)
+  {
+    if (message.front_servo_angle >= 0 && message.front_servo_angle <= 270)
+    {
+      servo_pwm = PWM_MIN + ((message.front_servo_angle / 270) * (PWM_MAX - PWM_MIN));
+    }
+    if (message.turn_front_servo_cw) {
+      servo_pwm -= 3;
+    }
+    if (message.turn_front_servo_ccw) {
+      servo_pwm += 3;
+    }
+  } 
+  else if (!FRONT_CAMERA)
+  {
+    if (message.back_servo_angle >= 0 && message.back_servo_angle <= 270)
+    {
+      servo_pwm = PWM_MIN + ((message.back_servo_angle / 270) * (PWM_MAX - PWM_MIN));
+    }
+    if (message.turn_back_servo_cw) {
+      servo_pwm -= 3;
+    }
+    if (message.turn_back_servo_ccw) {
+      servo_pwm += 3;
+    }
   }
 
   // Clamp the servo_pwm value between 500 and 2500
