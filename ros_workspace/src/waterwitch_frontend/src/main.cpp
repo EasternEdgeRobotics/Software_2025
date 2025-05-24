@@ -85,6 +85,12 @@ int main(int argc, char **argv) {
                 if (!configData["reverse_thrusters"][i].is_null()) waterwitch_config.reverse_thrusters[i] = configData["reverse_thrusters"][i].get<bool>();
                 if (!configData["stronger_side_positive"][i].is_null()) waterwitch_config.stronger_side_positive[i] = configData["stronger_side_positive"][i].get<bool>();
             }
+            for (size_t i = 0; i < std::size(waterwitch_config.front_camera_preset_servo_angles); i++){
+                if (!configData["front_camera_preset_servo_angles"][i].is_null()) waterwitch_config.front_camera_preset_servo_angles[i] = configData["front_camera_preset_servo_angles"][i].get<int>();
+            }
+            for (size_t i = 0; i < std::size(waterwitch_config.back_camera_preset_servo_angles); i++){
+                if (!configData["back_camera_preset_servo_angles"][i].is_null()) waterwitch_config.back_camera_preset_servo_angles[i] = configData["back_camera_preset_servo_angles"][i].get<int>();
+            }
             break;
         }
     }
@@ -119,6 +125,10 @@ int main(int argc, char **argv) {
         bool flipCam2ButtonPressed = false;
         bool flipCam3ButtonPressed = false;
 
+        // Note: A servo angle of -1 means that the exact angle is unset
+        int frontServoAngle = -1;
+        int backServoAngle = -1;
+
         //control loop
         if (glfwJoystickPresent(GLFW_JOYSTICK_1) || keyboard_mode)
         {
@@ -141,6 +151,12 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1ButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2ButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3ButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
+                if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
+                if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
+                if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) backServoAngle = waterwitch_config.back_camera_preset_servo_angles[0];
+                if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) backServoAngle = waterwitch_config.back_camera_preset_servo_angles[1];
+                if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) backServoAngle = waterwitch_config.back_camera_preset_servo_angles[2];
             }
             else if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
@@ -206,6 +222,24 @@ int main(int argc, char **argv) {
                         case ButtonAction::FLIP_CAMERA_3:
                             flipCam3ButtonPressed = true;
                             break;
+                        case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_1:
+                            frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
+                            break;
+                        case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_2:
+                            frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
+                            break;
+                        case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_3:
+                            frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
+                            break;
+                        case ButtonAction::BACK_CAMERA_SERVO_ANGLE_1:
+                            backServoAngle = waterwitch_config.back_camera_preset_servo_angles[0];
+                            break;
+                        case ButtonAction::BACK_CAMERA_SERVO_ANGLE_2:
+                            backServoAngle = waterwitch_config.back_camera_preset_servo_angles[1];
+                            break;
+                        case ButtonAction::BACK_CAMERA_SERVO_ANGLE_3:
+                            backServoAngle = waterwitch_config.back_camera_preset_servo_angles[2];
+                            break;
                         default:
                             break;
                     }
@@ -257,7 +291,8 @@ int main(int argc, char **argv) {
             // Add more inputs here
             // ########################
             pilotInputNode->sendInput(power, surge, sway, heave, yaw, brightenLED, dimLED, turnFrontServoCw,
-                turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, configuration_mode_thruster_number);
+                turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
+                backServoAngle, configuration_mode_thruster_number);
         }
         
 
@@ -400,13 +435,13 @@ int main(int argc, char **argv) {
 
                             ImGui::Text("Thruster Acceleration");
                             ImGui::SameLine();
-                            ImGui::SliderFloat("##thruster_acceleration", &waterwitch_config.thruster_acceleration, 0.1f, 1.0f, "%.05f");
+                            ImGui::SliderFloat("##thruster_acceleration", &waterwitch_config.thruster_acceleration, 0.1f, 1.0f, "%.05f", ImGuiSliderFlags_AlwaysClamp);
                             
                             ImGui::Text("The thruster acceleration determines how fast thrusters ramp up to the commanded speed");
 
                             ImGui::Text("Thruster Stronger Side Attenuation Constant");
                             ImGui::SameLine();
-                            ImGui::SliderFloat("##thruster_stronger_side_attenuation_constant", &waterwitch_config.thruster_stronger_side_attenuation_constant, 0.0f, 2.0f, "%.005f");
+                            ImGui::SliderFloat("##thruster_stronger_side_attenuation_constant", &waterwitch_config.thruster_stronger_side_attenuation_constant, 0.0f, 2.0f, "%.005f", ImGuiSliderFlags_AlwaysClamp);
 
                             const char* thrusterNumbers[] = { "0", "1", "2", "3", "4", "5" };
                             static int currentThrusterNumber = 0;
@@ -422,6 +457,29 @@ int main(int argc, char **argv) {
                             ImGui::Text("Servo 2 (Front Servo) SSH Target");
                             ImGui::SameLine();
                             ImGui::InputText("##servo2", waterwitch_config.servo2SSHTarget, 64);
+
+                            if (ImGui::TreeNode("Modify Preset Servo Angles"))
+                            {
+                                for (size_t i = 0; i < std::size(waterwitch_config.front_camera_preset_servo_angles); ++i) {
+                                    ImGui::Text("Front Camera Preset Servo Angle %ld", i + 1);
+                                    ImGui::SameLine();
+                                    ImGui::SliderInt(
+                                        (std::string("##front_camera_preset_servo_angle_") + std::to_string(i + 1)).c_str(),
+                                        &waterwitch_config.front_camera_preset_servo_angles[i],
+                                        0, 270, "%d", ImGuiSliderFlags_AlwaysClamp
+                                    );
+                                }
+                                for (size_t i = 0; i < std::size(waterwitch_config.back_camera_preset_servo_angles); ++i) {
+                                    ImGui::Text("Back Camera Preset Servo Angle %ld", i + 1);
+                                    ImGui::SameLine();
+                                    ImGui::SliderInt(
+                                        (std::string("##back_camera_preset_servo_angle_") + std::to_string(i + 1)).c_str(),
+                                        &waterwitch_config.back_camera_preset_servo_angles[i],
+                                        0, 270, "%d", ImGuiSliderFlags_AlwaysClamp
+                                    );
+                                }
+                                ImGui::TreePop();
+                            }
                         }
                         configuration_mode = configuration_mode_checkbox;
                     }
@@ -449,6 +507,12 @@ int main(int argc, char **argv) {
                         ImGui::Text("I - Flip Camera 1 Vertically");
                         ImGui::Text("O - Flip Camera 2 Vertically");
                         ImGui::Text("P - Flip Camera 3 Vertically");
+                        ImGui::Text("5 - Front Camera Servo Angle 1");
+                        ImGui::Text("6 - Front Camera Servo Angle 2");
+                        ImGui::Text("7 - Front Camera Servo Angle 3");
+                        ImGui::Text("8 - Back Camera Servo Angle 1");
+                        ImGui::Text("9 - Back Camera Servo Angle 2");
+                        ImGui::Text("0 - Back Camera Servo Angle 3");
                     }
                     if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         int buttonCount, axisCount;
@@ -545,13 +609,14 @@ int main(int argc, char **argv) {
             ImGui::SliderInt("Surge", &power.surge, 0, 100);
             ImGui::SliderInt("Sway", &power.sway, 0, 100);
             ImGui::SliderInt("Heave", &power.heave, 0, 100);
-            ImGui::SliderInt("Turn", &power.roll, 0, 100);
-            ImGui::SliderInt("Turn", &power.yaw, 0, 100);
+            ImGui::SliderInt("Roll", &power.roll, 0, 100);
+            ImGui::SliderInt("Yaw", &power.yaw, 0, 100);
 
             ImGui::SeparatorText("Keybinds");
             ImGui::Text("1 - Set all to 0%%");
             ImGui::Text("2 - Set all to 50%%");
             ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
+            ImGui::Text("4 - Kaitlin Approved Preset");
 
             if (ImGui::IsKeyPressed(ImGuiKey_1)) {
                 power.power = 0;
@@ -576,6 +641,14 @@ int main(int argc, char **argv) {
                 power.heave = 100;
                 power.roll = 0;
                 power.yaw = 0;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_4)) {
+                power.power = 50;
+                power.surge = 50;
+                power.sway = 50;
+                power.heave = 75;
+                power.roll = 50;
+                power.yaw = 30;
             }
 
             ImGui::End();
@@ -607,10 +680,18 @@ void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const
     configJson["thruster_acceleration"] = waterwitch_config.thruster_acceleration;
     configJson["thruster_stronger_side_attenuation_constant"] = waterwitch_config.thruster_stronger_side_attenuation_constant;
 
-    for (size_t i = 0; i < waterwitch_config.thruster_map.size(); i++) {
+    for (size_t i = 0; i < std::size(waterwitch_config.thruster_map); i++) {
         configJson["thruster_map"][i] = std::stoi(waterwitch_config.thruster_map[i]);
         configJson["reverse_thrusters"][i] = waterwitch_config.reverse_thrusters[i];
         configJson["stronger_side_positive"][i] = waterwitch_config.stronger_side_positive[i];
+    }
+
+    for (size_t i = 0; i < std::size(waterwitch_config.front_camera_preset_servo_angles); i++) {
+        configJson["front_camera_preset_servo_angles"][i] = waterwitch_config.front_camera_preset_servo_angles[i];
+    }
+
+    for (size_t i = 0; i < std::size(waterwitch_config.back_camera_preset_servo_angles); i++) {
+        configJson["back_camera_preset_servo_angles"][i] = waterwitch_config.back_camera_preset_servo_angles[i];
     }
 
     saveConfigNode->saveConfig("waterwitch_config", configJson.dump());
