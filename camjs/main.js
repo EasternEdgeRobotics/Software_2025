@@ -35,9 +35,9 @@ listener.subscribe(function (message) {
   // Allow the user to set the angle directly
   if (FRONT_CAMERA)
   {
-    if (message.front_servo_angle >= 0 && message.front_servo_angle <= 270)
+    if (message.front_servo_angle >= 0 && message.front_servo_angle <= 180)
     {
-      servo_pwm = PWM_MIN + ((message.front_servo_angle / 270) * (PWM_MAX - PWM_MIN));
+      servo_pwm = PWM_MIN + ((message.front_servo_angle / 180) * (PWM_MAX - PWM_MIN));
     }
     if (message.turn_front_servo_cw) {
       servo_pwm -= 3;
@@ -48,9 +48,9 @@ listener.subscribe(function (message) {
   } 
   else if (!FRONT_CAMERA)
   {
-    if (message.back_servo_angle >= 0 && message.back_servo_angle <= 270)
+    if (message.back_servo_angle >= 0 && message.back_servo_angle <= 180)
     {
-      servo_pwm = PWM_MIN + ((message.back_servo_angle / 270) * (PWM_MAX - PWM_MIN));
+      servo_pwm = PWM_MIN + ((message.back_servo_angle / 180) * (PWM_MAX - PWM_MIN));
     }
     if (message.turn_back_servo_cw) {
       servo_pwm -= 3;

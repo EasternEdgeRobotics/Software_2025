@@ -466,7 +466,7 @@ int main(int argc, char **argv) {
                                     ImGui::SliderInt(
                                         (std::string("##front_camera_preset_servo_angle_") + std::to_string(i + 1)).c_str(),
                                         &waterwitch_config.front_camera_preset_servo_angles[i],
-                                        0, 270, "%d", ImGuiSliderFlags_AlwaysClamp
+                                        0, 180, "%d", ImGuiSliderFlags_AlwaysClamp
                                     );
                                 }
                                 for (size_t i = 0; i < std::size(waterwitch_config.back_camera_preset_servo_angles); ++i) {
@@ -475,7 +475,7 @@ int main(int argc, char **argv) {
                                     ImGui::SliderInt(
                                         (std::string("##back_camera_preset_servo_angle_") + std::to_string(i + 1)).c_str(),
                                         &waterwitch_config.back_camera_preset_servo_angles[i],
-                                        0, 270, "%d", ImGuiSliderFlags_AlwaysClamp
+                                        0, 180, "%d", ImGuiSliderFlags_AlwaysClamp
                                     );
                                 }
                                 ImGui::TreePop();
