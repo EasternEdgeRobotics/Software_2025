@@ -271,45 +271,7 @@ int main(int argc, char **argv) {
                             break;
                     }
                 }
-
-                // We only want this input to be registered once per button hit 
-                // rather than toggling every frame as long as button is pressed
-                if (flipCam1VerticallyButtonPressed) {
-                    if (!flipCam1VerticallyButtonPressedLatch) cam1.flip_vertically();
-                    flipCam1VerticallyButtonPressedLatch = true;
-                } else {
-                    flipCam1VerticallyButtonPressedLatch = false;
-                }
-                if (flipCam2VerticallyButtonPressed) {
-                    if (!flipCam2VerticallyButtonPressedLatch) cam2.flip_vertically();
-                    flipCam2VerticallyButtonPressedLatch = true;
-                } else {
-                    flipCam2VerticallyButtonPressedLatch = false;
-                }
-                if (flipCam3VerticallyButtonPressed) {
-                    if (!flipCam3VerticallyButtonPressedLatch) cam3.flip_vertically();
-                    flipCam3VerticallyButtonPressedLatch = true;
-                } else {
-                    flipCam3VerticallyButtonPressedLatch = false;
-                }
-                if (flipCam1HorizontallyButtonPressed) {
-                    if (!flipCam1HorizontallyButtonPressedLatch) cam1.flip_horizontally();
-                    flipCam1HorizontallyButtonPressedLatch = true;
-                } else {
-                    flipCam1HorizontallyButtonPressedLatch = false;
-                }
-                if (flipCam2HorizontallyButtonPressed) {
-                    if (!flipCam2HorizontallyButtonPressedLatch) cam2.flip_horizontally();
-                    flipCam2HorizontallyButtonPressedLatch = true;
-                } else {
-                    flipCam2HorizontallyButtonPressedLatch = false;
-                }
-                if (flipCam3HorizontallyButtonPressed) {
-                    if (!flipCam3HorizontallyButtonPressedLatch) cam3.flip_horizontally();
-                    flipCam3HorizontallyButtonPressedLatch = true;
-                } else {
-                    flipCam3HorizontallyButtonPressedLatch = false;
-                }
+                
 
 
                 for (size_t i = 0; i < user_config.axisActions.size(); i++) {
@@ -334,16 +296,51 @@ int main(int argc, char **argv) {
                             break;
                     }
                 }
-            } 
-            //should probably move this out of the main render loop?
-            // ########################
-            // Add more inputs here
-            // ########################
-            pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
-                turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
-                backServoAngle, configuration_mode_thruster_number);
+            }
+                
+            // We only want this input to be registered once per button hit 
+            // rather than toggling every frame as long as button is pressed
+            if (flipCam1VerticallyButtonPressed) {
+                if (!flipCam1VerticallyButtonPressedLatch) cam1.flip_vertically();
+                flipCam1VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam1VerticallyButtonPressedLatch = false;
+            }
+            if (flipCam2VerticallyButtonPressed) {
+                if (!flipCam2VerticallyButtonPressedLatch) cam2.flip_vertically();
+                flipCam2VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam2VerticallyButtonPressedLatch = false;
+            }
+            if (flipCam3VerticallyButtonPressed) {
+                if (!flipCam3VerticallyButtonPressedLatch) cam3.flip_vertically();
+                flipCam3VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam3VerticallyButtonPressedLatch = false;
+            }
+            if (flipCam1HorizontallyButtonPressed) {
+                if (!flipCam1HorizontallyButtonPressedLatch) cam1.flip_horizontally();
+                flipCam1HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam1HorizontallyButtonPressedLatch = false;
+            }
+            if (flipCam2HorizontallyButtonPressed) {
+                if (!flipCam2HorizontallyButtonPressedLatch) cam2.flip_horizontally();
+                flipCam2HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam2HorizontallyButtonPressedLatch = false;
+            }
+            if (flipCam3HorizontallyButtonPressed) {
+                if (!flipCam3HorizontallyButtonPressedLatch) cam3.flip_horizontally();
+                flipCam3HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam3HorizontallyButtonPressedLatch = false;
+            }
         }
-        
+
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
+            turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
+            backServoAngle, configuration_mode_thruster_number);
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
