@@ -10,12 +10,12 @@
 
 
 const int8_t THRUSTER_CONFIG_MATRIX[6][6] = {
-    {-1, -1, 0, 0, 0, -1}, // for star
+    {-1,-1, 0, 0, 0, -1}, // for star
     {-1, 1, 0, 0, 0, 1}, // for port
     {1, -1, 0, 0, 0, 1}, // aft star
     {1, 1, 0, 0, 0, -1}, // aft port
-    {0, 0, -1, 0, 1, 0}, // star top
-    {0, 0, -1, 0, -1, 0} // port top
+    {0, 0, 1, 0, 1, 0}, // star top
+    {0, 0, 1, 0, -1, 0} // port top
 };
 
 const std::string THRUSTER_NAMES[6] = {
@@ -31,7 +31,7 @@ const int RP2040_ADDRESS = 0x69;
 
 const int SOFTWARE_TO_BOARD_COMMUNICATION_RATE = 100;
 
-const int SERVO_ANGLE_INCREMENT = 10;
+const int SERVO_ANGLE_INCREMENT = 30;
 
 const int MIN_SERVO_ANGLE = 0;
 

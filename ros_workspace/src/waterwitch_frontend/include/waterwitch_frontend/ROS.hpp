@@ -35,6 +35,7 @@ class PilotInputPublisher : public rclcpp::Node {
         const int& sway,
         const int& heave,
         const int& yaw,
+        const int& roll,
         const bool& brightenLED,
         const bool& dimLED,
         const bool& turnFrontServoCw,
@@ -42,12 +43,15 @@ class PilotInputPublisher : public rclcpp::Node {
         const bool& turnBackServoCw,
         const bool& turnBackServoCcw,
         const bool& configurationMode,
+        const int& frontServoAngle,
+        const int& backServoAngle,
         const int& configurationModeThrusterNumber) {
             auto msg = eer_interfaces::msg::PilotInput();
             msg.surge = surge;
             msg.sway = sway;
             msg.heave = heave;
             msg.yaw = yaw;
+            msg.roll = roll;
             msg.power_multiplier = power.power;
             msg.surge_multiplier = power.surge;
             msg.sway_multiplier = power.sway;
@@ -62,6 +66,8 @@ class PilotInputPublisher : public rclcpp::Node {
             msg.turn_back_servo_cw = turnBackServoCw;
             msg.turn_back_servo_ccw = turnBackServoCcw;
             msg.configuration_mode = configurationMode;
+            msg.front_servo_angle = frontServoAngle;
+            msg.back_servo_angle = backServoAngle;
             msg.configuration_mode_thruster_number = configurationModeThrusterNumber;
             publisher_->publish(msg);
             // ########################

@@ -38,6 +38,12 @@ public:
             if (!frameQueue.empty()) {
                 frame = frameQueue.front();
                 frameQueue.pop();
+
+                if (flip_frame_vertically)
+                {
+                    cv::flip(frame, frame, 0);
+                }
+                
                 frameCaptured = true;
                 lastFrameTime = std::chrono::steady_clock::now();
             }
@@ -55,11 +61,17 @@ public:
             texture = 0;
         }
         
+        // Since we called ImGui::SetCursorPos before this method, calling ImGui::Image will cause the image to render in the desired position
         if (texture) {
             ImGui::Image((ImTextureID)(uintptr_t)texture, size);
         } else {
             ImGui::Image((ImTextureID)(intptr_t)fallback, size);
         }
+    }
+
+    void flip_vertically()
+    {
+        flip_frame_vertically = !flip_frame_vertically;
     }
 
     ~Camera() {
@@ -77,6 +89,7 @@ private:
     GLuint texture;
     int displayWidth = 640;
     int displayHeight = 480;
+    bool flip_frame_vertically = false;
 
     std::chrono::steady_clock::time_point lastFrameTime;
 
