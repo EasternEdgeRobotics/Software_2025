@@ -61,7 +61,7 @@ const CarpAnimationGUI: React.FC = () => {
   const lastFrameTimeRef = useRef(0);
 
   const baseImage = new Image();
-  baseImage.src = "/river.png";
+  baseImage.src = "/River.png";
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext("2d");
