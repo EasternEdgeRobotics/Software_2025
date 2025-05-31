@@ -217,30 +217,27 @@ const CarpAnimationGUI: React.FC = () => {
           </thead>
           <tbody>
             {Object.entries(manualData).map(([yearStr, values]) => (
-              <tr key={yearStr}>
+                <tr key={yearStr}>
                 <td>{yearStr}</td>
                 {Object.entries(values).map(([region, val]) => (
                   <td key={region}>
-                    <Select
-                      value={val ? "Y" : "N"}
-                      onChange={(e) => {
-                        const newVal = e.target.value === "Y";
-                        setManualData(prev => ({
-                          ...prev,
-                          [yearStr]: {
-                            ...prev[+yearStr],
-                            [region]: newVal,
-                          },
-                        }));
-                      }}
-                      size="small"
-                    >
-                      <MenuItem value="Y">Y</MenuItem>
-                      <MenuItem value="N">N</MenuItem>
-                    </Select>
+                  <input
+                    type="checkbox"
+                    checked={val}
+                    onChange={(e) => {
+                    const newVal = e.target.checked;
+                    setManualData(prev => ({
+                      ...prev,
+                      [yearStr]: {
+                      ...prev[+yearStr],
+                      [region]: newVal,
+                      },
+                    }));
+                    }}
+                  />
                   </td>
                 ))}
-              </tr>
+                </tr>
             ))}
           </tbody>
         </table>
