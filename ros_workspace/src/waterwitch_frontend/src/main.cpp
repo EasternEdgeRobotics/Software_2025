@@ -436,7 +436,7 @@ int main(int argc, char **argv) {
                     ImGui::InputText("##camera3", user_config.cam3ip, 64);
                     ImGui::Text("Camera 4 URL");
                     ImGui::SameLine(); 
-                    ImGui::InputText("##camera4", user_config.cam3ip, 64);
+                    ImGui::InputText("##camera4", user_config.cam4ip, 64);
                     ImGui::EndTabItem();
                     
                 }
