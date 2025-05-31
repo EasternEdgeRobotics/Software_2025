@@ -121,18 +121,25 @@ private:
 
   float thruster_acceleration = 0.5f;
   float thruster_stronger_side_attenuation_constant = 1.0f;
+  int last_input_recieved_time = 0;
 
   void pilot_listener_callback(eer_interfaces::msg::PilotInput::UniquePtr pilot_input)
   { 
 
-    // This would be a part of the constructor, but since `get_waterwitch_config` contains
-    // a call to shared_from_this(), we need to call this in the `pilot_listener_callback` to avoid runtime error
-    if (!inital_configuration_set)
     {
       std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
-      // Get configs
-      get_waterwitch_config();
-      inital_configuration_set = true;
+      // #####################################/
+      // Save the current time in the last_input_recieved_time variable
+      // #####################################/
+
+      // This would be a part of the constructor, but since `get_waterwitch_config` contains
+      // a call to shared_from_this(), we need to call this in the `pilot_listener_callback` to avoid runtime error
+      if (!inital_configuration_set)
+      {
+        // Get configs
+        get_waterwitch_config();
+        inital_configuration_set = true;
+      }
     }
 
     // Check if thrust is being controlled using a bool input
@@ -216,6 +223,16 @@ private:
 
   void software_to_board_communication_timer_callback()
   {
+    {
+      std::scoped_lock lock(target_thrust_mutexes[thruster_index], current_waterwitch_control_values_mutex)
+
+      // #####################################/
+      // check if the current time minus last_input_recieved_time is greater than KILL_SWITCH_TIMEOUT. If so, 
+      // iterate through all six thrusters in afor loop and set target_thrust_values[thruster_index] = 0 
+      // #####################################/
+
+    }
+
     for (int thruster_index = 0; thruster_index < 6; thruster_index++) {
       // Ensure varaibles are not updated as they are being accessed
       std::scoped_lock lock(target_thrust_mutexes[thruster_index], current_waterwitch_control_values_mutex);

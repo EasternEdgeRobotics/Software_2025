@@ -36,3 +36,5 @@ const int SERVO_ANGLE_INCREMENT = 30;
 const int MIN_SERVO_ANGLE = 0;
 
 const int MAX_SERVO_ANGLE = 270;
+
+const int KILL_SWITCH_TIMEOUT = 2000;
