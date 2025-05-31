@@ -39,10 +39,25 @@ public:
                 frame = frameQueue.front();
                 frameQueue.pop();
 
-                if (flip_frame_vertically)
+                if (flip_frame_vertically && flip_frame_horizontally)
                 {
-                    cv::flip(frame, frame, 0);
+                    cv::flip(frame, frame, -1);
                 }
+                
+                else
+                {
+                    if (flip_frame_vertically)
+                    {
+                        cv::flip(frame, frame, 0);
+                    }
+    
+                    if (flip_frame_horizontally)
+                    {
+                        cv::flip(frame, frame, 1);
+                    }
+
+                }
+
                 
                 frameCaptured = true;
                 lastFrameTime = std::chrono::steady_clock::now();
@@ -74,6 +89,11 @@ public:
         flip_frame_vertically = !flip_frame_vertically;
     }
 
+    void flip_horizontally()
+    {
+        flip_frame_horizontally = !flip_frame_horizontally;
+    }
+
     ~Camera() {
         stop();
         if (texture) glDeleteTextures(1, &texture);
@@ -90,6 +110,7 @@ private:
     int displayWidth = 640;
     int displayHeight = 480;
     bool flip_frame_vertically = false;
+    bool flip_frame_horizontally = false;
 
     std::chrono::steady_clock::time_point lastFrameTime;
 

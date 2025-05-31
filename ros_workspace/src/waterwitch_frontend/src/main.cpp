@@ -29,9 +29,12 @@ int configuration_mode_thruster_number = 0;
 bool configuration_mode = false;
 bool keyboard_mode = false;
 
-bool flipCam1ButtonPressedLatch = false;
-bool flipCam2ButtonPressedLatch = false;
-bool flipCam3ButtonPressedLatch = false;
+bool flipCam1VerticallyButtonPressedLatch = false;
+bool flipCam2VerticallyButtonPressedLatch = false;
+bool flipCam3VerticallyButtonPressedLatch = false;
+bool flipCam1HorizontallyButtonPressedLatch = false;
+bool flipCam2HorizontallyButtonPressedLatch = false;
+bool flipCam3HorizontallyButtonPressedLatch = false;
 
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const WaterwitchConfig& waterwitch_config);
@@ -122,9 +125,12 @@ int main(int argc, char **argv) {
         bool turnFrontServoCcw = false;
         bool turnBackServoCw = false;
         bool turnBackServoCcw = false;
-        bool flipCam1ButtonPressed = false;
-        bool flipCam2ButtonPressed = false;
-        bool flipCam3ButtonPressed = false;
+        bool flipCam1VerticallyButtonPressed = false;
+        bool flipCam2VerticallyButtonPressed = false;
+        bool flipCam3VerticallyButtonPressed = false;
+        bool flipCam1HorizontallyButtonPressed = false;
+        bool flipCam2HorizontallyButtonPressed = false;
+        bool flipCam3HorizontallyButtonPressed = false;
 
         // Note: A servo angle of -1 means that the exact angle is unset
         int frontServoAngle = -1;
@@ -151,9 +157,12 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) turnBackServoCcw = true;
-                if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1ButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2ButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3ButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) flipCam1HorizontallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
                 if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
                 if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
@@ -222,14 +231,23 @@ int main(int argc, char **argv) {
                             // Can either be set by user input for through the GUI
                             configuration_mode = !configuration_mode;
                             break;
-                        case ButtonAction::FLIP_CAMERA_1:
-                            flipCam1ButtonPressed = true;
+                        case ButtonAction::FLIP_CAMERA_1_VERTICALLY:
+                            flipCam1VerticallyButtonPressed = true;
                             break;
-                        case ButtonAction::FLIP_CAMERA_2:
-                            flipCam2ButtonPressed = true;
+                        case ButtonAction::FLIP_CAMERA_2_VERTICALLY:
+                            flipCam2VerticallyButtonPressed = true;
                             break;
-                        case ButtonAction::FLIP_CAMERA_3:
-                            flipCam3ButtonPressed = true;
+                        case ButtonAction::FLIP_CAMERA_3_VERTICALLY:
+                            flipCam3VerticallyButtonPressed = true;
+                            break;
+                        case ButtonAction::FLIP_CAMERA_1_HORIZONTALLY:
+                            flipCam1HorizontallyButtonPressed = true;
+                            break;
+                        case ButtonAction::FLIP_CAMERA_2_HORIZONTALLY:
+                            flipCam2HorizontallyButtonPressed = true;
+                            break;
+                        case ButtonAction::FLIP_CAMERA_3_HORIZONTALLY:
+                            flipCam3HorizontallyButtonPressed = true;
                             break;
                         case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_1:
                             frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
@@ -256,24 +274,43 @@ int main(int argc, char **argv) {
 
                 // We only want this input to be registered once per button hit 
                 // rather than toggling every frame as long as button is pressed
-                if (flipCam1ButtonPressed) {
-                    if (!flipCam1ButtonPressedLatch) cam1.flip_vertically();
-                    flipCam1ButtonPressedLatch = true;
+                if (flipCam1VerticallyButtonPressed) {
+                    if (!flipCam1VerticallyButtonPressedLatch) cam1.flip_vertically();
+                    flipCam1VerticallyButtonPressedLatch = true;
                 } else {
-                    flipCam1ButtonPressedLatch = false;
+                    flipCam1VerticallyButtonPressedLatch = false;
                 }
-                if (flipCam2ButtonPressed) {
-                    if (!flipCam2ButtonPressedLatch) cam2.flip_vertically();
-                    flipCam2ButtonPressedLatch = true;
+                if (flipCam2VerticallyButtonPressed) {
+                    if (!flipCam2VerticallyButtonPressedLatch) cam2.flip_vertically();
+                    flipCam2VerticallyButtonPressedLatch = true;
                 } else {
-                    flipCam2ButtonPressedLatch = false;
+                    flipCam2VerticallyButtonPressedLatch = false;
                 }
-                if (flipCam3ButtonPressed) {
-                    if (!flipCam3ButtonPressedLatch) cam3.flip_vertically();
-                    flipCam3ButtonPressedLatch = true;
+                if (flipCam3VerticallyButtonPressed) {
+                    if (!flipCam3VerticallyButtonPressedLatch) cam3.flip_vertically();
+                    flipCam3VerticallyButtonPressedLatch = true;
                 } else {
-                    flipCam3ButtonPressedLatch = false;
+                    flipCam3VerticallyButtonPressedLatch = false;
                 }
+                if (flipCam1HorizontallyButtonPressed) {
+                    if (!flipCam1HorizontallyButtonPressedLatch) cam1.flip_horizontally();
+                    flipCam1HorizontallyButtonPressedLatch = true;
+                } else {
+                    flipCam1HorizontallyButtonPressedLatch = false;
+                }
+                if (flipCam2HorizontallyButtonPressed) {
+                    if (!flipCam2HorizontallyButtonPressedLatch) cam2.flip_horizontally();
+                    flipCam2HorizontallyButtonPressedLatch = true;
+                } else {
+                    flipCam2HorizontallyButtonPressedLatch = false;
+                }
+                if (flipCam3HorizontallyButtonPressed) {
+                    if (!flipCam3HorizontallyButtonPressedLatch) cam3.flip_horizontally();
+                    flipCam3HorizontallyButtonPressedLatch = true;
+                } else {
+                    flipCam3HorizontallyButtonPressedLatch = false;
+                }
+
 
                 for (size_t i = 0; i < user_config.axisActions.size(); i++) {
                     if (std::abs(axes[i]) <= user_config.deadzone) continue;
@@ -521,6 +558,9 @@ int main(int argc, char **argv) {
                         ImGui::Text("I - Flip Camera 1 Vertically");
                         ImGui::Text("O - Flip Camera 2 Vertically");
                         ImGui::Text("P - Flip Camera 3 Vertically");
+                        ImGui::Text("B - Flip Camera 1 Horizontally");
+                        ImGui::Text("N - Flip Camera 2 Horizontally");
+                        ImGui::Text("M - Flip Camera 3 Horizontally");
                         ImGui::Text("5 - Front Camera Servo Angle 1");
                         ImGui::Text("6 - Front Camera Servo Angle 2");
                         ImGui::Text("7 - Front Camera Servo Angle 3");

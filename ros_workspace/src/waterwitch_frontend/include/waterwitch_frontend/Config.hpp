@@ -8,16 +8,18 @@
 using namespace std;
 
 enum class ButtonAction { NONE, SURGE_FORWARD, SURGE_BACKWARD, SWAY_LEFT, SWAY_RIGHT, YAW_LEFT, YAW_RIGHT, HEAVE_UP, HEAVE_DOWN, BRIGHTEN_LED, DIM_LED,
-                        TURN_FRONT_SERVO_CW, TURN_FRONT_SERVO_CCW, TURN_BACK_SERVO_CW, TURN_BACK_SERVO_CCW, CONFIGURATION_MODE, FLIP_CAMERA_1, FLIP_CAMERA_2, FLIP_CAMERA_3,
-                        FRONT_CAMERA_SERVO_ANGLE_1, FRONT_CAMERA_SERVO_ANGLE_2, FRONT_CAMERA_SERVO_ANGLE_3, BACK_CAMERA_SERVO_ANGLE_1, BACK_CAMERA_SERVO_ANGLE_2,
-                        BACK_CAMERA_SERVO_ANGLE_3, ROLL_CW, ROLL_CCW, SIZE };
+                        TURN_FRONT_SERVO_CW, TURN_FRONT_SERVO_CCW, TURN_BACK_SERVO_CW, TURN_BACK_SERVO_CCW, CONFIGURATION_MODE, FLIP_CAMERA_1_VERTICALLY, FLIP_CAMERA_2_VERTICALLY,
+                        FLIP_CAMERA_3_VERTICALLY, FLIP_CAMERA_1_HORIZONTALLY, FLIP_CAMERA_2_HORIZONTALLY, FLIP_CAMERA_3_HORIZONTALLY, FRONT_CAMERA_SERVO_ANGLE_1, FRONT_CAMERA_SERVO_ANGLE_2, 
+                        FRONT_CAMERA_SERVO_ANGLE_3, BACK_CAMERA_SERVO_ANGLE_1, BACK_CAMERA_SERVO_ANGLE_2, BACK_CAMERA_SERVO_ANGLE_3, ROLL_CW, ROLL_CCW, SIZE };
 const char* buttonActionLabels[] = { "None", "Surge Forward", "Surge Backward", "Sway Left", "Sway Right", "Yaw Left", "Yaw Right", "Heave Up", "Heave Down", "Brighten LED", "Dim LED",
-    "Turn Front Servo CW", "Turn Front Servo CCW", "Turn Back Servo CW", "Turn Back Servo CCW", "Configuration Mode", "Flip Camera 1", "Flip Camera 2", "Flip Camera 3",
+    "Turn Front Servo CW", "Turn Front Servo CCW", "Turn Back Servo CW", "Turn Back Servo CCW", "Configuration Mode", "Flip Camera 1 Vertical", "Flip Camera 2 Vertical", "Flip Camera 3 Vertical",
+    "Flip Camera 1 Horizontally", "Flip Camera 2 Horizontally", "Flip Camera 3 Horizontally",
     "Front Camera Servo Angle 1", "Front Camera Servo Angle 2", "Front Camera Servo Angle 3", "Back Camera Servo Angle 1", "Back Camera Servo Angle 2", "Back Camera Servo Angle 3",
     "Roll CW", "Roll CCW"};
 const char* buttonActionCodes[] = { "none", "surge_forward", "surge_backward", "sway_left", "sway_right", "yaw_left", "yaw_right", "heave_up", "heave_down", "brighten_led", "dim_led",
-    "turn_front_servo_cw", "turn_front_servo_ccw", "turn_back_servo_cw", "turn_back_servo_ccw", "configuration_mode", "flip_camera_1", "flip_camera_2", "flip_camera_3",
-    "front_camera_servo_angle_1", "front_camera_servo_angle_2", "front_camera_servo_angle_3", "back_camera_servo_angle_1", "back_camera_servo_angle_2", "back_camera_servo_angle_3",
+    "turn_front_servo_cw", "turn_front_servo_ccw", "turn_back_servo_cw", "turn_back_servo_ccw", "configuration_mode", "flip_camera_1_vertically", "flip_camera_2_vertically", "flip_camera_3_vertically",
+    "flip_camera_1_horizontally", "flip_camera_2_horizontally", "flip_camera_3_horizontally", "front_camera_servo_angle_1", "front_camera_servo_angle_2", "front_camera_servo_angle_3", 
+    "back_camera_servo_angle_1", "back_camera_servo_angle_2", "back_camera_servo_angle_3",
     "roll_cw", "roll_ccw"};
 
 enum class AxisAction { NONE, SURGE, SWAY, YAW, ROLL, HEAVE, SIZE };
