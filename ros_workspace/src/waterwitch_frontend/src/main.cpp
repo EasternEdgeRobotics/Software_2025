@@ -101,10 +101,12 @@ int main(int argc, char **argv) {
     Camera cam1(user_config.cam1ip, noSignal);
     Camera cam2(user_config.cam2ip, noSignal);
     Camera cam3(user_config.cam3ip, noSignal);
+    Camera cam3(user_config.cam4ip, noSignal);
 
     cam1.start();
     cam2.start();
     cam3.start();
+    cam4.start();
 
     //render loop
     while (!glfwWindowShouldClose(window)) {
@@ -128,9 +130,11 @@ int main(int argc, char **argv) {
         bool flipCam1VerticallyButtonPressed = false;
         bool flipCam2VerticallyButtonPressed = false;
         bool flipCam3VerticallyButtonPressed = false;
+        bool flipCam4VerticallyButtonPressed = false;
         bool flipCam1HorizontallyButtonPressed = false;
         bool flipCam2HorizontallyButtonPressed = false;
         bool flipCam3HorizontallyButtonPressed = false;
+        bool flipCam4HorizontallyButtonPressed = false;
 
         // Note: A servo angle of -1 means that the exact angle is unset
         int frontServoAngle = -1;
@@ -160,9 +164,11 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS) flipCam1VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS) flipCam2VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) flipCam3VerticallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_LEFT_BRACKET) == GLFW_PRESS) flipCam4VerticallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) flipCam1HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
                 if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
                 if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
@@ -240,6 +246,9 @@ int main(int argc, char **argv) {
                         case ButtonAction::FLIP_CAMERA_3_VERTICALLY:
                             flipCam3VerticallyButtonPressed = true;
                             break;
+                        case ButtonAction::FLIP_CAMERA_4_VERTICALLY:
+                            flipCam4VerticallyButtonPressed = true;
+                            break;
                         case ButtonAction::FLIP_CAMERA_1_HORIZONTALLY:
                             flipCam1HorizontallyButtonPressed = true;
                             break;
@@ -248,6 +257,9 @@ int main(int argc, char **argv) {
                             break;
                         case ButtonAction::FLIP_CAMERA_3_HORIZONTALLY:
                             flipCam3HorizontallyButtonPressed = true;
+                            break;
+                        case ButtonAction::FLIP_CAMERA_4_HORIZONTALLY:
+                            flipCam4HorizontallyButtonPressed = true;
                             break;
                         case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_1:
                             frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
@@ -318,6 +330,12 @@ int main(int argc, char **argv) {
             } else {
                 flipCam3VerticallyButtonPressedLatch = false;
             }
+            if (flipCam4VerticallyButtonPressed) {
+                if (!flipCam4VerticallyButtonPressedLatch) cam4.flip_vertically();
+                flipCam4VerticallyButtonPressedLatch = true;
+            } else {
+                flipCam4VerticallyButtonPressedLatch = false;
+            }
             if (flipCam1HorizontallyButtonPressed) {
                 if (!flipCam1HorizontallyButtonPressedLatch) cam1.flip_horizontally();
                 flipCam1HorizontallyButtonPressedLatch = true;
@@ -335,6 +353,12 @@ int main(int argc, char **argv) {
                 flipCam3HorizontallyButtonPressedLatch = true;
             } else {
                 flipCam3HorizontallyButtonPressedLatch = false;
+            }
+            if (flipCam4HorizontallyButtonPressed) {
+                if (!flipCam4HorizontallyButtonPressedLatch) cam4.flip_horizontally();
+                flipCam4HorizontallyButtonPressedLatch = true;
+            } else {
+                flipCam4HorizontallyButtonPressedLatch = false;
             }
         }
 
@@ -366,6 +390,7 @@ int main(int argc, char **argv) {
                                 user_config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(user_config.cam1ip));
                             if (!configData["cameras"][1].is_null()) std::strncpy(user_config.cam2ip, configData["cameras"][1].get<std::string>().c_str(), sizeof(user_config.cam2ip));
                             if (!configData["cameras"][2].is_null()) std::strncpy(user_config.cam3ip, configData["cameras"][2].get<std::string>().c_str(), sizeof(user_config.cam3ip));
+                            if (!configData["cameras"][3].is_null()) std::strncpy(user_config.cam4ip, configData["cameras"][3].get<std::string>().c_str(), sizeof(user_config.cam3ip));
                             user_config.deadzone = configData.value("deadzone", 0.1f);
                             user_config.buttonActions.clear();
                             for (auto& mapping : configData["mappings"]["0"]["buttons"].items()) {
@@ -409,6 +434,9 @@ int main(int argc, char **argv) {
                     ImGui::Text("Camera 3 URL");
                     ImGui::SameLine(); 
                     ImGui::InputText("##camera3", user_config.cam3ip, 64);
+                    ImGui::Text("Camera 4 URL");
+                    ImGui::SameLine(); 
+                    ImGui::InputText("##camera4", user_config.cam3ip, 64);
                     ImGui::EndTabItem();
                     
                 }
@@ -610,6 +638,7 @@ int main(int argc, char **argv) {
                         configJson["cameras"][0] = user_config.cam1ip;
                         configJson["cameras"][1] = user_config.cam2ip;
                         configJson["cameras"][2] = user_config.cam3ip;
+                        configJson["cameras"][3] = user_config.cam4ip;
                         configJson["controller1"] = glfwGetJoystickName(GLFW_JOYSTICK_1);
                         configJson["controller2"] = "null";
                         configJson["deadzone"] = user_config.deadzone;
@@ -647,7 +676,7 @@ int main(int argc, char **argv) {
             ImGui::SetCursorPos(ImVec2(windowPos.x+8, (availPos.y-24)/2+35));
             cam3.render(ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
             ImGui::SetCursorPos(ImVec2((availPos.x-24)/2+16, (availPos.y-24)/2+35));
-            ImGui::Image((ImTextureID)(intptr_t)eerLogo, ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
+            cam4.render(ImVec2((availPos.x-24)/2, (availPos.y-24)/2));
 
             ImGui::End();
         }
