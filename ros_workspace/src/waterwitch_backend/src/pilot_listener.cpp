@@ -121,16 +121,14 @@ private:
 
   float thruster_acceleration = 0.5f;
   float thruster_stronger_side_attenuation_constant = 1.0f;
-  int last_input_recieved_time = 0;
+  std::chrono::time_point<std::chrono::high_resolution_clock> last_input_recieved_time = std::chrono::high_resolution_clock::now();
 
   void pilot_listener_callback(eer_interfaces::msg::PilotInput::UniquePtr pilot_input)
   { 
 
     {
       std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
-      // #####################################/
-      // Save the current time in the last_input_recieved_time variable
-      // #####################################/
+      last_input_recieved_time = std::chrono::high_resolution_clock::now();
 
       // This would be a part of the constructor, but since `get_waterwitch_config` contains
       // a call to shared_from_this(), we need to call this in the `pilot_listener_callback` to avoid runtime error
@@ -223,13 +221,19 @@ private:
 
   void software_to_board_communication_timer_callback()
   {
-    {
-      std::scoped_lock lock(target_thrust_mutexes[thruster_index], current_waterwitch_control_values_mutex)
+    {      
+      std::lock_guard<std::mutex> lock(current_waterwitch_control_values_mutex);
 
       // #####################################/
       // check if the current time minus last_input_recieved_time is greater than KILL_SWITCH_TIMEOUT. If so, 
       // iterate through all six thrusters in afor loop and set target_thrust_values[thruster_index] = 0 
       // #####################################/
+      if (std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - last_input_recieved_time).count() >= KILL_SWITCH_TIMEOUT)
+      {
+        for (int thruster_index = 0; thruster_index < 6; thruster_index++)  {
+          target_thrust_values[thruster_index] = 0 ;
+        }
+      }
 
     }
 

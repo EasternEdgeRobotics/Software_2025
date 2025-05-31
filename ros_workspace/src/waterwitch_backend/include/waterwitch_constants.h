@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <cstdint>
+#include <chrono>
 
 
 enum CONTROL_AXES {
@@ -37,6 +38,8 @@ extern const int MIN_SERVO_ANGLE;
 
 // The maximum servo angle
 extern const int MAX_SERVO_ANGLE;
+
+extern const int KILL_SWITCH_TIMEOUT;
 
 
 #endif // WATERWITCH_CONSTANTS_H
