@@ -21,8 +21,8 @@ const char* buttonActionCodes[] = { "none", "surge_forward", "surge_backward", "
     "roll_cw", "roll_ccw"};
 
 enum class AxisAction { NONE, SURGE, SWAY, YAW, ROLL, HEAVE, SIZE };
-const char* axisActionLabels[] = { "None", "Surge", "Sway", "Yaw", "Heave" };
-const char* axisActionCodes[] = { "none", "surge", "sway", "yaw", "heave" };
+const char* axisActionLabels[] = { "None", "Surge", "Sway", "Yaw", "Roll" ,"Heave" };
+const char* axisActionCodes[] = { "none", "surge", "sway", "yaw", "roll", "heave" };
 
 ButtonAction stringToButtonAction(const string& action) {
     auto it = std::find_if(std::begin(buttonActionCodes), std::end(buttonActionCodes), [&](const char* code) { return strcmp(code, action.c_str()) == 0; });
