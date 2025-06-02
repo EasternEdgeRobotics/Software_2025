@@ -39,7 +39,7 @@ extern const int MIN_SERVO_ANGLE;
 // The maximum servo angle
 extern const int MAX_SERVO_ANGLE;
 
-extern const int KILL_SWITCH_TIMEOUT;
+extern const int PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS;
 
 
 #endif // WATERWITCH_CONSTANTS_H

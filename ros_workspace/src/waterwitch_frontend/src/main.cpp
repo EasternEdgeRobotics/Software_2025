@@ -32,9 +32,11 @@ bool keyboard_mode = false;
 bool flipCam1VerticallyButtonPressedLatch = false;
 bool flipCam2VerticallyButtonPressedLatch = false;
 bool flipCam3VerticallyButtonPressedLatch = false;
+bool flipCam4VerticallyButtonPressedLatch = false;
 bool flipCam1HorizontallyButtonPressedLatch = false;
 bool flipCam2HorizontallyButtonPressedLatch = false;
 bool flipCam3HorizontallyButtonPressedLatch = false;
+bool flipCam4HorizontallyButtonPressedLatch = false;
 
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const WaterwitchConfig& waterwitch_config);
@@ -62,7 +64,6 @@ int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
     
     //create images
-    unsigned int eerLogo = loadEmbeddedTexture(logo_png, logo_png_len);
     unsigned int noSignal = loadEmbeddedTexture(nosignal_jpg, nosignal_jpg_len);
 
     //create ros nodes
@@ -101,7 +102,7 @@ int main(int argc, char **argv) {
     Camera cam1(user_config.cam1ip, noSignal);
     Camera cam2(user_config.cam2ip, noSignal);
     Camera cam3(user_config.cam3ip, noSignal);
-    Camera cam3(user_config.cam4ip, noSignal);
+    Camera cam4(user_config.cam4ip, noSignal);
 
     cam1.start();
     cam2.start();
@@ -386,8 +387,7 @@ int main(int argc, char **argv) {
                         }
                         if (ImGui::MenuItem(names[i].c_str())) {
                             json configData = json::parse(configs[i]);
-                            if (!configData["cameras"][0].is_null()) std::strncpy(
-                                user_config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(user_config.cam1ip));
+                            if (!configData["cameras"][0].is_null()) std::strncpy(user_config.cam1ip, configData["cameras"][0].get<std::string>().c_str(), sizeof(user_config.cam1ip));
                             if (!configData["cameras"][1].is_null()) std::strncpy(user_config.cam2ip, configData["cameras"][1].get<std::string>().c_str(), sizeof(user_config.cam2ip));
                             if (!configData["cameras"][2].is_null()) std::strncpy(user_config.cam3ip, configData["cameras"][2].get<std::string>().c_str(), sizeof(user_config.cam3ip));
                             if (!configData["cameras"][3].is_null()) std::strncpy(user_config.cam4ip, configData["cameras"][3].get<std::string>().c_str(), sizeof(user_config.cam3ip));
