@@ -8,6 +8,7 @@
 #include "ROS.hpp"
 #include "Camera.hpp"
 #include <iostream>
+#include <cstdint>
 #include <memory>
 #include "images/logo.h"
 #include "images/nosignal.h"
@@ -37,6 +38,14 @@ bool flipCam1HorizontallyButtonPressedLatch = false;
 bool flipCam2HorizontallyButtonPressedLatch = false;
 bool flipCam3HorizontallyButtonPressedLatch = false;
 bool flipCam4HorizontallyButtonPressedLatch = false;
+
+
+bool bilge_pump_on = false;
+int bilge_pump_speed = 255;
+
+bool bilge_pump_latch = false;
+bool brighten_led_latch = false;
+bool dim_led_latch = false;
 
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const WaterwitchConfig& waterwitch_config);
@@ -136,6 +145,7 @@ int main(int argc, char **argv) {
         bool flipCam2HorizontallyButtonPressed = false;
         bool flipCam3HorizontallyButtonPressed = false;
         bool flipCam4HorizontallyButtonPressed = false;
+        bool bilge_pump_toggle = false;
 
         // Note: A servo angle of -1 means that the exact angle is unset
         int frontServoAngle = -1;
@@ -169,6 +179,7 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) flipCam1HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) bilge_pump_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
                 if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
@@ -221,6 +232,9 @@ int main(int argc, char **argv) {
                             break;
                         case ButtonAction::DIM_LED:
                             dimLED = true;
+                            break;
+                        case ButtonAction::TOGGLE_BILGE_PUMP:
+                            bilge_pump_toggle = true;
                             break;
                         case ButtonAction::TURN_FRONT_SERVO_CW:
                             turnFrontServoCw = true;
@@ -361,11 +375,33 @@ int main(int argc, char **argv) {
             } else {
                 flipCam4HorizontallyButtonPressedLatch = false;
             }
+
+            
+            if (bilge_pump_toggle) {
+                if (!bilge_pump_latch) bilge_pump_on = !bilge_pump_on;
+                bilge_pump_latch = true;
+            } else {
+                bilge_pump_latch = false;
+            }
+            if (brightenLED) {
+                brightenLED = !brighten_led_latch;
+                brighten_led_latch = true;
+            } else {
+                brighten_led_latch = false;
+            }
+            if (dimLED) {
+                dimLED = !dim_led_latch;
+                dim_led_latch = true;
+            } else {
+                dim_led_latch = false;
+            }
         }
+
+        uint8_t effective_bilge_pump_speed = bilge_pump_on ? bilge_pump_speed : 0;
 
         pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
             turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
-            backServoAngle, configuration_mode_thruster_number);
+            backServoAngle, configuration_mode_thruster_number, effective_bilge_pump_speed);
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
@@ -412,6 +448,11 @@ int main(int argc, char **argv) {
                 }
                 ImGui::EndMenu();
             }
+
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, bilge_pump_on ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
+            ImGui::Text(bilge_pump_on ? " BILGE PUMP ON" : " BILGE PUMP OFF");
+            ImGui::PopStyleColor();
 
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
@@ -576,6 +617,7 @@ int main(int argc, char **argv) {
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("Z - Brighten LED");
                         ImGui::Text("X - Dim LED");
+                        ImGui::Text("C - Toggle Bilge Pump");
                         ImGui::Text("Right Arrow - Turn Front Servo Clockwise");
                         ImGui::Text("Left Arrow - Turn Front Servo Counter-Clockwise");
                         ImGui::Text("Page Up - Turn Back Servo Clockwise");
@@ -583,9 +625,11 @@ int main(int argc, char **argv) {
                         ImGui::Text("I - Flip Camera 1 Vertically");
                         ImGui::Text("O - Flip Camera 2 Vertically");
                         ImGui::Text("P - Flip Camera 3 Vertically");
+                        ImGui::Text("] - Flip Camera 4 Vertically");
                         ImGui::Text("B - Flip Camera 1 Horizontally");
                         ImGui::Text("N - Flip Camera 2 Horizontally");
                         ImGui::Text("M - Flip Camera 3 Horizontally");
+                        ImGui::Text(", - Flip Camera 4 Horizontally");
                         ImGui::Text("5 - Front Camera Servo Angle 1");
                         ImGui::Text("6 - Front Camera Servo Angle 2");
                         ImGui::Text("7 - Front Camera Servo Angle 3");
@@ -691,6 +735,7 @@ int main(int argc, char **argv) {
             ImGui::SliderInt("Heave", &power.heave, 0, 100);
             ImGui::SliderInt("Roll", &power.roll, 0, 100);
             ImGui::SliderInt("Yaw", &power.yaw, 0, 100);
+            ImGui::SliderInt("Bilge Pump Speed", &bilge_pump_speed, 0, 255);
 
             ImGui::SeparatorText("Keybinds");
             ImGui::Text("1 - Set all to 0%%");

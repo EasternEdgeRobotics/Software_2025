@@ -41,5 +41,7 @@ extern const int MAX_SERVO_ANGLE;
 
 extern const int PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS;
 
+extern const int LED_BRIGHTNESS_INCREMENT;
+
 
 #endif // WATERWITCH_CONSTANTS_H

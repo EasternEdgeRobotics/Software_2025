@@ -5,6 +5,7 @@
 #include <chrono>
 #include <array>
 #include <string>
+#include <cstdlib>
 
 #include "rclcpp/rclcpp.hpp"
 #include "eer_interfaces/msg/pilot_input.hpp"
@@ -216,7 +217,13 @@ private:
 
       current_waterwitch_control_values.camera_servos[0] = pilot_input->turn_front_servo_cw - pilot_input->turn_front_servo_ccw;
       current_waterwitch_control_values.camera_servos[1] = pilot_input->turn_back_servo_cw - pilot_input->turn_back_servo_ccw;
-      
+      current_waterwitch_control_values.bilge_pump_speed = pilot_input->bilge_pump_speed;
+
+      if (pilot_input->brighten_led || pilot_input->dim_led) {
+        current_waterwitch_control_values.led_brightness = std::clamp(
+          current_waterwitch_control_values.led_brightness + 85 * (pilot_input->brighten_led - pilot_input->dim_led),
+          0, 255);
+      }
     }
   }
 
@@ -227,10 +234,11 @@ private:
 
       if (std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - last_input_recieved_time).count() >= PILOT_COMMUNICATION_LOSS_THRUSTER_TIMEOUT_MS)
       {
-        // Communication has been cut with topsides for too long, stop all thrusters
+        // Communication has been cut with topsides for too long, stop all thrusters and the pump
         for (int thruster_index = 0; thruster_index < 6; thruster_index++)  {
-          target_thrust_values[thruster_index] = 0 ;
+          target_thrust_values[thruster_index] = 0;
         }
+        current_waterwitch_control_values.bilge_pump_speed = 0;
       }
 
     }

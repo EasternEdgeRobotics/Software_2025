@@ -17,6 +17,8 @@
 #include "waterwitch_constants.h"
 
 #define THRUST_SCALE 127.5
+#define LED_REGISTER 6
+#define BILGE_PUMP_REGISTER 7
 #define I2C_BUS_FILE "/dev/i2c-1"
 
 
@@ -33,9 +35,11 @@ public:
             // Map the thrust value from the range [-1, 1] to [0, 255]
             uint8_t thrust = static_cast<uint8_t>((control_values_msg->thrust[thruster_index] + 1) * THRUST_SCALE);
 
-            // Publish on i2c bus
             write_to_i2c(RP2040_ADDRESS, 2, control_values_msg->thruster_map[thruster_index], thrust);
         }
+
+        write_to_i2c(RP2040_ADDRESS, 2, LED_REGISTER, control_values_msg->led_brightness);
+        write_to_i2c(RP2040_ADDRESS, 2, BILGE_PUMP_REGISTER, control_values_msg->bilge_pump_speed);
 
         // for (size_t i = 0; i < servo_ssh_targets.size(); i++)
         // {
