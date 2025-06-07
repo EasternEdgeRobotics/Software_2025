@@ -18,6 +18,8 @@ using json = nlohmann::json;
 UserConfig user_config;
 WaterwitchConfig waterwitch_config;
 Power power;
+Power previous_power_settings;
+Power fast_mode_settings;
 
 bool showConfigWindow = false;
 bool showCameraWindow = false;
@@ -29,6 +31,7 @@ vector<string> configs;
 int configuration_mode_thruster_number = 0;
 bool configuration_mode = false;
 bool keyboard_mode = true;
+bool fast_mode = false;
 
 bool flipCam1VerticallyButtonPressedLatch = false;
 bool flipCam2VerticallyButtonPressedLatch = false;
@@ -39,13 +42,13 @@ bool flipCam2HorizontallyButtonPressedLatch = false;
 bool flipCam3HorizontallyButtonPressedLatch = false;
 bool flipCam4HorizontallyButtonPressedLatch = false;
 
-
 bool bilge_pump_on = false;
 int bilge_pump_speed = 255;
 
 bool bilge_pump_latch = false;
 bool brighten_led_latch = false;
 bool dim_led_latch = false;
+bool fast_mode_latch = false;
 
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const WaterwitchConfig& waterwitch_config);
@@ -83,6 +86,14 @@ int main(int argc, char **argv) {
     std::array<std::vector<std::string>, 2> configRes = getConfigs();
     names = configRes[0];
     configs = configRes[1];
+
+    // Set the default fast mode settings
+    fast_mode_settings.power = 75;
+    fast_mode_settings.surge = 75;
+    fast_mode_settings.sway = 50;
+    fast_mode_settings.heave = 75;
+    fast_mode_settings.roll = 0;
+    fast_mode_settings.yaw = 30;
 
     // Load the waterwitch config
     for (size_t i = 0; i < names.size(); i++) {
@@ -146,6 +157,7 @@ int main(int argc, char **argv) {
         bool flipCam3HorizontallyButtonPressed = false;
         bool flipCam4HorizontallyButtonPressed = false;
         bool bilge_pump_toggle = false;
+        bool fast_mode_toggle = false;
 
         // Note: A servo angle of -1 means that the exact angle is unset
         int frontServoAngle = -1;
@@ -180,6 +192,7 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) flipCam2HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) bilge_pump_toggle = true;
+                if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
                     frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0]; 
@@ -283,12 +296,7 @@ int main(int argc, char **argv) {
                             flipCam4HorizontallyButtonPressed = true;
                             break;
                         case ButtonAction::FAST_MODE:
-                            power.power = 75;
-                            power.surge = 75;
-                            power.sway = 0;
-                            power.heave = 75;
-                            power.roll = 0;
-                            power.yaw = 0;
+                            fast_mode_toggle = true;
                             break;  
                         case ButtonAction::USE_SERVO_ANGLE_PRESET_1:
                             frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
@@ -391,6 +399,21 @@ int main(int argc, char **argv) {
             } else {
                 bilge_pump_latch = false;
             }
+            if (fast_mode_toggle) {
+                if (!fast_mode_latch) {
+                    fast_mode = !fast_mode;
+                    if (fast_mode) {
+                        previous_power_settings = power;
+                        power = fast_mode_settings;
+                    }
+                    else {
+                        power = previous_power_settings;
+                    }
+                }
+                fast_mode_latch = true;
+            } else {
+                fast_mode_latch = false;
+            }
             if (brightenLED) {
                 brightenLED = !brighten_led_latch;
                 brighten_led_latch = true;
@@ -410,6 +433,7 @@ int main(int argc, char **argv) {
         pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
             turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
             backServoAngle, configuration_mode_thruster_number, effective_bilge_pump_speed);
+        
 
         //top menu bar
         if (ImGui::BeginMainMenuBar()) {
@@ -460,6 +484,11 @@ int main(int argc, char **argv) {
             ImGui::SameLine();
             ImGui::PushStyleColor(ImGuiCol_Text, bilge_pump_on ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
             ImGui::Text(bilge_pump_on ? " BILGE PUMP ON" : " BILGE PUMP OFF");
+            ImGui::PopStyleColor();
+
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, fast_mode ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
+            ImGui::Text(fast_mode ? " FAST MODE ON" : "FAST MODE OFF");
             ImGui::PopStyleColor();
 
             ImGui::SameLine();
@@ -750,7 +779,7 @@ int main(int argc, char **argv) {
             ImGui::Text("2 - Set all to 50%%");
             ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
             ImGui::Text("4 - Set all to 50%%, Heave to 75%% and Yaw to 30%%");
-            ImGui::Text("V - Fast mode: set Power, Surge, and Heave to 75%%");
+            ImGui::Text("V (Toggle - returns to previous preset when off) - Fast mode: set Power, Surge, and Heave to 75%%");
             if (ImGui::IsKeyPressed(ImGuiKey_1)) {
                 power.power = 0;
                 power.surge = 0;
@@ -783,14 +812,15 @@ int main(int argc, char **argv) {
                 power.roll = 50;
                 power.yaw = 30;
             }
-            if (ImGui::IsKeyPressed(ImGuiKey_V)) {
-                power.power = 75;
-                power.surge = 75;
-                power.sway = 0;
-                power.heave = 75;
-                power.roll = 0;
-                power.yaw = 0;
-            }
+
+            ImGui::SeparatorText("Fast Mode Adjustment");
+            ImGui::SliderInt("Power", &fast_mode_settings.power, 0, 100);
+            ImGui::SliderInt("Surge", &fast_mode_settings.surge, 0, 100);
+            ImGui::SliderInt("Sway", &fast_mode_settings.sway, 0, 100);
+            ImGui::SliderInt("Heave", &fast_mode_settings.heave, 0, 100);
+            ImGui::SliderInt("Roll", &fast_mode_settings.roll, 0, 100);
+            ImGui::SliderInt("Yaw", &fast_mode_settings.yaw, 0, 100);
+
             ImGui::End();
         }
 
