@@ -6,3 +6,10 @@ config/
 imgui.ini
 .DS_Store
 configs/
+venv/
+.env/
+lib/
+lib64/
+bin/
+include/
+pyvenv.cfg
