@@ -9,7 +9,16 @@ def extract_table_to_csv(image_path, debug = False):
 
     base, ext = os.path.splitext(image_path)
 
-    image = cv2.imread(image_path)
+    # Use webcam instead of image file
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Cannot open webcam")
+        return
+    ret, image = cap.read()
+    cap.release()
+    if not ret:
+        print("Failed to capture image from webcam")
+        return
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
