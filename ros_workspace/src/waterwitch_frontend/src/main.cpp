@@ -194,8 +194,7 @@ int main(int argc, char **argv) {
                     backServoAngle = waterwitch_config.back_camera_preset_servo_angles[2];
                 }
             }
-            }
-                if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
+            if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
                 const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
                 const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
@@ -750,8 +749,8 @@ int main(int argc, char **argv) {
             ImGui::Text("1 - Set all to 0%%");
             ImGui::Text("2 - Set all to 50%%");
             ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
-            ImGui::Text("4 - Kaitlin Approved Preset");
-            ImGui::Text("V - Fast mode, set power, surge and heave to 75%");
+            ImGui::Text("4 - Set all to 50%%, Heave to 75%% and Yaw to 30%%");
+            ImGui::Text("V - Fast mode: set Power, Surge, and Heave to 75%%");
             if (ImGui::IsKeyPressed(ImGuiKey_1)) {
                 power.power = 0;
                 power.surge = 0;
