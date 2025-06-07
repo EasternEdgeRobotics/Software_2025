@@ -28,7 +28,7 @@ vector<string> configs;
 
 int configuration_mode_thruster_number = 0;
 bool configuration_mode = false;
-bool keyboard_mode = false;
+bool keyboard_mode = true;
 
 bool flipCam1VerticallyButtonPressedLatch = false;
 bool flipCam2VerticallyButtonPressedLatch = false;
@@ -181,14 +181,21 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) flipCam3HorizontallyButtonPressed = true;
                 if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) bilge_pump_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
-                if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
-                if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
-                if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
-                if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS) backServoAngle = waterwitch_config.back_camera_preset_servo_angles[0];
-                if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS) backServoAngle = waterwitch_config.back_camera_preset_servo_angles[1];
-                if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) backServoAngle = waterwitch_config.back_camera_preset_servo_angles[2];
+                if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
+                    frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0]; 
+                    backServoAngle = waterwitch_config.back_camera_preset_servo_angles[0];
+                }
+                if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) {
+                    frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1]; 
+                    backServoAngle = waterwitch_config.back_camera_preset_servo_angles[1];
+                }
+                if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS) {
+                    frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2]; 
+                    backServoAngle = waterwitch_config.back_camera_preset_servo_angles[2];
+                }
             }
-            else if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
+            }
+                if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                 int buttonCount, axisCount;
                 const unsigned char* buttons = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
                 const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
@@ -276,22 +283,24 @@ int main(int argc, char **argv) {
                         case ButtonAction::FLIP_CAMERA_4_HORIZONTALLY:
                             flipCam4HorizontallyButtonPressed = true;
                             break;
-                        case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_1:
+                        case ButtonAction::FAST_MODE:
+                            power.power = 75;
+                            power.surge = 75;
+                            power.sway = 0;
+                            power.heave = 75;
+                            power.roll = 0;
+                            power.yaw = 0;
+                            break;  
+                        case ButtonAction::USE_SERVO_ANGLE_PRESET_1:
                             frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0];
-                            break;
-                        case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_2:
-                            frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
-                            break;
-                        case ButtonAction::FRONT_CAMERA_SERVO_ANGLE_3:
-                            frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
-                            break;
-                        case ButtonAction::BACK_CAMERA_SERVO_ANGLE_1:
                             backServoAngle = waterwitch_config.back_camera_preset_servo_angles[0];
                             break;
-                        case ButtonAction::BACK_CAMERA_SERVO_ANGLE_2:
+                        case ButtonAction::USE_SERVO_ANGLE_PRESET_2:
+                            frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[1];
                             backServoAngle = waterwitch_config.back_camera_preset_servo_angles[1];
                             break;
-                        case ButtonAction::BACK_CAMERA_SERVO_ANGLE_3:
+                        case ButtonAction::USE_SERVO_ANGLE_PRESET_3:
+                            frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
                             backServoAngle = waterwitch_config.back_camera_preset_servo_angles[2];
                             break;
                         default:
@@ -454,6 +463,9 @@ int main(int argc, char **argv) {
             ImGui::Text(bilge_pump_on ? " BILGE PUMP ON" : " BILGE PUMP OFF");
             ImGui::PopStyleColor();
 
+            ImGui::SameLine();
+            ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
+
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
             ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
@@ -601,7 +613,6 @@ int main(int argc, char **argv) {
                     ImGui::EndTabItem();
                 }
                 if (ImGui::BeginTabItem("Controls (User)")) {
-                    ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
                     if (keyboard_mode)
                     {
                         ImGui::SeparatorText("Keyboard Bindings");
@@ -629,13 +640,11 @@ int main(int argc, char **argv) {
                         ImGui::Text("B - Flip Camera 1 Horizontally");
                         ImGui::Text("N - Flip Camera 2 Horizontally");
                         ImGui::Text("M - Flip Camera 3 Horizontally");
-                        ImGui::Text(", - Flip Camera 4 Horizontally");
-                        ImGui::Text("5 - Front Camera Servo Angle 1");
-                        ImGui::Text("6 - Front Camera Servo Angle 2");
-                        ImGui::Text("7 - Front Camera Servo Angle 3");
-                        ImGui::Text("8 - Back Camera Servo Angle 1");
-                        ImGui::Text("9 - Back Camera Servo Angle 2");
-                        ImGui::Text("0 - Back Camera Servo Angle 3");
+                        ImGui::Text("V - Fast Mode");
+                        ImGui::Text("5 - Use Servo Preset Angle 1");
+                        ImGui::Text("6 - Use Servo Preset Angle 2");
+                        ImGui::Text("7 - Use Servo Preset Angle 3");
+                        
                     }
                     if (glfwJoystickPresent(GLFW_JOYSTICK_1)) {
                         int buttonCount, axisCount;
@@ -742,7 +751,7 @@ int main(int argc, char **argv) {
             ImGui::Text("2 - Set all to 50%%");
             ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
             ImGui::Text("4 - Kaitlin Approved Preset");
-
+            ImGui::Text("V - Fast mode, set power, surge and heave to 75%");
             if (ImGui::IsKeyPressed(ImGuiKey_1)) {
                 power.power = 0;
                 power.surge = 0;
@@ -775,7 +784,14 @@ int main(int argc, char **argv) {
                 power.roll = 50;
                 power.yaw = 30;
             }
-
+            if (ImGui::IsKeyPressed(ImGuiKey_V)) {
+                power.power = 75;
+                power.surge = 75;
+                power.sway = 0;
+                power.heave = 75;
+                power.roll = 0;
+                power.yaw = 0;
+            }
             ImGui::End();
         }
 
