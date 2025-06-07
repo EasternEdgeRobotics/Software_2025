@@ -312,11 +312,10 @@ def extract_table_to_csv(image_path, debug = False):
                     red_pixels = (regions[column_number][:, :, 2] == 255) & (regions[column_number][:, :, 1] == 0) & (regions[column_number][:, :, 0] == 0)
                     blank_map[red_pixels] = regions[column_number][red_pixels]
             
-            if debug:
-                # Save the modified map image
-                os.makedirs("video_frames", exist_ok=True)
-                output_path = os.path.join("video_frames", f"{row_number-1}.png")
-                cv2.imwrite(output_path, blank_map)
+            # Save the modified map image
+            os.makedirs("video_frames", exist_ok=True)
+            output_path = os.path.join("video_frames", f"{row_number-1}.png")
+            cv2.imwrite(output_path, blank_map)
 
     image_files = [f"video_frames/{i}.png" for i in range(10)]
     # Read the first image to get frame size
