@@ -215,7 +215,7 @@ def extract_table_to_csv(image_path, debug = False):
         
         if row_number > 0:
 
-            row_start = table_cell_horizontal_lines_rectangles[row_number][1] + table_cell_horizontal_lines_rectangles[row_number][3]
+            row_start = table_cell_horizontal_lines_rectangles[row_number][1] 
             row_end = table_cell_horizontal_lines_rectangles[row_number+1][1]
 
             # Create six columns
