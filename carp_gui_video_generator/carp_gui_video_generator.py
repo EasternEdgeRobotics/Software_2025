@@ -248,6 +248,19 @@ def extract_table_to_csv(image_path, debug = False):
                     cell_thresh[:, :border_w] = 255
                     cell_thresh[:, -border_w:] = 255
 
+                    # Make cell_thresh 50% bigger in width and height by adding white padding
+                    h, w = cell_thresh.shape
+                    new_h = int(h * 1.5)
+                    new_w = int(w * 1.5)
+                    pad_top = (new_h - h) // 2
+                    pad_bottom = new_h - h - pad_top
+                    pad_left = (new_w - w) // 2
+                    pad_right = new_w - w - pad_left
+                    cell_thresh = cv2.copyMakeBorder(
+                        cell_thresh, pad_top, pad_bottom, pad_left, pad_right,
+                        borderType=cv2.BORDER_CONSTANT, value=255
+                    )
+
                     # Remove noise: keep only the three largest connected components (biggest black blobs)
                     cell_inv = cv2.bitwise_not(cell_thresh)
                     num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=4)
