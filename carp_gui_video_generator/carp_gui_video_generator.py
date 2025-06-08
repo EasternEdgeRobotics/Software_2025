@@ -5,21 +5,13 @@ import sys
 import time
 
 
-def extract_table_to_csv(image_path, debug = False):
+def extract_table_to_csv(frame, debug = False):
 
     base, ext = os.path.splitext(image_path)
 
-    # image = cv2.imread(image_path)
+    # image = cv2.imread("table_image.jpg")
 
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Cannot open webcam")
-        return
-    ret, image = cap.read()
-    cap.release()
-    if not ret:
-        print("Failed to capture image from webcam")
-        return
+    image = frame
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -316,6 +308,7 @@ if __name__ == "__main__":
     # Show a live video feed to the user for 5 seconds, then capture an image
     feed_opened = True
     cap = cv2.VideoCapture(0)
+    frame = None
     if not cap.isOpened():
         print("Cannot open webcam")
         feed_opened = False
@@ -336,7 +329,7 @@ if __name__ == "__main__":
         cv2.destroyAllWindows()
 
     try:
-        table = extract_table_to_csv("table_image.jpg", debug)
+        table = extract_table_to_csv(frame, debug)
     except:
         table = [
             ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
