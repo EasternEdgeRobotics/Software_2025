@@ -2,7 +2,7 @@ import cv2
 import numpy as np 
 import os
 import sys
-import readline
+import time
 
 
 def extract_table_to_csv(image_path, debug = False):
@@ -109,7 +109,7 @@ def extract_table_to_csv(image_path, debug = False):
 
     if not row_lines_obtained == row_lines_required:
         print("Not enought lines")
-        return
+        raise Exception("Not enough horizontal lines detected to extract the table.")
     
     # Draw contours on the original image for visualization
     if debug:
@@ -300,24 +300,24 @@ if __name__ == "__main__":
 
     table = []
 
-    # Show a live video feed to the user while prompting them to press Enter
+    # Show a live video feed to the user for 5 seconds, then capture an image
     feed_opened = True
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Cannot open webcam")
         feed_opened = False
     if feed_opened:
-        print("Press Enter in the terminal to take a picture...")
+        print("Showing live feed for 5 seconds...")
+        start_time = time.time()
         while True:
             ret, frame = cap.read()
             if not ret:
                 print("Failed to grab frame")
                 break
-            cv2.imshow("Live Feed - Press Enter in terminal", frame)
+            cv2.imshow("Live Feed - Capturing in 5 seconds", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-            # Check if Enter was pressed in the terminal
-            if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+            if time.time() - start_time >= 5:
                 break
         cap.release()
         cv2.destroyAllWindows()
