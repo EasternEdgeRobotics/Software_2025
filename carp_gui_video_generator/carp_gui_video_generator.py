@@ -7,7 +7,7 @@ import time
 
 def extract_table_to_csv(frame, debug = False):
 
-    base, ext = os.path.splitext(image_path)
+    base, ext = os.path.splitext("table_image.jpg")
 
     # image = cv2.imread("table_image.jpg")
 
@@ -101,7 +101,7 @@ def extract_table_to_csv(frame, debug = False):
 
     if not row_lines_obtained == row_lines_required:
         print("Not enought lines")
-        raise Exception("Not enough horizontal lines detected to extract the table.")
+        return []
     
     # Draw contours on the original image for visualization
     if debug:
@@ -242,8 +242,8 @@ def extract_table_to_csv(frame, debug = False):
 
                     # Make cell_thresh 50% bigger in width and height by adding white padding
                     h, w = cell_thresh.shape
-                    new_h = int(h * 1.5)
-                    new_w = int(w * 1.5)
+                    new_h = int(h * 3)
+                    new_w = int(w * 3)
                     pad_top = (new_h - h) // 2
                     pad_bottom = new_h - h - pad_top
                     pad_left = (new_w - w) // 2
@@ -307,45 +307,25 @@ if __name__ == "__main__":
 
     def obtain_table(table):
 
-        # Show a live video feed to the user for 5 seconds, then capture an image
-        feed_opened = True
         cap = cv2.VideoCapture(0)
         frame = None
         if not cap.isOpened():
             print("Cannot open webcam")
-            feed_opened = False
-        if feed_opened:
-            print("Showing live feed for 5 seconds...")
-            start_time = time.time()
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    print("Failed to grab frame")
-                    break
-                cv2.imshow("Live Feed - Capturing in 5 seconds", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-                if time.time() - start_time >= 5:
-                    break
-            cap.release()
-            cv2.destroyAllWindows()
+            return
 
-        try:
+        while True:
+            ret, frame = cap.read()
+            cv2.imshow("Capture", frame)
             table = extract_table_to_csv(frame, debug)
-        except:
-            table = [
-                ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
-                ["2016","N", "N", "N", "N", "N"],
-                ["2017","N", "N", "N", "N", "N"],
-                ["2018","N", "N", "N", "N", "N"],
-                ["2019","N", "N", "N", "N", "N"],
-                ["2020","N", "N", "N", "N", "N"],
-                ["2021","N", "N", "N", "N", "N"],
-                ["2022","N", "N", "N", "N", "N"],
-                ["2023","N", "N", "N", "N", "N"],
-                ["2024","N", "N", "N", "N", "N"],
-                ["2025","N", "N", "N", "N", "N"]
-            ]
+            if table != []:
+                break
+            if not ret:
+                print("Failed to grab frame")
+                break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        cap.release()
+        cv2.destroyAllWindows()
         return table
 
     table = obtain_table(table)
@@ -355,7 +335,7 @@ if __name__ == "__main__":
         col_headers = ["  "] + [f"{i+1:^5}" for i in range(5)]
         print("    " + " ".join(col_headers[1:]))
         for i, row in enumerate(table[1:]):
-            print(f"{i+1:2}: " + " ".join(f"{cell:^5}" for cell in row[1:]))
+            print(f"({i+2016:2}) {i+1:2}: " + " ".join(f"{cell:^5}" for cell in row[1:]))
 
     def edit_table(table):
         while True:
