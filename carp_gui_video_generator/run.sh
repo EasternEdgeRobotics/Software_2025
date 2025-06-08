@@ -1,0 +1,2 @@
+source venv/bin/activate
+python carp_gui_video_generator.py

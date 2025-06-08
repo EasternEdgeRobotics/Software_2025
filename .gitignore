@@ -7,9 +7,6 @@ imgui.ini
 .DS_Store
 configs/
 venv/
-.env/
-lib/
-lib64/
-bin/
-include/
-pyvenv.cfg
+table_image_cells/
+video_frames/
+output.mp4

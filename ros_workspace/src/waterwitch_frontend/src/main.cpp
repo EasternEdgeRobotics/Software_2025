@@ -30,7 +30,7 @@ vector<string> configs;
 
 int configuration_mode_thruster_number = 0;
 bool configuration_mode = false;
-bool keyboard_mode = true;
+bool keyboard_mode = false;
 bool fast_mode = false;
 
 bool flipCam1VerticallyButtonPressedLatch = false;
@@ -494,6 +494,23 @@ int main(int argc, char **argv) {
             ImGui::SameLine();
             ImGui::Checkbox("Keyboard Mode", &keyboard_mode);
 
+            ImGui::SameLine();
+            if (ImGui::Button("Cam1 Screenshot")) {
+                if (!cam1.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam1");
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam2 Screenshot")) {                
+                if (!cam2.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam2");
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam3 Screenshot")) {                
+                if (!cam3.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam3");
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cam4 Screenshot")) {                
+                if (!cam4.screenshot()) RCLCPP_ERROR(rclcpp::get_logger("main"), "Failed to take screenshot for Cam4");
+            }
+
             //fps counter
             ImGui::SameLine(ImGui::GetWindowWidth() - 100);
             ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
@@ -779,7 +796,7 @@ int main(int argc, char **argv) {
             ImGui::Text("2 - Set all to 50%%");
             ImGui::Text("3 - Set all to 0%%, set Heave and Power to 100%%");
             ImGui::Text("4 - Set all to 50%%, Heave to 75%% and Yaw to 30%%");
-            ImGui::Text("V (Toggle - returns to previous preset when off) - Fast mode: set Power, Surge, and Heave to 75%%");
+            ImGui::Text("V (Toggle) - Fast mode");
             if (ImGui::IsKeyPressed(ImGuiKey_1)) {
                 power.power = 0;
                 power.surge = 0;
@@ -814,12 +831,12 @@ int main(int argc, char **argv) {
             }
 
             ImGui::SeparatorText("Fast Mode Adjustment");
-            ImGui::SliderInt("Power", &fast_mode_settings.power, 0, 100);
-            ImGui::SliderInt("Surge", &fast_mode_settings.surge, 0, 100);
-            ImGui::SliderInt("Sway", &fast_mode_settings.sway, 0, 100);
-            ImGui::SliderInt("Heave", &fast_mode_settings.heave, 0, 100);
-            ImGui::SliderInt("Roll", &fast_mode_settings.roll, 0, 100);
-            ImGui::SliderInt("Yaw", &fast_mode_settings.yaw, 0, 100);
+            ImGui::SliderInt("Fast Mode Power", &fast_mode_settings.power, 0, 100);
+            ImGui::SliderInt("Fast Mode Surge", &fast_mode_settings.surge, 0, 100);
+            ImGui::SliderInt("Fast Mode Sway", &fast_mode_settings.sway, 0, 100);
+            ImGui::SliderInt("Fast Mode Heave", &fast_mode_settings.heave, 0, 100);
+            ImGui::SliderInt("Fast Mode Roll", &fast_mode_settings.roll, 0, 100);
+            ImGui::SliderInt("Fast Mode Yaw", &fast_mode_settings.yaw, 0, 100);
 
             ImGui::End();
         }

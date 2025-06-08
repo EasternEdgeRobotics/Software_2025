@@ -1,15 +1,16 @@
 import cv2
-import pytesseract
-import pandas as pd 
 import numpy as np 
 import os
 import sys
+import readline
+
 
 def extract_table_to_csv(image_path, debug = False):
 
     base, ext = os.path.splitext(image_path)
 
-    # Use webcam instead of image file
+    # image = cv2.imread(image_path)
+
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Cannot open webcam")
@@ -39,7 +40,7 @@ def extract_table_to_csv(image_path, debug = False):
 
     # Create elements to use for detecting vertical and horizontal lines
     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 30))
-    horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 1))
+    horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 1))
 
     # Detect vertical lines 
     vertical_lines = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, vertical_kernel, iterations=1)
@@ -194,17 +195,17 @@ def extract_table_to_csv(image_path, debug = False):
     # Split up table into cells based on the extracted boxes.
 
     table = [
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        []        
+        ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
+        ["2016","N", "N", "N", "N", "N"],
+        ["2017","N", "N", "N", "N", "N"],
+        ["2018","N", "N", "N", "N", "N"],
+        ["2019","N", "N", "N", "N", "N"],
+        ["2020","N", "N", "N", "N", "N"],
+        ["2021","N", "N", "N", "N", "N"],
+        ["2022","N", "N", "N", "N", "N"],
+        ["2023","N", "N", "N", "N", "N"],
+        ["2024","N", "N", "N", "N", "N"],
+        ["2025","N", "N", "N", "N", "N"]
     ]
     # Ensure the output directory exists
 
@@ -232,31 +233,35 @@ def extract_table_to_csv(image_path, debug = False):
 
                     cell_gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
 
-                    # Remove 2 pixels from each side of the cell image
-                    cell_gray = cell_gray[2:-2, 2:-2]
-
                     # Apply adaptive thresholding for better handling of varying lighting conditions
                     cell_thresh = cv2.adaptiveThreshold(
                         cell_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                        cv2.THRESH_BINARY, 11, 2
+                        cv2.THRESH_BINARY, 9, 2
                     )
 
-                    # Remove noise: keep only the largest connected component (biggest black blob)
-                    # Invert so blobs are white for connectedComponents
+                    # Replace the outer pixels with white in case there is a table border
+                    h, w = cell_thresh.shape
+                    border_h = max(1, int(h * 0.10))
+                    border_w = max(1, int(w * 0.10))
+                    cell_thresh[:border_h, :] = 255
+                    cell_thresh[-border_h:, :] = 255
+                    cell_thresh[:, :border_w] = 255
+                    cell_thresh[:, -border_w:] = 255
+
+                    # Remove noise: keep only the three largest connected components (biggest black blobs)
                     cell_inv = cv2.bitwise_not(cell_thresh)
-                    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=8)
+                    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=4)
                     if num_labels > 1:
-                        # Ignore background (label 0), find largest component
-                        largest_label = 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])
+                        # Ignore background (label 0), find the three largest components
+                        areas = stats[1:, cv2.CC_STAT_AREA]
+                        largest_labels = 1 + np.argsort(areas)[-3:]  # get indices of 3 largest blobs
                         mask = np.zeros_like(cell_inv)
-                        mask[labels == largest_label] = 255
+                        for lbl in largest_labels:
+                            mask[labels == lbl] = 255
                         # Invert back to original
                         clean_cell = cv2.bitwise_not(mask)
                     else:
                         clean_cell = cell_thresh.copy()
-
-                    # Obtain the text from this cell assuming a unifrom block of text, and remove any whitespace with strip
-                    text = pytesseract.image_to_string(cell, config='--psm 6').strip()
 
                     best_non_affirmative_score = None
                     for template_name in os.listdir("non_affirmative_templates"):
@@ -281,11 +286,114 @@ def extract_table_to_csv(image_path, debug = False):
                     else:
                         text = "N"
 
-                    table[row_number].append(text)
+                    table[row_number][column_number] = text
                     if debug:
                         # Save the cropped cell image
                         cv2.imwrite(f"{base}_cells/{row_number}_{column_number}.png", clean_cell)
-    
+    return table
+
+
+if __name__ == "__main__":
+    debug = False
+    if "debug" in sys.argv:
+        debug = True
+
+    table = []
+
+    # Show a live video feed to the user while prompting them to press Enter
+    feed_opened = True
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Cannot open webcam")
+        feed_opened = False
+    if feed_opened:
+        print("Press Enter in the terminal to take a picture...")
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame")
+                break
+            cv2.imshow("Live Feed - Press Enter in terminal", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+            # Check if Enter was pressed in the terminal
+            if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                break
+        cap.release()
+        cv2.destroyAllWindows()
+
+    try:
+        table = extract_table_to_csv("table_image.jpg", debug)
+    except:
+        table = [
+            ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
+            ["2016","N", "N", "N", "N", "N"],
+            ["2017","N", "N", "N", "N", "N"],
+            ["2018","N", "N", "N", "N", "N"],
+            ["2019","N", "N", "N", "N", "N"],
+            ["2020","N", "N", "N", "N", "N"],
+            ["2021","N", "N", "N", "N", "N"],
+            ["2022","N", "N", "N", "N", "N"],
+            ["2023","N", "N", "N", "N", "N"],
+            ["2024","N", "N", "N", "N", "N"],
+            ["2025","N", "N", "N", "N", "N"]
+        ]
+
+    def display_table(table):
+        print("Current Table:")
+        col_headers = ["  "] + [f"{i+1:^5}" for i in range(5)]
+        print("    " + " ".join(col_headers[1:]))
+        for i, row in enumerate(table[1:]):
+            print(f"{i+1:2}: " + " ".join(f"{cell:^5}" for cell in row[1:]))
+
+    def edit_table(table):
+        while True:
+            display_table(table)
+            print("\nOptions:")
+            print("  f: <row> <col> - flip value at row,col")
+            print("  s: <row> <Y/N><Y/N><Y/N><Y/N><Y/N>  - Set an entire row")
+            print("  c:                 - Continue")
+            cmd = input("Enter command: ").strip().lower()
+            if cmd == "c":
+                break
+            if cmd.startswith("f "):
+                try:
+                    _, row, col = cmd.split()
+                    row = int(row)
+                    col = int(col)
+                    if 1 <= row < len(table) and 1 <= col < len(table[0]):
+                        current = table[row][col]
+                        if current == "Y":
+                            table[row][col] = "N"
+                        elif current == "N":
+                            table[row][col] = "Y"
+                        else:
+                            print("Cell is not editable (not Y/N).")
+                    else:
+                        print("Invalid row/col or value.")
+                except Exception as e:
+                    print("Invalid command format.")
+            elif cmd.startswith("s "):
+                try:
+                    parts = cmd.split()
+                    if len(parts) == 3:
+                        row = int(parts[1])
+                        vals = parts[2].upper()
+                        if len(vals) == 5 and all(v in ("Y", "N") for v in vals) and 1 <= row < len(table):
+                            for i, v in enumerate(vals):
+                                table[row][i+1] = v
+                        else:
+                            print("Invalid row or values.")
+                    else:
+                        print("Invalid command format.")
+                except Exception as e:
+                    print("Invalid command format.")
+            else:
+                print("Unknown command.")
+
+    edit_table(table)
+
+    # Create the video
     regions = []
     for i in range(1, 6):
         if os.path.isfile(f"regions/Region{i}.png"):
@@ -316,8 +424,8 @@ def extract_table_to_csv(image_path, debug = False):
             )
 
             # Create six columns
-            for column_number in range(5):
-                if table[row_number][column_number] == "Y":
+            for column_number in range(0, 5):
+                if table[row_number][column_number+1] == "Y":
                     red_pixels = (regions[column_number][:, :, 2] == 255) & (regions[column_number][:, :, 1] == 0) & (regions[column_number][:, :, 0] == 0)
                     blank_map[red_pixels] = regions[column_number][red_pixels]
             
@@ -345,14 +453,4 @@ def extract_table_to_csv(image_path, debug = False):
 
     video.release()
 
-    # Print the table nicely
-    for row in table:
-        print('\t'.join(row))
 
-
-if __name__ == "__main__":
-    debug = False
-    if "debug" in sys.argv:
-        debug = True
-    # Example usage
-    extract_table_to_csv("table_image.png", debug)

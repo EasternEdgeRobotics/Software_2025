@@ -58,6 +58,17 @@ public:
 
                 }
 
+                if (take_screenshot)
+                {
+                    take_screenshot = false;
+                    if (filesystem::exists(std::string(getenv("HOME")) + "/Pictures/"))
+                    {
+                        std::string filename = std::string(getenv("HOME")) + "/Pictures/screenshot_" +
+                            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
+                                std::chrono::system_clock::now().time_since_epoch()).count()) + ".png";
+                        cv::imwrite(filename, frame);
+                    }
+                }
                 
                 frameCaptured = true;
                 lastFrameTime = std::chrono::steady_clock::now();
@@ -94,6 +105,13 @@ public:
         flip_frame_horizontally = !flip_frame_horizontally;
     }
 
+    bool screenshot()
+    {
+        if (!filesystem::exists(std::string(getenv("HOME")) + "/Pictures/")) return false;
+        take_screenshot = true;
+        return true;
+    }
+
     ~Camera() {
         stop();
         if (texture) glDeleteTextures(1, &texture);
@@ -111,6 +129,7 @@ private:
     int displayHeight = 480;
     bool flip_frame_vertically = false;
     bool flip_frame_horizontally = false;
+    bool take_screenshot = false;
 
     std::chrono::steady_clock::time_point lastFrameTime;
 
