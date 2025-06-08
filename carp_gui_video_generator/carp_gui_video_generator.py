@@ -348,7 +348,7 @@ if __name__ == "__main__":
             ]
         return table
 
-    table = obtain_table()
+    table = obtain_table(table)
 
     def display_table(table):
         print("Current Table:")
@@ -401,7 +401,7 @@ if __name__ == "__main__":
                 except Exception as e:
                     print("Invalid command format.")
             elif cmd.startswith("r "):
-                table = obtain_table()
+                table = obtain_table(table)
             else:
                 print("Unknown command.")
 
