@@ -305,45 +305,50 @@ if __name__ == "__main__":
 
     table = []
 
-    # Show a live video feed to the user for 5 seconds, then capture an image
-    feed_opened = True
-    cap = cv2.VideoCapture(0)
-    frame = None
-    if not cap.isOpened():
-        print("Cannot open webcam")
-        feed_opened = False
-    if feed_opened:
-        print("Showing live feed for 5 seconds...")
-        start_time = time.time()
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                print("Failed to grab frame")
-                break
-            cv2.imshow("Live Feed - Capturing in 5 seconds", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            if time.time() - start_time >= 5:
-                break
-        cap.release()
-        cv2.destroyAllWindows()
+    def obtain_table(table):
 
-    try:
-        table = extract_table_to_csv(frame, debug)
-    except:
-        table = [
-            ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
-            ["2016","N", "N", "N", "N", "N"],
-            ["2017","N", "N", "N", "N", "N"],
-            ["2018","N", "N", "N", "N", "N"],
-            ["2019","N", "N", "N", "N", "N"],
-            ["2020","N", "N", "N", "N", "N"],
-            ["2021","N", "N", "N", "N", "N"],
-            ["2022","N", "N", "N", "N", "N"],
-            ["2023","N", "N", "N", "N", "N"],
-            ["2024","N", "N", "N", "N", "N"],
-            ["2025","N", "N", "N", "N", "N"]
-        ]
+        # Show a live video feed to the user for 5 seconds, then capture an image
+        feed_opened = True
+        cap = cv2.VideoCapture(0)
+        frame = None
+        if not cap.isOpened():
+            print("Cannot open webcam")
+            feed_opened = False
+        if feed_opened:
+            print("Showing live feed for 5 seconds...")
+            start_time = time.time()
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    print("Failed to grab frame")
+                    break
+                cv2.imshow("Live Feed - Capturing in 5 seconds", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+                if time.time() - start_time >= 5:
+                    break
+            cap.release()
+            cv2.destroyAllWindows()
+
+        try:
+            table = extract_table_to_csv(frame, debug)
+        except:
+            table = [
+                ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
+                ["2016","N", "N", "N", "N", "N"],
+                ["2017","N", "N", "N", "N", "N"],
+                ["2018","N", "N", "N", "N", "N"],
+                ["2019","N", "N", "N", "N", "N"],
+                ["2020","N", "N", "N", "N", "N"],
+                ["2021","N", "N", "N", "N", "N"],
+                ["2022","N", "N", "N", "N", "N"],
+                ["2023","N", "N", "N", "N", "N"],
+                ["2024","N", "N", "N", "N", "N"],
+                ["2025","N", "N", "N", "N", "N"]
+            ]
+        return table
+
+    table = obtain_table()
 
     def display_table(table):
         print("Current Table:")
@@ -359,6 +364,7 @@ if __name__ == "__main__":
             print("  f: <row> <col> - flip value at row,col")
             print("  s: <row> <Y/N><Y/N><Y/N><Y/N><Y/N>  - Set an entire row")
             print("  c:                 - Continue")
+            print("  r:                 - Retry")
             cmd = input("Enter command: ").strip().lower()
             if cmd == "c":
                 break
@@ -394,6 +400,8 @@ if __name__ == "__main__":
                         print("Invalid command format.")
                 except Exception as e:
                     print("Invalid command format.")
+            elif cmd.startswith("r "):
+                table = obtain_table()
             else:
                 print("Unknown command.")
 
