@@ -261,13 +261,13 @@ def extract_table_to_csv(image_path, debug = False):
                         borderType=cv2.BORDER_CONSTANT, value=255
                     )
 
-                    # Remove noise: keep only the three largest connected components (biggest black blobs)
+                    # Remove noise: keep only the two largest connected components (biggest black blobs)
                     cell_inv = cv2.bitwise_not(cell_thresh)
                     num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=4)
                     if num_labels > 1:
                         # Ignore background (label 0), find the three largest components
                         areas = stats[1:, cv2.CC_STAT_AREA]
-                        largest_labels = 1 + np.argsort(areas)[-3:]  # get indices of 3 largest blobs
+                        largest_labels = 1 + np.argsort(areas)[-2:]  # get indices of 2 largest blobs
                         mask = np.zeros_like(cell_inv)
                         for lbl in largest_labels:
                             mask[labels == lbl] = 255
