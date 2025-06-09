@@ -17,8 +17,8 @@
 #include "waterwitch_constants.h"
 
 #define THRUST_SCALE 127.5
-#define LED_REGISTER 6
-#define BILGE_PUMP_REGISTER 7
+#define BILGE_PUMP_REGISTER 6
+#define LED_REGISTER 7
 #define I2C_BUS_FILE "/dev/i2c-1"
 
 

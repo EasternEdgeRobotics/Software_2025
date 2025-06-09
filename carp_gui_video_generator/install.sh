@@ -1,4 +1,5 @@
 sudo apt update
 python3 -m venv venv
 source venv/bin/activate
-pip install opencv-python 
+sudo apt install tesseract-ocr
+pip install opencv-python pytesseract

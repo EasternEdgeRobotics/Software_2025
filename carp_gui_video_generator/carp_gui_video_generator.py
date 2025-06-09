@@ -5,9 +5,9 @@ import sys
 import time
 
 
-def extract_table_to_csv(frame, debug = False):
+def extract_table_to_csv(frame, debug = False, last_error=""):
 
-    base, ext = os.path.splitext(image_path)
+    base, ext = os.path.splitext("table_image.jpg")
 
     # image = cv2.imread("table_image.jpg")
 
@@ -53,6 +53,15 @@ def extract_table_to_csv(frame, debug = False):
     # Sort the horizontal_line_rectangles lines top-to-bottom, then left-to-right
     horizontal_line_rectangles = sorted(horizontal_line_rectangles, key=lambda b: (b[1], b[0])) 
 
+    # Find all shapes (contours)
+    vertical_line_contours, _ = cv2.findContours(vertical_lines, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    
+    # Get the smallest bounding rectangle of each contour
+    vertical_line_rectangles = [cv2.boundingRect(c) for c in vertical_line_contours]
+
+    # Sort the vertical_line_rectangles lines left-to-right, then top-to-bottom
+    vertical_line_rectangles = sorted(vertical_line_rectangles, key=lambda b: (b[0], b[1]))
+
     if debug:
         horizontal_contour_all_lines_image = image.copy()
         i = 0
@@ -64,12 +73,63 @@ def extract_table_to_csv(frame, debug = False):
 
     VERTICAL_SPACING_TOLERANCE = 2
 
+    # Combine fragmented vertical lines if they are in approximately the same x position and one starts where another ends
+    combined_vertical_lines = []
+    used = [False] * len(vertical_line_rectangles)
+    for i, rect1 in enumerate(vertical_line_rectangles):
+        if used[i]:
+            continue
+        x1, y1, w1, h1 = rect1
+        center1 = x1 + w1 / 2
+        end_y1 = y1 + h1
+        merged = False
+        for j in range(i + 1, len(vertical_line_rectangles)):
+            if used[j]:
+                continue
+            x2, y2, w2, h2 = vertical_line_rectangles[j]
+            center2 = x2 + w2 / 2
+            start_y2 = y2
+            # Check if centers are close and one starts where the other ends (with small tolerance)
+            if abs(center1 - center2) < 20 and (abs(end_y1 - start_y2) < 20 or abs(y1 - (y2 + h2)) < 20):
+                new_x = min(x1, x2)
+                new_y = min(y1, y2)
+                new_w = max(x1 + w1, x2 + w2) - new_x
+                new_h = max(y1 + h1, y2 + h2) - new_y
+                combined_vertical_lines.append((new_x, new_y, new_w, new_h))
+                used[i] = True
+                used[j] = True
+                merged = True
+                break
+        if not merged:
+            combined_vertical_lines.append(rect1)
+            used[i] = True
+    vertical_line_rectangles = combined_vertical_lines
+
+    # Find the one vertical line where the largest number of horizontal lines start
+    num_crossing_horizontal_lines = 0
+    table_left_boundry = None
+    for vertical_line_rectangle in vertical_line_rectangles:
+        current_num_crossing_horizontal_lines = 0
+        x, y, w, h = vertical_line_rectangle
+        for horizontal_line_rectangle in horizontal_line_rectangles:
+            hx, hy, hw, hh = horizontal_line_rectangle
+            # Check if the x position of the horizontal line is approximately inside the vertical line
+            if abs(hx - x) <= 2 or (hx >= x and hx <= x + w) or abs(hx - x + w) <= 2:
+                current_num_crossing_horizontal_lines += 1
+        if current_num_crossing_horizontal_lines > num_crossing_horizontal_lines:
+            table_left_boundry = vertical_line_rectangle 
+    
+
+
     # Attempt to construct an array of 12 lines that are evenly spaced
     table_cell_horizontal_lines_rectangles = []
     row_lines_required = 12
     row_lines_obtained = 0
 
     for horizontal_line_rectangle in horizontal_line_rectangles:
+        if horizontal_line_rectangle[3] >= 13:
+            # Don't accept horizontal line rectangles that have too might height (suggesting tilted image)
+            continue
         if len(table_cell_horizontal_lines_rectangles) < 2:
             if len(table_cell_horizontal_lines_rectangles) == 1:
                 if table_cell_horizontal_lines_rectangles[-1][2] >= horizontal_line_rectangle[2]*0.75 and table_cell_horizontal_lines_rectangles[-1][2] < horizontal_line_rectangle[2]*1.05:
@@ -100,8 +160,10 @@ def extract_table_to_csv(frame, debug = False):
             break
 
     if not row_lines_obtained == row_lines_required:
-        print("Not enought lines")
-        raise Exception("Not enough horizontal lines detected to extract the table.")
+        if not (last_error == "Not enough horizontal lines"):
+            print("Not enough horizontal lines")
+        last_error = "Not enough horizontal lines"
+        return last_error, []
     
     # Draw contours on the original image for visualization
     if debug:
@@ -113,20 +175,16 @@ def extract_table_to_csv(frame, debug = False):
             i+=1
         cv2.imwrite(f"{base}_table_cell_row_lines{ext}", horizontal_contour_image)
 
-    # Find all shapes (contours)
-    vertical_line_contours, _ = cv2.findContours(vertical_lines, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    
-    # Get the smallest bounding rectangle of each contour
-    vertical_line_rectangles = [cv2.boundingRect(c) for c in vertical_line_contours]
-
-    # Sort the vertical_line_rectangles lines left-to-right, then top-to-bottom
-    vertical_line_rectangles = sorted(vertical_line_rectangles, key=lambda b: (b[0], b[1]))  
+      
 
     # Now that we know the top and bottom horizontal lines, we know the upper and lower bounds of the table.
     table_y_start = table_cell_horizontal_lines_rectangles[0][1]
     table_y_end = table_cell_horizontal_lines_rectangles[-1][1]+table_cell_horizontal_lines_rectangles[-1][3]
-
-    HORIZNOTAL_SPACING_TOLERANCE = 2
+    
+    table_x_start = image.shape[0]
+    for line in table_cell_horizontal_lines_rectangles:
+        if line[0] < table_x_start:
+            table_x_start = line[0]
 
     # Attempt to construct an array of 12 lines that are evenly spaced
     table_cell_vertical_lines_rectangles = []
@@ -137,6 +195,9 @@ def extract_table_to_csv(frame, debug = False):
         # Check if this vertical line's center is within the upper and lower bounds of the table
         vertical_center = vertical_line_rectangle[1]+(vertical_line_rectangle[3]/2)
         if not (vertical_center > table_y_start and vertical_center < table_y_end):
+            continue
+        
+        if len(table_cell_vertical_lines_rectangles) == 0 and vertical_line_rectangle[0] <= table_x_start - 10:
             continue
 
         # Check to see if this vertical line is actually a continuation of another one
@@ -165,6 +226,12 @@ def extract_table_to_csv(frame, debug = False):
         if not sequence_of_same_space_vertical_lines_detected == sequence_of_same_space_vertical_lines_required:
             table_cell_vertical_lines_rectangles.append(vertical_line_rectangle)
             sequence_of_same_space_vertical_lines_detected += 1
+
+    if not sequence_of_same_space_vertical_lines_detected == sequence_of_same_space_vertical_lines_required:
+        if not (last_error == "Not enought vertical lines"):
+            print("Not enought vertical lines")
+        last_error = "Not enought vertical lines"
+        return last_error, []
 
     # Draw contours on the original image for visualization
     if debug:
@@ -219,9 +286,12 @@ def extract_table_to_csv(frame, debug = False):
                     # Crop the cell from the original image using the calculated start and end positions
                     cell = image[row_start:row_end, column_start:column_end]
 
-                    # # Improve the resolution of the cropped cell using interpolation
-                    # scale_factor = 2  # You can adjust this factor as needed
-                    # cell = cv2.resize(cell, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+                    h, w, _ = cell.shape
+                    if w < 85 or h < 25:
+                        if not (last_error == "move table closer"):
+                            print("move table closer")
+                        last_error = "move table closer"
+                        return last_error, []
 
                     cell_gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
 
@@ -233,60 +303,78 @@ def extract_table_to_csv(frame, debug = False):
 
                     # Replace the outer pixels with white in case there is a table border
                     h, w = cell_thresh.shape
-                    border_h = max(1, int(h * 0.10))
-                    border_w = max(1, int(w * 0.10))
+                    border_h = max(1, int(h * 0.2))
+                    border_w = max(1, int(w * 0.2))
                     cell_thresh[:border_h, :] = 255
                     cell_thresh[-border_h:, :] = 255
                     cell_thresh[:, :border_w] = 255
                     cell_thresh[:, -border_w:] = 255
 
-                    # Make cell_thresh 50% bigger in width and height by adding white padding
-                    h, w = cell_thresh.shape
-                    new_h = int(h * 1.5)
-                    new_w = int(w * 1.5)
-                    pad_top = (new_h - h) // 2
-                    pad_bottom = new_h - h - pad_top
-                    pad_left = (new_w - w) // 2
-                    pad_right = new_w - w - pad_left
-                    cell_thresh = cv2.copyMakeBorder(
-                        cell_thresh, pad_top, pad_bottom, pad_left, pad_right,
-                        borderType=cv2.BORDER_CONSTANT, value=255
-                    )
-
-                    # Remove noise: keep only the two largest connected components (biggest black blobs)
-                    cell_inv = cv2.bitwise_not(cell_thresh)
-                    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=4)
-                    if num_labels > 1:
-                        # Ignore background (label 0), find the three largest components
-                        areas = stats[1:, cv2.CC_STAT_AREA]
-                        largest_labels = 1 + np.argsort(areas)[-2:]  # get indices of 2 largest blobs
-                        mask = np.zeros_like(cell_inv)
-                        for lbl in largest_labels:
-                            mask[labels == lbl] = 255
-                        # Invert back to original
-                        clean_cell = cv2.bitwise_not(mask)
-                    else:
+                    def get_clean_cell(num_blobs = 1):
+                        # Remove noise: keep only the largest connected components (biggest black blobs)
+                        cell_inv = cv2.bitwise_not(cell_thresh)
+                        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=4)
                         clean_cell = cell_thresh.copy()
+                        if num_labels > 1:
+                            # Ignore background (label 0), find the three largest components
+                            areas = stats[1:, cv2.CC_STAT_AREA]
+                            largest_labels = 1 + np.argsort(areas)[-num_blobs:]  # get indices of largest blobs
+                            mask = np.zeros_like(cell_inv)
+                            for lbl in largest_labels:
+                                mask[labels == lbl] = 255
+                            # Invert back to original
+                            clean_cell = cv2.bitwise_not(mask)
+                        else:
+                            clean_cell = cell_thresh.copy()
+                        return clean_cell
 
-                    best_non_affirmative_score = None
+                    non_affirmative_score = None
+                    affirmative_score = None
+
+                    clean_cell = get_clean_cell(2)
+
+                    non_affirmative_scores = []
                     for template_name in os.listdir("non_affirmative_templates"):
                         template_path = os.path.join("non_affirmative_templates", template_name)
                         template_img = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
-                        res = cv2.matchTemplate(clean_cell, template_img, cv2.TM_CCOEFF_NORMED)
+                        th, tw = template_img.shape
+                        ch, cw = clean_cell.shape
+                        pad_top = max(0, (ch - th) // 2)
+                        pad_bottom = max(0, ch - th - pad_top)
+                        pad_left = max(0, (cw - tw) // 2)
+                        pad_right = max(0, cw - tw - pad_left)
+                        template_img_padded = cv2.copyMakeBorder(
+                            template_img, pad_top, pad_bottom, pad_left, pad_right,
+                            borderType=cv2.BORDER_CONSTANT, value=255
+                        )
+                        res = cv2.matchTemplate(clean_cell, template_img_padded, cv2.TM_CCOEFF_NORMED)
                         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-                        if best_non_affirmative_score is None or max_val > best_non_affirmative_score:
-                            best_non_affirmative_score = max_val
+                        non_affirmative_scores.append(max_val)
+                    non_affirmative_score = np.mean(non_affirmative_scores) if non_affirmative_scores else None
 
-                    best_affirmative_score = None
+                    affirmative_scores = []
                     for template_name in os.listdir("affirmative_templates"):
                         template_path = os.path.join("affirmative_templates", template_name)
                         template_img = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
-                        res = cv2.matchTemplate(clean_cell, template_img, cv2.TM_CCOEFF_NORMED)
+                        th, tw = template_img.shape
+                        ch, cw = clean_cell.shape
+                        pad_top = max(0, (ch - th) // 2)
+                        pad_bottom = max(0, ch - th - pad_top)
+                        pad_left = max(0, (cw - tw) // 2)
+                        pad_right = max(0, cw - tw - pad_left)
+                        template_img_padded = cv2.copyMakeBorder(
+                            template_img, pad_top, pad_bottom, pad_left, pad_right,
+                            borderType=cv2.BORDER_CONSTANT, value=255
+                        )
+                        res = cv2.matchTemplate(clean_cell, template_img_padded, cv2.TM_CCOEFF_NORMED)
                         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-                        if best_affirmative_score is None or max_val > best_affirmative_score:
-                            best_affirmative_score = max_val
+                        affirmative_scores.append(max_val)
+                    affirmative_score = np.mean(affirmative_scores) if affirmative_scores else None
+                    
+                    if debug:
+                        print(max(affirmative_score, non_affirmative_score))
 
-                    if best_affirmative_score > best_non_affirmative_score:
+                    if affirmative_score > non_affirmative_score:
                         text = "Y"
                     else:
                         text = "N"
@@ -295,7 +383,8 @@ def extract_table_to_csv(frame, debug = False):
                     if debug:
                         # Save the cropped cell image
                         cv2.imwrite(f"{base}_cells/{row_number}_{column_number}.png", clean_cell)
-    return table
+
+    return last_error, table
 
 
 if __name__ == "__main__":
@@ -307,45 +396,37 @@ if __name__ == "__main__":
 
     def obtain_table(table):
 
-        # Show a live video feed to the user for 5 seconds, then capture an image
-        feed_opened = True
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
         frame = None
         if not cap.isOpened():
             print("Cannot open webcam")
-            feed_opened = False
-        if feed_opened:
-            print("Showing live feed for 5 seconds...")
-            start_time = time.time()
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    print("Failed to grab frame")
-                    break
-                cv2.imshow("Live Feed - Capturing in 5 seconds", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-                if time.time() - start_time >= 5:
-                    break
-            cap.release()
-            cv2.destroyAllWindows()
+            return
+        last_error = ""
 
-        try:
-            table = extract_table_to_csv(frame, debug)
-        except:
-            table = [
-                ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
-                ["2016","N", "N", "N", "N", "N"],
-                ["2017","N", "N", "N", "N", "N"],
-                ["2018","N", "N", "N", "N", "N"],
-                ["2019","N", "N", "N", "N", "N"],
-                ["2020","N", "N", "N", "N", "N"],
-                ["2021","N", "N", "N", "N", "N"],
-                ["2022","N", "N", "N", "N", "N"],
-                ["2023","N", "N", "N", "N", "N"],
-                ["2024","N", "N", "N", "N", "N"],
-                ["2025","N", "N", "N", "N", "N"]
-            ]
+        while True:
+            ret, frame = cap.read()
+            cv2.imshow("Capture", frame)
+            last_error, table = extract_table_to_csv(frame, debug, last_error)
+            if table != []:
+                break
+            if not ret or (cv2.waitKey(1) & 0xFF == ord('q')):
+                print("Failed to grab frame")
+                table = [
+                    ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
+                    ["2016","N", "N", "N", "N", "N"],
+                    ["2017","N", "N", "N", "N", "N"],
+                    ["2018","N", "N", "N", "N", "N"],
+                    ["2019","N", "N", "N", "N", "N"],
+                    ["2020","N", "N", "N", "N", "N"],
+                    ["2021","N", "N", "N", "N", "N"],
+                    ["2022","N", "N", "N", "N", "N"],
+                    ["2023","N", "N", "N", "N", "N"],
+                    ["2024","N", "N", "N", "N", "N"],
+                    ["2025","N", "N", "N", "N", "N"]
+                ]
+                break
+        cap.release()
+        cv2.destroyAllWindows()
         return table
 
     table = obtain_table(table)
@@ -355,7 +436,7 @@ if __name__ == "__main__":
         col_headers = ["  "] + [f"{i+1:^5}" for i in range(5)]
         print("    " + " ".join(col_headers[1:]))
         for i, row in enumerate(table[1:]):
-            print(f"{i+1:2}: " + " ".join(f"{cell:^5}" for cell in row[1:]))
+            print(f"({i+2016:2}) {i+1:2}: " + " ".join(f"{cell:^5}" for cell in row[1:]))
 
     def edit_table(table):
         while True:
@@ -400,7 +481,7 @@ if __name__ == "__main__":
                         print("Invalid command format.")
                 except Exception as e:
                     print("Invalid command format.")
-            elif cmd.startswith("r "):
+            elif cmd.startswith("r"):
                 table = obtain_table(table)
             else:
                 print("Unknown command.")

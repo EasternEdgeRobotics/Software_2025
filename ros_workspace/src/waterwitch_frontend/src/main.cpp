@@ -32,6 +32,7 @@ int configuration_mode_thruster_number = 0;
 bool configuration_mode = false;
 bool keyboard_mode = false;
 bool fast_mode = false;
+bool invert_controls = false;
 
 bool flipCam1VerticallyButtonPressedLatch = false;
 bool flipCam2VerticallyButtonPressedLatch = false;
@@ -49,6 +50,7 @@ bool bilge_pump_latch = false;
 bool brighten_led_latch = false;
 bool dim_led_latch = false;
 bool fast_mode_latch = false;
+bool invert_controls_latch = false;
 
 // Predeclare function
 void saveGlobalConfig(std::shared_ptr<SaveConfigPublisher> saveConfigNode, const WaterwitchConfig& waterwitch_config);
@@ -158,6 +160,7 @@ int main(int argc, char **argv) {
         bool flipCam4HorizontallyButtonPressed = false;
         bool bilge_pump_toggle = false;
         bool fast_mode_toggle = false;
+        bool invert_controls_toggle = false;
 
         // Note: A servo angle of -1 means that the exact angle is unset
         int frontServoAngle = -1;
@@ -194,6 +197,7 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) bilge_pump_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) fast_mode_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS) flipCam4HorizontallyButtonPressed = true;
+                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) invert_controls_toggle = true;
                 if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) {
                     frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[0]; 
                     backServoAngle = waterwitch_config.back_camera_preset_servo_angles[0];
@@ -310,6 +314,9 @@ int main(int argc, char **argv) {
                             frontServoAngle = waterwitch_config.front_camera_preset_servo_angles[2];
                             backServoAngle = waterwitch_config.back_camera_preset_servo_angles[2];
                             break;
+                        case ButtonAction::INVERT_CONTROLS:
+                            invert_controls_toggle = true;
+                            break;
                         default:
                             break;
                     }
@@ -399,6 +406,12 @@ int main(int argc, char **argv) {
             } else {
                 bilge_pump_latch = false;
             }
+            if (invert_controls_toggle) {
+                if (!invert_controls_latch) invert_controls = !invert_controls;
+                invert_controls_latch = true;
+            } else {
+                invert_controls_latch = false;
+            }
             if (fast_mode_toggle) {
                 if (!fast_mode_latch) {
                     fast_mode = !fast_mode;
@@ -429,6 +442,14 @@ int main(int argc, char **argv) {
         }
 
         uint8_t effective_bilge_pump_speed = bilge_pump_on ? bilge_pump_speed : 0;
+
+        if (invert_controls)
+        {
+            surge = -surge;
+            sway = -sway;
+            roll = -roll;
+            // Since this is used to allow the ROV to change directions, heave and yaw do not need to be inverted
+        }
 
         pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
             turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
@@ -489,6 +510,11 @@ int main(int argc, char **argv) {
             ImGui::SameLine();
             ImGui::PushStyleColor(ImGuiCol_Text, fast_mode ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
             ImGui::Text(fast_mode ? " FAST MODE ON" : "FAST MODE OFF");
+            ImGui::PopStyleColor();
+
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, invert_controls ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) : ImVec4(0.5f, 0.5f, 0.7f, 1.0f));
+            ImGui::Text(invert_controls ?  "INVERT CONTROLS ON" : "INVERT CONTROLS OFF");
             ImGui::PopStyleColor();
 
             ImGui::SameLine();
@@ -609,7 +635,7 @@ int main(int argc, char **argv) {
                             ImGui::SameLine();
                             ImGui::SliderFloat("##thruster_acceleration", &waterwitch_config.thruster_acceleration, 0.1f, 1.0f, "%.05f", ImGuiSliderFlags_AlwaysClamp);
                             
-                            ImGui::Text("The thruster acceleration determines how fast thrusters ramp up to the commanded speed");
+                            ImGui::Text("The stronger side attentuation constant attenuates the power of the thruster on a given side");
 
                             ImGui::Text("Thruster Stronger Side Attenuation Constant");
                             ImGui::SameLine();
@@ -671,6 +697,7 @@ int main(int argc, char **argv) {
                         ImGui::Text("G - Roll CCW");
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
+                        ImGui::Text("SPACE - Invert Controls (Surge, Sway, Roll)");
                         ImGui::Text("Z - Brighten LED");
                         ImGui::Text("X - Dim LED");
                         ImGui::Text("C - Toggle Bilge Pump");
