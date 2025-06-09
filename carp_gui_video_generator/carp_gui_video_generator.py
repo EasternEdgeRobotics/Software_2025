@@ -160,10 +160,8 @@ def extract_table_to_csv(frame, debug = False, last_error=""):
             break
 
     if not row_lines_obtained == row_lines_required:
-        if not (last_error == "Not enough horizontal lines"):
-            print("Not enough horizontal lines")
-        last_error = "Not enough horizontal lines"
-        return last_error, []
+        print("Not enought lines")
+        return []
     
     # Draw contours on the original image for visualization
     if debug:
@@ -310,23 +308,33 @@ def extract_table_to_csv(frame, debug = False, last_error=""):
                     cell_thresh[:, :border_w] = 255
                     cell_thresh[:, -border_w:] = 255
 
-                    def get_clean_cell(num_blobs = 1):
-                        # Remove noise: keep only the largest connected components (biggest black blobs)
-                        cell_inv = cv2.bitwise_not(cell_thresh)
-                        num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=4)
+                    # Make cell_thresh 50% bigger in width and height by adding white padding
+                    h, w = cell_thresh.shape
+                    new_h = int(h * 3)
+                    new_w = int(w * 3)
+                    pad_top = (new_h - h) // 2
+                    pad_bottom = new_h - h - pad_top
+                    pad_left = (new_w - w) // 2
+                    pad_right = new_w - w - pad_left
+                    cell_thresh = cv2.copyMakeBorder(
+                        cell_thresh, pad_top, pad_bottom, pad_left, pad_right,
+                        borderType=cv2.BORDER_CONSTANT, value=255
+                    )
+
+                    # Remove noise: keep only the two largest connected components (biggest black blobs)
+                    cell_inv = cv2.bitwise_not(cell_thresh)
+                    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_inv, connectivity=4)
+                    if num_labels > 1:
+                        # Ignore background (label 0), find the three largest components
+                        areas = stats[1:, cv2.CC_STAT_AREA]
+                        largest_labels = 1 + np.argsort(areas)[-2:]  # get indices of 2 largest blobs
+                        mask = np.zeros_like(cell_inv)
+                        for lbl in largest_labels:
+                            mask[labels == lbl] = 255
+                        # Invert back to original
+                        clean_cell = cv2.bitwise_not(mask)
+                    else:
                         clean_cell = cell_thresh.copy()
-                        if num_labels > 1:
-                            # Ignore background (label 0), find the three largest components
-                            areas = stats[1:, cv2.CC_STAT_AREA]
-                            largest_labels = 1 + np.argsort(areas)[-num_blobs:]  # get indices of largest blobs
-                            mask = np.zeros_like(cell_inv)
-                            for lbl in largest_labels:
-                                mask[labels == lbl] = 255
-                            # Invert back to original
-                            clean_cell = cv2.bitwise_not(mask)
-                        else:
-                            clean_cell = cell_thresh.copy()
-                        return clean_cell
 
                     non_affirmative_score = None
                     affirmative_score = None
@@ -396,34 +404,22 @@ if __name__ == "__main__":
 
     def obtain_table(table):
 
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
         frame = None
         if not cap.isOpened():
             print("Cannot open webcam")
             return
-        last_error = ""
 
         while True:
             ret, frame = cap.read()
             cv2.imshow("Capture", frame)
-            last_error, table = extract_table_to_csv(frame, debug, last_error)
+            table = extract_table_to_csv(frame, debug)
             if table != []:
                 break
-            if not ret or (cv2.waitKey(1) & 0xFF == ord('q')):
+            if not ret:
                 print("Failed to grab frame")
-                table = [
-                    ["","Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
-                    ["2016","N", "N", "N", "N", "N"],
-                    ["2017","N", "N", "N", "N", "N"],
-                    ["2018","N", "N", "N", "N", "N"],
-                    ["2019","N", "N", "N", "N", "N"],
-                    ["2020","N", "N", "N", "N", "N"],
-                    ["2021","N", "N", "N", "N", "N"],
-                    ["2022","N", "N", "N", "N", "N"],
-                    ["2023","N", "N", "N", "N", "N"],
-                    ["2024","N", "N", "N", "N", "N"],
-                    ["2025","N", "N", "N", "N", "N"]
-                ]
+                break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         cap.release()
         cv2.destroyAllWindows()
