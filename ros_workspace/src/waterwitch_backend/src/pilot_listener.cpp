@@ -219,11 +219,7 @@ private:
       current_waterwitch_control_values.camera_servos[1] = pilot_input->turn_back_servo_cw - pilot_input->turn_back_servo_ccw;
       current_waterwitch_control_values.bilge_pump_speed = pilot_input->bilge_pump_speed;
 
-      if (pilot_input->brighten_led || pilot_input->dim_led) {
-        current_waterwitch_control_values.led_brightness = std::clamp(
-          current_waterwitch_control_values.led_brightness + 85 * (pilot_input->brighten_led - pilot_input->dim_led),
-          0, 255);
-      }
+      current_waterwitch_control_values.led_brightness = pilot_input->led_on * 255;
     }
   }
 

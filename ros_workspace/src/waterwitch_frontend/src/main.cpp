@@ -47,8 +47,7 @@ bool bilge_pump_on = false;
 int bilge_pump_speed = 255;
 
 bool bilge_pump_latch = false;
-bool brighten_led_latch = false;
-bool dim_led_latch = false;
+bool led_on_latch = false;
 bool fast_mode_latch = false;
 bool invert_controls_latch = false;
 
@@ -250,11 +249,8 @@ int main(int argc, char **argv) {
                         case ButtonAction::ROLL_CCW:
                             roll -= 100;
                             break;
-                        case ButtonAction::BRIGHTEN_LED:
-                            brightenLED = true;
-                            break;
-                        case ButtonAction::DIM_LED:
-                            dimLED = true;
+                        case ButtonAction::LED:
+                            ledOn = true;
                             break;
                         case ButtonAction::TOGGLE_BILGE_PUMP:
                             bilge_pump_toggle = true;
@@ -427,11 +423,11 @@ int main(int argc, char **argv) {
             } else {
                 fast_mode_latch = false;
             }
-            if (brightenLED) {
-                brightenLED = !brighten_led_latch;
-                brighten_led_latch = true;
+            if (ledOn) {
+                ledOn = !led_on_latch;
+                led_on_latch = true;
             } else {
-                brighten_led_latch = false;
+                led_on_latch = false;
             }
             if (dimLED) {
                 dimLED = !dim_led_latch;
