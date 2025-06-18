@@ -143,8 +143,7 @@ int main(int argc, char **argv) {
         int heave = 0;
         int roll = 0;
         int yaw = 0;
-        bool brightenLED = false;
-        bool dimLED = false;
+        bool ledOn = false;
         bool turnFrontServoCw = false;
         bool turnFrontServoCcw = false;
         bool turnBackServoCw = false;
@@ -180,8 +179,7 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) roll -= 100;
                 if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) heave += 100;
                 if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) heave -= 100;
-                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) brightenLED = true;
-                if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED = true;
+                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) ledOn = true;
                 if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turnFrontServoCw = true;
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
@@ -447,7 +445,7 @@ int main(int argc, char **argv) {
             // Since this is used to allow the ROV to change directions, heave and yaw do not need to be inverted
         }
 
-        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, ledOn, turnFrontServoCw,
             turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
             backServoAngle, configuration_mode_thruster_number, effective_bilge_pump_speed);
         
@@ -694,8 +692,7 @@ int main(int argc, char **argv) {
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("SPACE - Invert Controls (Surge, Sway, Roll)");
-                        ImGui::Text("Z - Brighten LED");
-                        ImGui::Text("X - Dim LED");
+                        ImGui::Text("Z - Turn On LED");
                         ImGui::Text("C - Toggle Bilge Pump");
                         ImGui::Text("Right Arrow - Turn Front Servo Clockwise");
                         ImGui::Text("Left Arrow - Turn Front Servo Counter-Clockwise");
