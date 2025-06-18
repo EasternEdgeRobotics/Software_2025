@@ -47,8 +47,7 @@ bool bilge_pump_on = false;
 int bilge_pump_speed = 255;
 
 bool bilge_pump_latch = false;
-bool brighten_led_latch = false;
-bool dim_led_latch = false;
+bool led_on_latch = false;
 bool fast_mode_latch = false;
 bool invert_controls_latch = false;
 
@@ -144,8 +143,7 @@ int main(int argc, char **argv) {
         int heave = 0;
         int roll = 0;
         int yaw = 0;
-        bool brightenLED = false;
-        bool dimLED = false;
+        bool ledOn = false;
         bool turnFrontServoCw = false;
         bool turnFrontServoCcw = false;
         bool turnBackServoCw = false;
@@ -181,8 +179,7 @@ int main(int argc, char **argv) {
                 if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) roll -= 100;
                 if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) heave += 100;
                 if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) heave -= 100;
-                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) brightenLED = true;
-                if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) dimLED = true;
+                if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) ledOn = true;
                 if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) turnFrontServoCw = true;
                 if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) turnFrontServoCcw = true;
                 if (glfwGetKey(window, GLFW_KEY_PAGE_UP) == GLFW_PRESS) turnBackServoCw = true;
@@ -250,11 +247,8 @@ int main(int argc, char **argv) {
                         case ButtonAction::ROLL_CCW:
                             roll -= 100;
                             break;
-                        case ButtonAction::BRIGHTEN_LED:
-                            brightenLED = true;
-                            break;
-                        case ButtonAction::DIM_LED:
-                            dimLED = true;
+                        case ButtonAction::LED:
+                            ledOn = true;
                             break;
                         case ButtonAction::TOGGLE_BILGE_PUMP:
                             bilge_pump_toggle = true;
@@ -427,11 +421,11 @@ int main(int argc, char **argv) {
             } else {
                 fast_mode_latch = false;
             }
-            if (brightenLED) {
-                brightenLED = !brighten_led_latch;
-                brighten_led_latch = true;
+            if (ledOn) {
+                ledOn = !led_on_latch;
+                led_on_latch = true;
             } else {
-                brighten_led_latch = false;
+                led_on_latch = false;
             }
             if (dimLED) {
                 dimLED = !dim_led_latch;
@@ -451,7 +445,7 @@ int main(int argc, char **argv) {
             // Since this is used to allow the ROV to change directions, heave and yaw do not need to be inverted
         }
 
-        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
+        pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, ledOn, turnFrontServoCw,
             turnFrontServoCcw, turnBackServoCw, turnBackServoCcw, configuration_mode, frontServoAngle, 
             backServoAngle, configuration_mode_thruster_number, effective_bilge_pump_speed);
         
@@ -698,8 +692,7 @@ int main(int argc, char **argv) {
                         ImGui::Text("R - Heave Up");
                         ImGui::Text("F - Heave Down");
                         ImGui::Text("SPACE - Invert Controls (Surge, Sway, Roll)");
-                        ImGui::Text("Z - Brighten LED");
-                        ImGui::Text("X - Dim LED");
+                        ImGui::Text("Z - Turn On LED");
                         ImGui::Text("C - Toggle Bilge Pump");
                         ImGui::Text("Right Arrow - Turn Front Servo Clockwise");
                         ImGui::Text("Left Arrow - Turn Front Servo Counter-Clockwise");
