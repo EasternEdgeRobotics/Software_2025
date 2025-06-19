@@ -39,3 +39,156 @@ More details [here](./web_frontend/)
 3. Pick a task from our [task tracker](https://docs.google.com/spreadsheets/d/1OF3RxeuQIAM3jEYy3F_bVlgd5O9Kzjha2wboch3H_Rw/edit?usp=drive_link) or suggest one based on the team's goal
 
 
+Appendix A Checklists
+
+Pre-deployment Construction Checklist
+
+Area clear and safe
+
+Power supply is powered off
+
+Cables/ tether are undamaged
+
+Tether strain relief is attached
+
+Check to make sure the electronics are prop-
+
+erly plugged in
+
+Grease and tighten penetrators
+
+Grease the enclosures O-ring
+
+Close the enclosure by tightening screws in
+
+an alternating pattern
+
+When the enclosure is closed, add the vent
+
+plug and tighten
+
+Visually inspect the ROV to check for any
+
+damage and to make sure the ROV is safe
+
+for water
+
+Leak test ROV for 15 minutes
+
+Check for water in the camera tube and in
+
+the enclosure
+
+If there are no leaks: the ROV is ready. Pro-
+
+ceed to deployment
+
+Leaks: Disassemble and inspect ROV
+
+Deployment (Power On)
+
+Pilot sets up topside
+
+Pilot ensures team is attentive
+
+Co-Pilot calls Power On
+
+ROV is connected to power supply
+
+Tether in coiled by deck crew to ensure easy
+
+use
+
+Tether managers place ROV in the water and
+
+check for bubbles going to the surface
+
+If bubbles are identified, take the ROV out of
+
+the water and check for leaks
+
+Pilot calls “Performing thruster test”
+
+Pilot ensures all thrusters are functioning
+
+properly
+
+Pilot checks cameras to ensure proper feed
+
+and positioning
+
+If all systems are okay, proceed to Launch
+
+Procedure
+
+Launch Procedure (Deck Crew)
+
+Pilot calls power on, and power is turned on
+
+with disabled controls
+
+Deck crew calls hands-off
+
+Deck crew removes their hands from the
+
+ROV
+
+Piloting begins
+
+Mid-Mission (Deck Crew)
+
+When the the ROV is visible in the moon
+
+pool, the deck crew calls surface
+
+Pilot calls safe when controls are disabled
+
+Hands-on is called by the deck crew when
+
+they have made contact with the ROV
+
+Loss of Communication
+
+Steps are attempted in order. If a step is
+
+successful, the mission resumes
+
+After 2.5 seconds without topside commu-
+
+nication, thrusters turn off
+
+Co-Pilot inspects tether and surface connec-
+
+tions to the laptop
+
+Pilot attempts rebooting the control system
+
+Co-Pilot attempts rebooting Waterwitch by
+
+cycling power supply
+
+Power down ROV, call Power Off
+
+Manual retrieval of ROV using tether
+
+Confirm no leaks and begin troubleshooting
+
+Isolate the cause and document
+
+Tether Protocol
+
+Tether Manager conducts inspection of
+
+tether
+
+Tether is deployed carefully and monitored
+
+throughout the mission to make adjust-
+
+ments as needed
+
+Tether Manager retrieves the tether at the
+
+end of the mission and coils it into a figure-
+
+eight pattern for storage
