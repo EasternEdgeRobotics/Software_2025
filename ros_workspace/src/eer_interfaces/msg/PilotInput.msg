@@ -26,8 +26,7 @@ bool turn_front_servo_cw
 bool turn_front_servo_ccw
 bool turn_back_servo_cw
 bool turn_back_servo_ccw
-bool brighten_led
-bool dim_led 
+bool led_on
 bool turn_stepper_cw 
 bool turn_stepper_ccw
 bool read_outside_temperature_probe
