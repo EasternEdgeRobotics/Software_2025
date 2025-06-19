@@ -446,9 +446,7 @@ int main(int argc, char **argv) {
         if (invert_controls)
         {
             surge = -surge;
-            sway = -sway;
-            roll = -roll;
-            // Since this is used to allow the ROV to change directions, heave and yaw do not need to be inverted
+            yaw = -yaw;
         }
 
         pilotInputNode->sendInput(power, surge, sway, heave, yaw, roll, brightenLED, dimLED, turnFrontServoCw,
