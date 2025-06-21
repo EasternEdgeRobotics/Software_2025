@@ -61,7 +61,7 @@ class WaterwitchConfig {
         std::array<int, 3> back_camera_preset_servo_angles = {0, 90, 180};
 };
 
-std::map<char, std::vector<int>> charMap = {
+map<char, vector<int>> charMap = {
     { 'A', {1, 2} },
     { 'B', {2, 1, 1, 1} },
     { 'C', {2, 1, 2, 1} },
